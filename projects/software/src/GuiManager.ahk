@@ -1,6 +1,6 @@
 ; ==============================
 ; GuiManager.ahk
-; GUI管理类
+; GUI管理类（支持增删改查）
 ; ==============================
 class GuiManager {
     ; 构造函数
@@ -11,17 +11,26 @@ class GuiManager {
         ; 获取软件列表
         this.softwareList := configManager.GetSoftwareListArray()
         
+        ; 保存配置类型和路径，用于修改INI文件
+        this.configType := configManager.GetConfigType()
+        this.configPath := configManager.GetConfigPath()
+        
         ; 初始化其他属性
         this.gui := ""
         this.listBox := ""
         this.softwareMap := Map()
+        
+        ; 当前编辑的模式：create 或 edit
+        this.editMode := ""
+        ; 当前编辑的原始section名称（编辑模式时使用）
+        this.currentEditSection := ""
     }
     
     ; 显示软件列表GUI
     ShowSoftwareList() {
         ; 创建GUI
         this.gui := Gui()
-        this.gui.Title := "软件管理器"
+        this.gui.Title := (this.configType = "ai" ? "AI工具管理器" : "软件管理器")
         this.gui.Opt("+Resize") ; 允许调整大小
         
         ; 创建ListBox
@@ -31,21 +40,25 @@ class GuiManager {
         this.PopulateSoftwareList()
         
         ; 添加按钮区域
-        this.gui.Add("Text", "w500", "双击列表项或点击按钮打开软件")
+        this.gui.Add("Text", "w500", "双击列表项或点击按钮操作")
         
-        ; 创建按钮
-        btnOpen := this.gui.Add("Button", "w80", "打开")
+        ; 创建按钮 - 调整顺序和位置
+        btnCreate := this.gui.Add("Button", "w80", "创建")
+        btnOpen := this.gui.Add("Button", "x+10 w80", "打开")
+        btnEdit := this.gui.Add("Button", "x+10 w80", "编辑")
+        btnDelete := this.gui.Add("Button", "x+10 w80", "删除")
         btnRefresh := this.gui.Add("Button", "x+10 w80", "刷新")
-        btnInfo := this.gui.Add("Button", "x+10 w80", "详情")
         btnClose := this.gui.Add("Button", "x+10 w80", "关闭")
         
         ; 绑定事件
+        btnCreate.OnEvent("Click", this.ShowCreateDialog.Bind(this))
         btnOpen.OnEvent("Click", this.OpenSoftware.Bind(this))
+        btnEdit.OnEvent("Click", this.ShowEditDialog.Bind(this))
+        btnDelete.OnEvent("Click", this.DeleteSoftware.Bind(this))
         btnRefresh.OnEvent("Click", this.RefreshList.Bind(this))
-        btnInfo.OnEvent("Click", this.ShowSoftwareInfo.Bind(this))
         btnClose.OnEvent("Click", this.CloseGui.Bind(this))
         
-        ; 双击ListBox事件
+        ; 双击ListBox事件 - 打开软件
         this.listBox.OnEvent("DoubleClick", this.OpenSoftware.Bind(this))
         
         ; 显示GUI
@@ -66,12 +79,6 @@ class GuiManager {
             path := software["path"]
             section := software["section"]
             
-            ; 检查文件是否存在
-            /* status := " ✗" ; 默认显示叉号
-            if (FileExist(path)) {
-                status := " ✓" ; 文件存在显示勾号
-            } */
-            
             displayName := name
             
             ; 添加到ListBox
@@ -87,6 +94,249 @@ class GuiManager {
         }
     }
     
+    ; ==================== 核心功能方法 ====================
+    
+    ; 显示创建对话框
+    ShowCreateDialog(*) {
+        this.editMode := "create"
+        this.currentEditSection := ""
+        this.ShowEditDialogGui("", "")
+    }
+    
+    ; 显示编辑对话框
+    ShowEditDialog(*) {
+        selectedIndex := this.listBox.Value
+        if (selectedIndex <= 0) {
+            MsgBox("请先选择一个要编辑的软件")
+            return
+        }
+        
+        selectedText := this.listBox.Text
+        if (!this.softwareMap.Has(selectedText)) {
+            MsgBox("未找到选中的软件信息")
+            return
+        }
+        
+        software := this.softwareMap[selectedText]
+        this.editMode := "edit"
+        this.currentEditSection := software["section"]
+        
+        this.ShowEditDialogGui(software["name"], software["path"])
+    }
+    
+    ; 显示编辑对话框（内部方法）
+    ShowEditDialogGui(defaultName, defaultPath) {
+        ; 创建编辑对话框
+        editGui := Gui()
+        editGui.Title := (this.editMode = "create" ? "创建新软件" : "编辑软件")
+        editGui.Opt("+AlwaysOnTop")
+        
+        ; 添加输入控件
+        editGui.Add("Text", "w400", "软件名称:")
+        ctlName := editGui.Add("Edit", "w400", defaultName)
+        
+        editGui.Add("Text", "w400", "软件路径:")
+        ctlPath := editGui.Add("Edit", "w400", defaultPath)
+        editGui.Add("Button", "w80", "浏览...").OnEvent("Click", (*) => this.BrowseForFile(ctlPath))
+        
+        editGui.Add("Text", "w400", "Section名称（自动生成，可修改）:")
+        ctlSection := editGui.Add("Edit", "w400")
+        
+        ; 根据模式设置Section
+        if (this.editMode = "create") {
+            ; 创建模式：默认用软件名称作为section
+            ctlSection.Value := defaultName
+            ; 监听名称变化，自动更新section - 使用外部函数
+            ctlName.OnEvent("Change", this.UpdateSectionFromName.Bind(this, ctlName, ctlSection, defaultName))
+        } else {
+            ; 编辑模式：显示当前section
+            ctlSection.Value := this.currentEditSection
+            ctlSection.Opt("+ReadOnly")  ; 编辑时不允许修改section
+        }
+        
+        ; 添加按钮
+        btnSave := editGui.Add("Button", "w80", "保存")
+        btnCancel := editGui.Add("Button", "x+10 w80", "取消")
+        
+        ; 绑定事件
+        btnSave.OnEvent("Click", (*) => this.SaveSoftware(
+            editGui, 
+            ctlName.Value, 
+            ctlPath.Value, 
+            ctlSection.Value
+        ))
+        btnCancel.OnEvent("Click", (*) => editGui.Destroy())
+        
+        editGui.Show()
+    }
+
+    ; 更新Section名称（当软件名称变化时）
+    UpdateSectionFromName(nameControl, sectionControl, originalName, *) {
+        if (sectionControl.Value = "" || sectionControl.Value = originalName) {
+            sectionControl.Value := nameControl.Value
+        }
+    }
+    
+    ; 浏览文件
+    BrowseForFile(pathControl) {
+        selectedFile := FileSelect(1, , "选择可执行文件", "可执行文件 (*.exe; *.bat; *.cmd)")
+        if (selectedFile != "") {
+            pathControl.Value := selectedFile
+        }
+    }
+    
+    ; 保存软件（创建或编辑）
+    SaveSoftware(editGui, name, path, section) {
+        ; 输入验证
+        if (name = "") {
+            MsgBox("软件名称不能为空")
+            return
+        }
+        
+        if (path = "") {
+            MsgBox("软件路径不能为空")
+            return
+        }
+        
+        if (section = "") {
+            MsgBox("Section名称不能为空")
+            return
+        }
+        
+        ; 检查名称是否已存在（创建模式下）
+        if (this.editMode = "create") {
+            for displayName in this.softwareMap {
+                if (this.softwareMap[displayName]["name"] = name) {
+                    MsgBox("软件名称已存在，请使用其他名称")
+                    return
+                }
+            }
+        }
+        
+        ; 检查section是否已存在（创建模式下）
+        if (this.editMode = "create") {
+            for displayName in this.softwareMap {
+                if (this.softwareMap[displayName]["section"] = section) {
+                    MsgBox("Section名称已存在，请使用其他名称")
+                    return
+                }
+            }
+        }
+        
+        ; 更新INI文件
+        if (!this.UpdateIniFile(name, path, section)) {
+            MsgBox("保存失败，无法更新配置文件")
+            return
+        }
+        
+        ; 关闭编辑窗口
+        editGui.Destroy()
+        
+        ; 刷新列表
+        this.RefreshList()
+        
+        MsgBox("保存成功！")
+    }
+    
+    ; 更新INI文件
+    UpdateIniFile(name, path, section) {
+        try {
+            ; 读取整个INI文件
+            content := FileRead(this.configPath)
+            
+            if (this.editMode = "edit") {
+                ; 编辑模式：找到并替换对应的section
+                newSection := "[" section "]`r`nname=" name "`r`npath=" path "`r`n"
+                
+                ; 构建正则表达式匹配原section
+                pattern := "\[" this.currentEditSection "\][\s\S]*?(?=\n\[|$)"
+                if (RegExMatch(content, pattern, &match)) {
+                    ; 替换原section
+                    content := StrReplace(content, match[0], newSection)
+                } else {
+                    ; 如果没找到，在文件末尾添加
+                    content .= "`r`n" newSection
+                }
+            } else {
+                ; 创建模式：在文件末尾添加新section
+                content .= "`r`n[" section "]`r`nname=" name "`r`npath=" path "`r`n"
+            }
+            
+            ; 写回文件
+            FileDelete(this.configPath)
+            FileAppend(content, this.configPath)
+            
+            return true
+        } catch as e {
+            MsgBox("更新配置文件时出错：`n" e.Message)
+            return false
+        }
+    }
+    
+    ; 删除软件
+    DeleteSoftware(*) {
+        selectedIndex := this.listBox.Value
+        if (selectedIndex <= 0) {
+            MsgBox("请先选择一个要删除的软件")
+            return
+        }
+        
+        selectedText := this.listBox.Text
+        if (!this.softwareMap.Has(selectedText)) {
+            MsgBox("未找到选中的软件信息")
+            return
+        }
+        
+        software := this.softwareMap[selectedText]
+        
+        ; 确认删除
+        response := MsgBox("确定要删除 '" software["name"] "' 吗？", "确认删除", "YesNo")
+        if (response != "Yes") {
+            return
+        }
+        
+        ; 从INI文件中删除
+        if (!this.DeleteFromIniFile(software["section"])) {
+            MsgBox("删除失败，无法更新配置文件")
+            return
+        }
+        
+        ; 刷新列表
+        this.RefreshList()
+        
+        MsgBox("删除成功！")
+    }
+    
+    ; 从INI文件中删除section
+    DeleteFromIniFile(sectionName) {
+        try {
+            ; 读取整个INI文件
+            content := FileRead(this.configPath)
+            
+            ; 构建正则表达式匹配要删除的section
+            pattern := "\[" sectionName "\][\s\S]*?(?=\n\[|$)"
+            if (RegExMatch(content, pattern, &match)) {
+                ; 删除该section
+                content := StrReplace(content, match[0] "`r`n", "")
+                content := StrReplace(content, match[0], "")
+                
+                ; 写回文件
+                FileDelete(this.configPath)
+                FileAppend(content, this.configPath)
+                
+                return true
+            } else {
+                MsgBox("在配置文件中未找到对应的section")
+                return false
+            }
+        } catch as e {
+            MsgBox("删除配置文件时出错：`n" e.Message)
+            return false
+        }
+    }
+    
+    ; ==================== 原有方法 ====================
+    
     ; 打开选中的软件
     OpenSoftware(*) {
         selectedIndex := this.listBox.Value
@@ -101,9 +351,6 @@ class GuiManager {
                 if (FileExist(path)) {
                     try {
                         Run(path)
-                        ; 可以添加打开成功的提示
-                        ; ToolTip "正在打开 " software["name"]
-                        ; SetTimer () => ToolTip(), -1000
                     } catch as e {
                         MsgBox("打开失败: " e.Message)
                     }
@@ -116,59 +363,12 @@ class GuiManager {
         }
     }
     
-    ; 显示软件详情
-    ShowSoftwareInfo(*) {
-        selectedIndex := this.listBox.Value
-        if (selectedIndex > 0) {
-            selectedText := this.listBox.Text
-            
-            if (this.softwareMap.Has(selectedText)) {
-                software := this.softwareMap[selectedText]
-                
-                ; 检查文件是否存在
-                fileExists := FileExist(software["path"])
-                
-                ; 创建详情对话框
-                infoGui := Gui()
-                infoGui.Title := "软件详情 - " software["name"]
-                infoGui.Add("Text", "w400", "名称: " software["name"])
-                infoGui.Add("Text", "w400", "Section: " software["section"])
-                infoGui.Add("Text", "w400", "路径:")
-                infoGui.Add("Edit", "w400 ReadOnly", software["path"])
-                infoGui.Add("Text", "w400", "状态: " (fileExists ? "✓ 文件存在" : "✗ 文件不存在"))
-                
-                ; 添加按钮
-                if (fileExists) {
-                    btnOpen := infoGui.Add("Button", "w80", "打开")
-                    ; 使用闭包捕获变量
-                    btnOpen.OnEvent("Click", (*) => this.OpenSoftwareInInfo(software["path"], infoGui))
-                }
-                
-                btnClose := infoGui.Add("Button", "w80", "关闭")
-                btnClose.OnEvent("Click", (*) => infoGui.Destroy())
-                
-                infoGui.Show()
-            }
-        } else {
-            MsgBox("请先选择一个软件")
-        }
-    }
-    
-    ; 在详情窗口中打开软件（辅助函数）
-    OpenSoftwareInInfo(path, infoGui) {
-        try {
-            Run(path)
-            infoGui.Destroy()
-        } catch as e {
-            MsgBox("打开失败: " e.Message)
-        }
-    }
-    
     ; 刷新列表
     RefreshList(*) {
         ; 重新加载配置
-        this.configManager := ConfigManager()
-        this.softwareList := this.configManager.GetSoftwareListArray()
+        configMgr := ConfigManager(this.configType)
+        this.configManager := configMgr
+        this.softwareList := configMgr.GetSoftwareListArray()
         
         ; 重新填充列表
         this.PopulateSoftwareList()
