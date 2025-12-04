@@ -13,40 +13,17 @@ __New(configType := "") {
     ; 现在 scriptDir 是 ConfigManager.ahk 所在的目录
     ; 应该是：L:\AutoHotkey\projects\software\src
     
-    /* MsgBox("调试信息：`n"
-        . "ConfigManager.ahk路径: " configManagerPath "`n"
-        . "ConfigManager目录: " scriptDir "`n"
-        . "配置类型: " configType) */
-    
-    /*
-        调试信息：
-        ConfigManager.ahk路径l:AutoHotkey\projects\software\src\ConfigManager.ahk
-        ConfigManagerl目录：l:\AutoHotkey\projects\software\src
-        配置类型：software
-    */
-    
     ; configs目录就在当前目录下
     configsDir := scriptDir "\configs"
-    
-    /* MsgBox("configs目录: " configsDir "`n"
-        . "目录是否存在: " (DirExist(configsDir) ? "是" : "否")) */
-    ;configs:l:\AutoHotkey\projects\software\src\configs 目录是否存在：是
-    
-    ; 构建配置文件路径
-    if (configType = "ai") {
-        this.configPath := configsDir "\ai.ini"
-        this.configType := "ai"
-    } else if (configType = "software") {
-        this.configPath := configsDir "\software.ini"
-        this.configType := "software"
-    } else {
-        this.configPath := configsDir "\software.ini"
-        this.configType := "software"
+
+    ; 自动构建配置文件路径：configs\{configType}.ini
+    if (configType = "") {
+        configType := "software"  ; 默认使用software
     }
-    
-   /*  MsgBox("配置文件路径: " this.configPath "`n"
-        . "文件是否存在: " (FileExist(this.configPath) ? "是" : "否")) */
-    ;配置文件路径：l\AutoHotkey\projects\software\src\configs\software.ini 文件是否存在：是
+
+    this.configPath := configsDir "\" configType ".ini"
+    this.configType := configType
+
     
     ; 检查配置文件是否存在
     if (!FileExist(this.configPath)) {
@@ -104,6 +81,12 @@ __New(configType := "") {
         softwareList := []
         
         for section, sectionData in this.data {
+
+            ; 跳过Root项
+            if (section = "Root") {
+                continue
+            }
+
             if (sectionData.Has("name") && sectionData.Has("path")) {
                 softwareInfo := Map()
                 softwareInfo["name"] := sectionData["name"]
@@ -130,4 +113,12 @@ __New(configType := "") {
     GetConfigPath() {
         return this.configPath
     }
+
+    ; 获取Root路径
+    GetRootPath() {
+        if (this.data.Has("Root") && this.data["Root"].Has("path")) {
+            return this.data["Root"]["path"]
+        }
+        return ""
+    }   
 }
