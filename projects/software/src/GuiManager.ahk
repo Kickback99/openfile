@@ -10,6 +10,9 @@ class GuiManager {
         
         ; 获取软件列表
         this.softwareList := configManager.GetSoftwareListArray()
+
+        ; 获取Root路径
+        this.rootPath := configManager.GetRootPath()
         
         ; 保存配置类型和路径，用于修改INI文件
         this.configType := configManager.GetConfigType()
@@ -30,7 +33,7 @@ class GuiManager {
     ShowSoftwareList() {
         ; 创建GUI
         this.gui := Gui()
-        this.gui.Title := (this.configType = "ai" ? "AI工具管理器" : "软件管理器")
+        this.gui.Title := (this.configType)
         this.gui.Opt("+Resize") ; 允许调整大小
         
         ; 创建ListBox
@@ -48,7 +51,8 @@ class GuiManager {
         btnEdit := this.gui.Add("Button", "x+10 w80", "编辑")
         btnDelete := this.gui.Add("Button", "x+10 w80", "删除")
         btnRefresh := this.gui.Add("Button", "x+10 w80", "刷新")
-        btnClose := this.gui.Add("Button", "x+10 w80", "关闭")
+        ; btnClose := this.gui.Add("Button", "x+10 w80", "关闭")
+        btnLocate := this.gui.Add("Button", "x+10 w80", "定位")  ; 新增定位按钮
         
         ; 绑定事件
         btnCreate.OnEvent("Click", this.ShowCreateDialog.Bind(this))
@@ -56,7 +60,8 @@ class GuiManager {
         btnEdit.OnEvent("Click", this.ShowEditDialog.Bind(this))
         btnDelete.OnEvent("Click", this.DeleteSoftware.Bind(this))
         btnRefresh.OnEvent("Click", this.RefreshList.Bind(this))
-        btnClose.OnEvent("Click", this.CloseGui.Bind(this))
+        ; btnClose.OnEvent("Click", this.CloseGui.Bind(this))
+        btnLocate.OnEvent("Click", this.LocateSoftware.Bind(this))  ; 绑定定位事件
         
         ; 双击ListBox事件 - 打开软件
         this.listBox.OnEvent("DoubleClick", this.OpenSoftware.Bind(this))
@@ -125,29 +130,45 @@ class GuiManager {
     }
     
     ; 显示编辑对话框（内部方法）
+    ; 显示编辑对话框（内部方法）- 修正版
     ShowEditDialogGui(defaultName, defaultPath) {
         ; 创建编辑对话框
         editGui := Gui()
         editGui.Title := (this.editMode = "create" ? "创建新软件" : "编辑软件")
         editGui.Opt("+AlwaysOnTop")
         
+        ; 存储相关控件到GUI对象，以便在事件处理器中访问
+        editGui.ctlName := ""
+        editGui.ctlSection := ""
+        editGui.autoUpdateSection := true
+        editGui.originalSection := defaultName
+        
         ; 添加输入控件
         editGui.Add("Text", "w400", "软件名称:")
         ctlName := editGui.Add("Edit", "w400", defaultName)
+        editGui.ctlName := ctlName
         
         editGui.Add("Text", "w400", "软件路径:")
         ctlPath := editGui.Add("Edit", "w400", defaultPath)
-        editGui.Add("Button", "w80", "浏览...").OnEvent("Click", (*) => this.BrowseForFile(ctlPath))
+        btnBrowse := editGui.Add("Button", "w80", "浏览...")
+        btnBrowse.OnEvent("Click", (*) => this.BrowseForFile(ctlPath))
         
         editGui.Add("Text", "w400", "Section名称（自动生成，可修改）:")
         ctlSection := editGui.Add("Edit", "w400")
+        editGui.ctlSection := ctlSection
         
         ; 根据模式设置Section
         if (this.editMode = "create") {
             ; 创建模式：默认用软件名称作为section
             ctlSection.Value := defaultName
-            ; 监听名称变化，自动更新section - 使用外部函数
-            ctlName.OnEvent("Change", this.UpdateSectionFromName.Bind(this, ctlName, ctlSection, defaultName))
+            
+            ; 绑定事件处理器
+            ctlName.OnEvent("Change", this.HandleNameChangeForEditGui.Bind(this, editGui))
+            ctlSection.OnEvent("Change", this.HandleSectionChangeForEditGui.Bind(this, editGui))
+            ctlSection.OnEvent("Focus", this.HandleSectionFocusForEditGui.Bind(this, editGui))
+            ctlSection.OnEvent("LoseFocus", this.HandleSectionLoseFocusForEditGui.Bind(this, editGui))
+            ctlName.OnEvent("Focus", this.HandleNameFocusForEditGui.Bind(this, editGui))
+            
         } else {
             ; 编辑模式：显示当前section
             ctlSection.Value := this.currentEditSection
@@ -169,14 +190,6 @@ class GuiManager {
         
         editGui.Show()
     }
-
-    ; 更新Section名称（当软件名称变化时）
-    UpdateSectionFromName(nameControl, sectionControl, originalName, *) {
-        if (sectionControl.Value = "" || sectionControl.Value = originalName) {
-            sectionControl.Value := nameControl.Value
-        }
-    }
-    
     ; 浏览文件
     BrowseForFile(pathControl) {
         selectedFile := FileSelect(1, , "选择可执行文件", "可执行文件 (*.exe; *.bat; *.cmd)")
@@ -200,6 +213,12 @@ class GuiManager {
         
         if (section = "") {
             MsgBox("Section名称不能为空")
+            return
+        }
+
+        ; 防止创建Root项    
+        if (section = "Root" || section = "root") {
+            MsgBox("不能使用'Root'作为Section名称，这是保留名称")
             return
         }
         
@@ -362,6 +381,13 @@ class GuiManager {
             MsgBox("请先选择一个软件")
         }
     }
+
+    ; 更新Section名称（当软件名称变化时）
+    UpdateSectionFromName(nameControl, sectionControl, originalName, *) {
+    if (sectionControl.Value = "" || sectionControl.Value = originalName) {
+        sectionControl.Value := nameControl.Value
+    }
+}
     
     ; 刷新列表
     RefreshList(*) {
@@ -369,6 +395,7 @@ class GuiManager {
         configMgr := ConfigManager(this.configType)
         this.configManager := configMgr
         this.softwareList := configMgr.GetSoftwareListArray()
+        this.rootPath := configMgr.GetRootPath()  ; 重新获取Root路径
         
         ; 重新填充列表
         this.PopulateSoftwareList()
@@ -377,9 +404,111 @@ class GuiManager {
         ToolTip("列表已刷新")
         SetTimer () => ToolTip(), -1000
     }
+
+    ; 定位软件（在资源管理器中打开所在文件夹）
+    LocateSoftware(*) {
+        ; 如果选择了软件
+        if (this.listBox.Value > 0) {
+            this.LocateSelectedSoftware()
+            return
+        }
+        
+        ; 没有选择软件
+        if (this.rootPath != "" && DirExist(this.rootPath)) {
+            ; 有Root配置
+            try {
+                Run('explorer.exe "' this.rootPath '"')
+            } catch {
+                this.OpenThisPC()
+            }
+        } else {
+            ; 无Root配置
+            this.OpenThisPC()
+        }
+    }
+
+    ; 定位选中的软件
+    LocateSelectedSoftware() {
+        selectedText := this.listBox.Text
+        if (!this.softwareMap.Has(selectedText)) {
+            return
+        }
+        
+        software := this.softwareMap[selectedText]
+        filePath := software["path"]
+        
+        if (filePath != "") {
+            if (FileExist(filePath)) {
+                try {
+                    Run('explorer.exe /select,"' filePath '"')
+                } catch {
+                    SplitPath(filePath, , &fileDir)
+                    if (fileDir != "") {
+                        Run('explorer.exe "' fileDir '"')
+                    }
+                }
+            } else {
+                SplitPath(filePath, , &fileDir)
+                if (fileDir != "") {
+                    Run('explorer.exe "' fileDir '"')
+                }
+            }
+        }
+    }
+
+    ; 打开此电脑
+    OpenThisPC() {
+        try {
+            Run("explorer.exe shell:MyComputerFolder")
+        } catch {
+            try {
+                Run("explorer.exe")
+            }
+        }
+    }
     
     ; 关闭GUI
     CloseGui(*) {
         this.gui.Destroy()
+    }
+
+    ; ==================== 编辑对话框事件处理器 ====================
+
+    ; 处理名称变化
+    HandleNameChangeForEditGui(editGui, *) {
+        if (editGui.autoUpdateSection) {
+            editGui.ctlSection.Value := editGui.ctlName.Value
+        }
+    }
+
+    ; 处理Section变化
+    HandleSectionChangeForEditGui(editGui, *) {
+        ; 如果用户修改了Section，且新值不等于当前软件名称，则关闭自动更新
+        if (editGui.ctlSection.Value != editGui.ctlName.Value) {
+            editGui.autoUpdateSection := false
+        }
+    }
+
+    ; 处理Section获取焦点事件
+    HandleSectionFocusForEditGui(editGui, *) {
+        ; 当用户点击Section输入框时，暂时关闭自动更新
+        editGui.autoUpdateSection := false
+    }
+
+    ; 处理Section失去焦点事件
+    HandleSectionLoseFocusForEditGui(editGui, *) {
+        ; 当Section输入框失去焦点时，如果内容为空或等于原始值，恢复自动更新
+        if (editGui.ctlSection.Value = "" || editGui.ctlSection.Value = editGui.originalSection) {
+            editGui.autoUpdateSection := true
+            editGui.ctlSection.Value := editGui.ctlName.Value
+        }
+    }
+
+    ; 处理软件名称获取焦点事件
+    HandleNameFocusForEditGui(editGui, *) {
+        ; 当用户点击名称输入框时，检查是否可以恢复自动更新
+        if (editGui.ctlSection.Value = "" || editGui.ctlSection.Value = editGui.ctlName.Value) {
+            editGui.autoUpdateSection := true
+        }
     }
 }
