@@ -22,6 +22,9 @@ class GuiManager {
         this.gui := ""
         this.listBox := ""
         this.softwareMap := Map()
+        ; 添加搜索相关属性
+        this.searchBox := ""
+        this.allSoftwareList := []  ; 保存所有软件的原始列表
         
         ; 当前编辑的模式：create 或 edit
         this.editMode := ""
@@ -35,9 +38,23 @@ class GuiManager {
         this.gui := Gui()
         this.gui.Title := (this.configType)
         this.gui.Opt("+Resize") ; 允许调整大小
+
+        ;设置字体
+        this.gui.SetFont("s9", "JetBrains Mono")
+
+        ; 设置默认边距（左、上、右、下）
+        this.gui.MarginX := 25
+        this.gui.MarginY := 10
+
+        ; 创建搜索框
+        this.gui.Add("Text", "w500", "搜索:")
+        this.searchBox := this.gui.Add("Edit", "w500 -Tabstop", "")
+    
+        ; 监听搜索框变化
+        this.searchBox.OnEvent("Change", this.HandleSearchChange.Bind(this))
         
-        ; 创建ListBox
-        this.listBox := this.gui.Add("ListBox", "w500 r15")
+        ; 创建ListBox,作为第一个可Tab访问的控件
+        this.listBox := this.gui.Add("ListBox", "w500 r15 Center Tabstop")
         
         ; 添加软件到ListBox
         this.PopulateSoftwareList()
@@ -47,16 +64,18 @@ class GuiManager {
         
         ; 创建按钮 - 调整顺序和位置
         btnCreate := this.gui.Add("Button", "w80", "创建")
-        btnOpen := this.gui.Add("Button", "x+10 w80", "打开")
+        ; btnOpen := this.gui.Add("Button", "x+10 w80", "打开")
         btnEdit := this.gui.Add("Button", "x+10 w80", "编辑")
         btnDelete := this.gui.Add("Button", "x+10 w80", "删除")
         btnRefresh := this.gui.Add("Button", "x+10 w80", "刷新")
         ; btnClose := this.gui.Add("Button", "x+10 w80", "关闭")
         btnLocate := this.gui.Add("Button", "x+10 w80", "定位")  ; 新增定位按钮
+        ; 新增回车打开事件
+        btnEnter := this.gui.Add("Button",  "x+10 w0 Hidden Default", "打开").OnEvent('Click',this.OpenSoftware.Bind(this))
         
         ; 绑定事件
         btnCreate.OnEvent("Click", this.ShowCreateDialog.Bind(this))
-        btnOpen.OnEvent("Click", this.OpenSoftware.Bind(this))
+        ; btnOpen.OnEvent("Click", this.OpenSoftware.Bind(this))
         btnEdit.OnEvent("Click", this.ShowEditDialog.Bind(this))
         btnDelete.OnEvent("Click", this.DeleteSoftware.Bind(this))
         btnRefresh.OnEvent("Click", this.RefreshList.Bind(this))
@@ -65,21 +84,68 @@ class GuiManager {
         
         ; 双击ListBox事件 - 打开软件
         this.listBox.OnEvent("DoubleClick", this.OpenSoftware.Bind(this))
-        
+
+        ; 为ListBox添加Tab键事件
+        this.listBox.OnEvent("Focus", this.HandleListBoxFocus.Bind(this))
+        ; this.listBox.OnEvent("LoseFocus", this.HandleListBoxLoseFocus.Bind(this))
+
+        this.gui.OnEvent("Escape", (*) => this.gui.Destroy())  ; ESC关闭窗口
+
         ; 显示GUI
-        this.gui.Show()
+        this.gui.Show("w550")
+
+        ; 使用一次性定时器启用搜索框Tabstop
+        SetTimer(ObjBindMethod(this, "EnableSearchBoxTab"), -50)
+        
+    }
+
+    EnableSearchBoxTab() {
+    ; 启用搜索框的Tabstop
+    this.searchBox.Opt("+Tabstop")
+    
+    ; 确保ListBox有选中项（再次确认）
+    if (this.allSoftwareList.Length > 0 && this.listBox.Value = 0) {
+        this.listBox.Value := 1
+    }
+}
+
+    ; 处理ListBox获得焦点
+    HandleListBoxFocus(*) {
+        ; 当ListBox获得焦点时，确保有一个选中项
+
+        ; 如果有项目，默认选择第一项
+        if (this.allSoftwareList.Length > 0) {
+            this.listBox.Value := 1
+        }
+
     }
     
-    ; 填充软件列表
+    ; 修改PopulateSoftwareList方法
     PopulateSoftwareList() {
+        ; 保存原始软件列表
+        this.allSoftwareList := this.softwareList
+        
+        ; 显示所有软件
+        this.ShowAllSoftware()
+    }
+
+    ; 显示所有软件
+    ShowAllSoftware() {
         ; 清空现有项
         this.listBox.Delete()
         
         ; 创建存储名称-路径映射的Map
         this.softwareMap := Map()
+
+    ; 检查是否有软件
+    if (this.allSoftwareList.Length = 0) {
+        ; 列表为空，显示提示信息
+        this.listBox.Add([">>> 列表为空，点击'创建'按钮添加软件 <<<"])
+        return
+    }
         
         ; 添加软件到ListBox
-        for software in this.softwareList {
+        for software in this.allSoftwareList {
             name := software["name"]
             path := software["path"]
             section := software["section"]
@@ -98,7 +164,7 @@ class GuiManager {
             )
         }
     }
-    
+
     ; ==================== 核心功能方法 ====================
     
     ; 显示创建对话框
@@ -129,7 +195,6 @@ class GuiManager {
         this.ShowEditDialogGui(software["name"], software["path"])
     }
     
-    ; 显示编辑对话框（内部方法）
     ; 显示编辑对话框（内部方法）- 修正版
     ShowEditDialogGui(defaultName, defaultPath) {
         ; 创建编辑对话框
@@ -152,6 +217,7 @@ class GuiManager {
         ctlPath := editGui.Add("Edit", "w400", defaultPath)
         btnBrowse := editGui.Add("Button", "w80", "浏览...")
         btnBrowse.OnEvent("Click", (*) => this.BrowseForFile(ctlPath))
+        editGui.ctlPath := ctlPath 
         
         editGui.Add("Text", "w400", "Section名称（自动生成，可修改）:")
         ctlSection := editGui.Add("Edit", "w400")
@@ -174,6 +240,19 @@ class GuiManager {
             ctlSection.Value := this.currentEditSection
             ctlSection.Opt("+ReadOnly")  ; 编辑时不允许修改section
         }
+
+        ; 创建复选框区域（只在创建模式下显示）
+        if (this.editMode = "create") {
+            ; 添加一个空行分隔
+            editGui.Add("Text", "w400", "")
+            
+            ; 添加批量添加复选框
+            chkBatchAdd := editGui.Add("CheckBox", "w400", "批量添加模式")
+            editGui.chkBatchAdd := chkBatchAdd  ; 保存到editGui对象中
+            
+            ; 添加提示文本
+            editGui.Add("Text", "w400 cGray", "勾选后，保存后不清空表单，可继续添加")
+        }
         
         ; 添加按钮
         btnSave := editGui.Add("Button", "w80", "保存")
@@ -184,7 +263,8 @@ class GuiManager {
             editGui, 
             ctlName.Value, 
             ctlPath.Value, 
-            ctlSection.Value
+            ctlSection.Value,
+            chkBatchAdd  ; 传递复选框控件
         ))
         btnCancel.OnEvent("Click", (*) => editGui.Destroy())
         
@@ -199,7 +279,7 @@ class GuiManager {
     }
     
     ; 保存软件（创建或编辑）
-    SaveSoftware(editGui, name, path, section) {
+    SaveSoftware(editGui, name, path, section, chkBatchAdd := "") {
         ; 输入验证
         if (name = "") {
             MsgBox("软件名称不能为空")
@@ -247,14 +327,43 @@ class GuiManager {
             MsgBox("保存失败，无法更新配置文件")
             return
         }
+
+        ; 显示保存成功提示
+        this.ShowToolTip("保存成功！", 1500)
         
-        ; 关闭编辑窗口
-        editGui.Destroy()
+        ; 检查是否批量添加模式
+        isBatchMode := false
+        if (this.editMode = "create" && chkBatchAdd && chkBatchAdd.Value = 1) {
+            isBatchMode := true
+        }
         
-        ; 刷新列表
-        this.RefreshList()
-        
-        MsgBox("保存成功！")
+        if (!isBatchMode) {
+            ; 非批量模式，关闭编辑窗口
+            editGui.Destroy()
+            
+            ; 刷新列表
+            this.RefreshList()
+        } else {
+            ; 批量模式，清空表单但不关闭窗口
+            editGui.ctlName.Value := ""
+            editGui.ctlPath.Value := ""
+            editGui.ctlSection.Value := ""
+            editGui.autoUpdateSection := true
+            editGui.originalSection := ""
+            
+            ; 将焦点设置到名称输入框，方便继续输入
+            editGui.ctlName.Focus()
+            
+            ; 刷新列表以显示新添加的项
+            this.RefreshList()
+        }
+    }
+
+    ; 显示工具提示的方法
+    ShowToolTip(message, duration := 1500) {
+        ; 在保存按钮位置显示提示
+        ToolTip(message)
+        SetTimer () => ToolTip(), -duration
     }
     
     ; 更新INI文件
@@ -397,8 +506,16 @@ class GuiManager {
         this.softwareList := configMgr.GetSoftwareListArray()
         this.rootPath := configMgr.GetRootPath()  ; 重新获取Root路径
         
-        ; 重新填充列表
-        this.PopulateSoftwareList()
+        ; 重新填充原始列表
+        this.allSoftwareList := this.softwareList
+        
+        ; 根据当前搜索文本重新过滤
+        ; 检查 searchBox 是否存在且有值
+        if (HasProp(this, "searchBox") && this.searchBox.Value != "") {
+            this.HandleSearchChange()
+        } else {
+            this.ShowAllSoftware()
+        }
         
         ; 提示刷新完成
         ToolTip("列表已刷新")
@@ -509,6 +626,62 @@ class GuiManager {
         ; 当用户点击名称输入框时，检查是否可以恢复自动更新
         if (editGui.ctlSection.Value = "" || editGui.ctlSection.Value = editGui.ctlName.Value) {
             editGui.autoUpdateSection := true
+        }
+    }
+
+    ; 处理搜索框变化（最终简化版）
+    HandleSearchChange(*) {
+        searchText := Trim(this.searchBox.Value)
+        
+        ; 如果搜索文本为空，显示所有软件
+        if (searchText = "") {
+            this.ShowAllSoftware()
+            return
+        }
+        
+        ; 转换为小写，实现不区分大小写的搜索
+        searchText := StrLower(searchText)
+        
+        ; 清空现有项
+        this.listBox.Delete()
+        
+        ; 清空当前映射Map（需要重新填充）
+        this.softwareMap := Map()
+        
+        ; 记录找到的项目数量
+        foundCount := 0
+        
+        ; 过滤并添加匹配的软件到ListBox
+        for software in this.allSoftwareList {
+            name := software["name"]
+            path := software["path"]
+            section := software["section"]
+            
+            ; 转换为小写进行匹配
+            lowerName := StrLower(name)
+            
+            ; 简单匹配：是否包含搜索文本
+            if (InStr(lowerName, searchText)) {
+                displayName := name
+                
+                ; 添加到ListBox
+                this.listBox.Add([displayName])
+                
+                ; 存储到映射Map
+                this.softwareMap[displayName] := Map(
+                    "name", name,
+                    "path", path,
+                    "section", section,
+                    "displayName", displayName
+                )
+                
+                foundCount++
+            }
+        }
+        
+        ; 如果没有找到匹配项
+        if (foundCount = 0) {
+            this.listBox.Add([">>> 未找到匹配项 <<<"])
         }
     }
 }
