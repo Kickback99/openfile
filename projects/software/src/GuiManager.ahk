@@ -395,6 +395,9 @@ class GuiManager {
             ; 写回文件
             FileDelete(this.configPath)
             FileAppend(content, this.configPath,"UTF-8")
+
+            ; 格式化文件
+            this.FormatAndSaveIniFile()
             
             return true
         } catch as e {
@@ -453,6 +456,9 @@ class GuiManager {
                 ; 写回文件
                 FileDelete(this.configPath)
                 FileAppend(content, this.configPath, "UTF-8")
+
+                ; 格式化文件
+                this.FormatAndSaveIniFile()
                 
                 return true
             } else {
@@ -850,6 +856,9 @@ class GuiManager {
             FileDelete(this.configPath)
             FileAppend(finalContent, this.configPath, "UTF-8")
             
+            ; 格式化文件
+            this.FormatAndSaveIniFile()
+
             return true
         } catch Error as e {
             ; 显示具体错误以便调试
@@ -925,7 +934,7 @@ class GuiManager {
         return ""  ; 没有找到有效的Root section
     }
 
-    ; TXT转INI格式（不包括root）
+    ; 简化版的TXT转INI格式（不包括root）（改进版）
     TxtToIniWithoutRoot(txtContent) {
         lines := StrSplit(txtContent, "`n", "`r")
         iniLines := []
@@ -945,18 +954,17 @@ class GuiManager {
                 currentName := line
             } else if (isPath && currentName != "") {
                 ; 是路径，且有对应的名称
+                ; 添加空行（除非是第一个section）
+                if (iniLines.Length > 0) {
+                    iniLines.Push("")
+                }
+                
                 iniLines.Push("[" currentName "]")
                 iniLines.Push("name=" currentName)
                 iniLines.Push("path=" line)
-                iniLines.Push("")  ; 空行分隔
                 
                 currentName := ""
             }
-        }
-        
-        ; 移除最后的空行（如果有）
-        if (iniLines.Length > 0 && iniLines[iniLines.Length] = "") {
-            iniLines.Pop()
         }
         
         return this.StrJoin(iniLines, "`r`n") . (iniLines.Length > 0 ? "`r`n" : "")
@@ -1005,6 +1013,9 @@ class GuiManager {
             ; 写入文件
             FileDelete(this.configPath)
             FileAppend(mergedContent, this.configPath, "UTF-8")
+
+            ; 格式化文件
+            this.FormatAndSaveIniFile()
             
             return true
         } catch {
@@ -1077,13 +1088,23 @@ class GuiManager {
         
         ; 清理多余空行
         oldContent := RegExReplace(oldContent, "(`r`n){3,}", "`r`n`r`n")
-        oldContent := RTrim(oldContent, "`r`n") . "`r`n"
+        oldContent := RTrim(oldContent, "`r`n")
         
-        ; 添加新section
-        for section in newSections {
+        ; 确保原内容以空行结尾
+        if (oldContent != "" && !RegExMatch(oldContent, "`r`n$")) {
+            oldContent .= "`r`n"
+        }
+        
+        ; 添加新section，确保每个section之间有空行
+        for i, section in newSections {
+            ; 如果不是第一个新section，添加空行
+            if (i > 1 || (oldContent != "" && !RegExMatch(oldContent, "`r`n$"))) {
+                oldContent .= "`r`n"
+            }
+            
             newSection := "[" section["section"] . "]`r`n"
             newSection .= "name=" section["name"] . "`r`n"
-            newSection .= "path=" section["path"] . "`r`n`r`n"
+            newSection .= "path=" section["path"] . "`r`n"
             
             oldContent .= newSection
         }
@@ -1101,5 +1122,66 @@ class GuiManager {
             result .= item
         }
         return result
+    }
+
+    ; ==================== 格式化函数 ====================
+
+    ; 格式化INI文件内容，确保每个section前面有空行
+    FormatIniContent(iniContent) {
+        ; 如果内容为空，直接返回
+        if (iniContent = "") {
+            return iniContent
+        }
+        
+        ; 按行分割
+        lines := StrSplit(iniContent, "`n", "`r")
+        formattedLines := []
+        
+        for i, line in lines {
+            trimmedLine := Trim(line)
+            
+            ; 如果是section行 ([xxx])
+            if (SubStr(trimmedLine, 1, 1) = "[") {
+                ; 检查前一行是否为空行
+                if (i > 1 && Trim(lines[i - 1]) != "") {
+                    ; 前一行不为空，添加一个空行
+                    formattedLines.Push("")
+                }
+            }
+            
+            formattedLines.Push(line)
+        }
+        
+        ; 重新组合并确保以换行符结尾
+        formattedContent := this.StrJoin(formattedLines, "`r`n")
+        
+        ; 清理连续的空行（最多保留一个）
+        formattedContent := RegExReplace(formattedContent, "(`r`n){3,}", "`r`n`r`n")
+        
+        ; 确保以换行符结尾
+        formattedContent := RTrim(formattedContent, "`r`n") . "`r`n"
+        
+        return formattedContent
+    }
+
+    ; 格式化并保存INI文件
+    FormatAndSaveIniFile() {
+        try {
+            ; 读取当前INI文件内容
+            content := FileRead(this.configPath)
+            
+            ; 格式化内容
+            formattedContent := this.FormatIniContent(content)
+            
+            ; 写回文件
+            FileDelete(this.configPath)
+            FileAppend(formattedContent, this.configPath, "UTF-8")
+            
+            return true
+        } catch as e {
+            ; 格式化失败不影响主要功能
+            ; MsgBox("格式化文件时出错: " e.Message)
+            return false
+        }
     }
 }
