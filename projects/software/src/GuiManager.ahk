@@ -70,6 +70,7 @@ class GuiManager {
         btnRefresh := this.gui.Add("Button", "x+10 w80", "刷新")
         ; btnClose := this.gui.Add("Button", "x+10 w80", "关闭")
         btnLocate := this.gui.Add("Button", "x+10 w80", "定位")  ; 新增定位按钮
+        btnMore := this.gui.Add("Button", "x+10 w80", "更多")  ; 新增更多按钮
         ; 新增回车打开事件
         btnEnter := this.gui.Add("Button",  "x+10 w0 Hidden Default", "打开").OnEvent('Click',this.OpenSoftware.Bind(this))
         
@@ -81,6 +82,7 @@ class GuiManager {
         btnRefresh.OnEvent("Click", this.RefreshList.Bind(this))
         ; btnClose.OnEvent("Click", this.CloseGui.Bind(this))
         btnLocate.OnEvent("Click", this.LocateSoftware.Bind(this))  ; 绑定定位事件
+        btnMore.OnEvent("Click", this.ShowMoreDialog.Bind(this))  ; 绑定更多事件
         
         ; 双击ListBox事件 - 打开软件
         this.listBox.OnEvent("DoubleClick", this.OpenSoftware.Bind(this))
@@ -392,7 +394,7 @@ class GuiManager {
             
             ; 写回文件
             FileDelete(this.configPath)
-            FileAppend(content, this.configPath)
+            FileAppend(content, this.configPath,"UTF-8")
             
             return true
         } catch as e {
@@ -450,7 +452,7 @@ class GuiManager {
                 
                 ; 写回文件
                 FileDelete(this.configPath)
-                FileAppend(content, this.configPath)
+                FileAppend(content, this.configPath, "UTF-8")
                 
                 return true
             } else {
@@ -683,5 +685,360 @@ class GuiManager {
         if (foundCount = 0) {
             this.listBox.Add([">>> 未找到匹配项 <<<"])
         }
+    }
+
+    ; ==================== 导入导出事件处理器 ====================
+    ; 显示更多对话框
+    ShowMoreDialog(btn,*) {
+        ; 创建更多对话框
+        moreGui := Gui()
+        moreGui.Title := "更多操作 - " this.configType
+        moreGui.Opt("+AlwaysOnTop")
+        
+        ; 设置字体
+        moreGui.SetFont("s9", "JetBrains Mono")
+        
+        ; 添加说明
+        moreGui.Add("Text", "w300 Center", "配置管理操作")
+        moreGui.Add("Text", "w300 Center cGray", "管理" this.configType ".ini 配置文件")
+        
+        ; 创建按钮
+        btnImport := moreGui.Add("Button", "w80", "导入")
+        btnExport := moreGui.Add("Button", "x+10 w80", "导出")
+        btnAppend := moreGui.Add("Button", "x+10 w80", "追加")
+        btnCancel := moreGui.Add("Button", "x+10 w80", "取消")
+        
+        ; 绑定事件
+        btnImport.OnEvent("Click", (*) => this.ImportConfig(moreGui))
+        btnExport.OnEvent("Click", (*) => this.ExportConfig(moreGui))
+        btnAppend.OnEvent("Click", (*) => this.AppendConfig(moreGui))
+        btnCancel.OnEvent("Click", (*) => moreGui.Destroy())
+        
+        moreGui.Show()
+    }
+
+    ; 导出配置
+    ExportConfig(moreGui) {
+        moreGui.Destroy()
+        
+        ; 自动填充文件名
+        defaultFileName := this.configType ".txt"
+        exportPath := FileSelect("S", defaultFileName, "导出配置文件", "文本文件 (*.txt)")
+        if (exportPath = "") {
+            return
+        }
+        
+        ; 确保扩展名
+        if (!RegExMatch(exportPath, "\.txt$")) {
+            exportPath .= ".txt"
+        }
+        
+        ; 导出配置
+        if (this.ExportToTxt(exportPath)) {
+            MsgBox("导出成功！`n文件保存到: " exportPath)
+        } else {
+            MsgBox("导出失败！")
+        }
+    }
+
+    ; 导出为TXT格式（不添加标题）
+    ExportToTxt(filePath) {
+        try {
+            ; 读取INI文件（自动处理编码）
+            content := FileRead(this.configPath)
+            txtContent := this.IniToTxt(content)
+            
+            ; 写入UTF-8文件
+            FileAppend(txtContent, filePath, "UTF-8")
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    ; INI转TXT格式
+    IniToTxt(iniContent) {
+        txtLines := []
+        currentName := ""
+        
+        Loop Parse, iniContent, "`n", "`r" {
+            line := Trim(A_LoopField)
+            
+            ; 跳过注释和空行
+            if (line = "" || SubStr(line, 1, 1) = ";") {
+                continue
+            }
+            
+            ; 解析section，跳过Root
+            if (SubStr(line, 1, 1) = "[") {
+                section := SubStr(line, 2, InStr(line, "]") - 2)
+                if (section != "Root") {
+                    currentName := ""
+                }
+                continue
+            }
+            
+            ; 解析key=value
+            if (InStr(line, "=")) {
+                pos := InStr(line, "=")
+                key := Trim(SubStr(line, 1, pos - 1))
+                value := Trim(SubStr(line, pos + 1))
+                
+                if (key = "name") {
+                    currentName := value
+                } else if (key = "path" && currentName != "" && currentName != "root") {
+                    txtLines.Push(currentName)
+                    txtLines.Push(value)
+                    txtLines.Push("")  ; 空行分隔
+                    currentName := ""
+                }
+            }
+        }
+        
+        return Trim(this.StrJoin(txtLines, "`r`n"), "`r`n") . "`r`n"
+    }
+
+    ; 导入配置
+    ImportConfig(moreGui) {
+        moreGui.Destroy()
+        
+        importPath := FileSelect(1, , "选择要导入的配置文件", "文本文件 (*.txt)")
+        if (importPath = "" || !FileExist(importPath)) {
+            return
+        }
+        
+        if (this.ImportFromTxt(importPath)) {
+            MsgBox("导入成功！")
+            this.RefreshList()
+        } else {
+            MsgBox("导入失败！")
+        }
+    }
+
+    ; 从TXT导入
+    ImportFromTxt(filePath) {
+        try {
+            ; 读取TXT文件（UTF-8）
+            content := FileOpen(filePath, "r", "UTF-8").Read()
+            
+            ; 转换并写入INI文件
+            iniContent := this.TxtToIni(content)
+            FileDelete(this.configPath)
+            FileAppend(iniContent, this.configPath, "UTF-8")
+            
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    ; TXT转INI格式
+    TxtToIni(txtContent) {
+        lines := StrSplit(txtContent, "`n", "`r")
+        iniLines := []
+        
+        ; 添加Root section（固定）
+        iniLines.Push("[Root]")
+        iniLines.Push("name=root")
+        
+        ; 尝试从txt中获取root路径，否则使用默认
+        rootPath := ""
+        currentName := ""
+        
+        for i, line in lines {
+            line := Trim(line)
+            if (line = "") {
+                currentName := ""
+                continue
+            }
+            
+            ; 判断是名称还是路径
+            if (!InStr(line, "\") && !InStr(line, ":/") && !InStr(line, ":\") && line != "") {
+                ; 没有路径分隔符，是名称
+                currentName := line
+                if (currentName = "root") {
+                    ; 尝试获取root路径
+                        ; 尝试获取root路径
+            for j, nextLine in lines {
+                if (j <= i)  ; 跳过当前行之前的行
+                    continue
+                nextLine := Trim(nextLine)
+                if (nextLine != "") {
+                    rootPath := nextLine
+                    break
+                }
+            }
+        }
+            } else if (InStr(line, "\") || InStr(line, ":/") || InStr(line, ":\")) {
+                ; 有路径分隔符，是路径
+                if (currentName != "") {
+                    if (currentName = "root") {
+                        rootPath := line
+                    } else {
+                        ; 普通软件项
+                        sectionName := currentName
+                        if (sectionName = "") {
+                            sectionName := "Item_" A_Index
+                        }
+                        
+                        iniLines.Push("")
+                        iniLines.Push("[" sectionName "]")
+                        iniLines.Push("name=" currentName)
+                        iniLines.Push("path=" line)
+                    }
+                    currentName := ""
+                }
+            }
+        }
+        
+        ; 设置root路径
+        if (rootPath = "") {
+            rootPath := "C:\Users\wz\Desktop\tools\" this.configType
+        }
+        ; 在第3行（name=root后面）插入path
+        iniLines.InsertAt(3, "path=" rootPath)
+        
+        return this.StrJoin(iniLines, "`r`n") . "`r`n"
+    }
+
+    ; 追加配置
+    AppendConfig(moreGui) {
+        moreGui.Destroy()
+        
+        if (!FileExist(this.configPath)) {
+            MsgBox("配置文件不存在，无法追加！")
+            return
+        }
+        
+        appendPath := FileSelect(1, , "选择要追加的配置文件", "文本文件 (*.txt)")
+        if (appendPath = "" || !FileExist(appendPath)) {
+            return
+        }
+        
+        if (this.AppendFromTxt(appendPath)) {
+            MsgBox("追加成功！")
+            this.RefreshList()
+        } else {
+            MsgBox("追加失败！")
+        }
+    }
+
+    ; 从TXT追加
+    AppendFromTxt(filePath) {
+        try {
+            ; 读取现有INI内容
+            oldContent := FileRead(this.configPath)
+            
+            ; 读取要追加的TXT内容
+            appendContent := FileOpen(filePath, "r", "UTF-8").Read()
+            
+            ; 获取现有section名称
+            existingSections := this.GetExistingSections(oldContent)
+            
+            ; 解析要追加的内容
+            sectionsToAdd := this.ParseTxtSections(appendContent)
+            
+            ; 合并内容
+            mergedContent := this.MergeIniContent(oldContent, sectionsToAdd, existingSections)
+            
+            ; 写入文件
+            FileDelete(this.configPath)
+            FileAppend(mergedContent, this.configPath, "UTF-8")
+            
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    ; 获取现有section名称
+    GetExistingSections(iniContent) {
+        sections := Map()
+        
+        Loop Parse, iniContent, "`n", "`r" {
+            line := Trim(A_LoopField)
+            if (SubStr(line, 1, 1) = "[") {
+                section := SubStr(line, 2, InStr(line, "]") - 2)
+                sections[section] := true
+            }
+        }
+        
+        return sections
+    }
+
+    ; 解析TXT中的section
+    ParseTxtSections(txtContent) {
+        sections := []
+        lines := StrSplit(txtContent, "`n", "`r")
+        currentName := ""
+        
+        for i, line in lines {
+            line := Trim(line)
+            if (line = "") {
+                continue
+            }
+            
+            ; 判断是名称还是路径
+            if (!InStr(line, "\") && !InStr(line, ":/") && !InStr(line, ":\")) {
+                currentName := line
+            } else if (currentName != "" && (InStr(line, "\") || InStr(line, ":/") || InStr(line, ":\"))) {
+                if (currentName != "root") {  ; 跳过root
+                    section := Map()
+                    section["name"] := currentName
+                    section["path"] := line
+                    section["section"] := currentName 
+                    if (section["section"] = "") {
+                        section["section"] := "Item_" A_Index
+                    }
+                    
+                    sections.Push(section)
+                }
+                currentName := ""
+            }
+        }
+        
+        return sections
+    }
+
+    ; 合并INI内容
+    MergeIniContent(oldContent, newSections, existingSections) {
+        ; 移除旧内容中与新section相同的项
+        for section in newSections {
+            sectionName := section["section"]
+            if (existingSections.Has(sectionName)) {
+                ; 替换现有section
+                pattern := "\[" sectionName "\][\s\S]*?(?=\n\[|$)"
+                if (RegExMatch(oldContent, pattern, &match)) {
+                    oldContent := StrReplace(oldContent, match[0], "")
+                }
+            }
+        }
+        
+        ; 清理多余空行
+        oldContent := RegExReplace(oldContent, "(`r`n){3,}", "`r`n`r`n")
+        oldContent := RTrim(oldContent, "`r`n") . "`r`n"
+        
+        ; 添加新section
+        for section in newSections {
+            newSection := "[" section["section"] . "]`r`n"
+            newSection .= "name=" section["name"] . "`r`n"
+            newSection .= "path=" section["path"] . "`r`n`r`n"
+            
+            oldContent .= newSection
+        }
+        
+        return oldContent
+    }
+
+    ; 辅助函数：连接数组
+    StrJoin(arr, delimiter) {
+        result := ""
+        for i, item in arr {
+            if (i > 1) {
+                result .= delimiter
+            }
+            result .= item
+        }
+        return result
     }
 }
