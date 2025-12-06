@@ -72,7 +72,7 @@ class ConfigManager {
                     . "; name=软件显示名称`r`n" 
                     . "; path=C:\Path\To\Software.exe`r`n"
                 
-                FileAppend(basicContent, this.configPath)
+                FileAppend(basicContent, this.configPath,"UTF-8")
             } catch as e {
                 MsgBox("创建配置文件失败: " e.Message)
             }
