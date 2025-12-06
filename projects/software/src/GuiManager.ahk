@@ -818,87 +818,148 @@ class GuiManager {
     ; 从TXT导入
     ImportFromTxt(filePath) {
         try {
-            ; 读取TXT文件（UTF-8）
-            content := FileOpen(filePath, "r", "UTF-8").Read()
+            ; 读取TXT文件
+            content := FileRead(filePath, "UTF-8")
             
-            ; 转换并写入INI文件
-            iniContent := this.TxtToIni(content)
+            ; 获取现有的root配置（如果有）
+            existingRootContent := ""
+            if (FileExist(this.configPath)) {
+                existingContent := FileRead(this.configPath)
+                existingRootContent := this.ExtractRootSection(existingContent)
+            }
+            
+            ; 转换TXT为INI内容（不包括root）
+            iniContentWithoutRoot := this.TxtToIniWithoutRoot(content)
+            
+            ; 合并：现有root + 导入的内容
+            finalContent := ""
+            if (existingRootContent != "" && existingRootContent != "`r`n") {
+                ; 使用现有的root，清理多余空行
+                existingRootContent := RTrim(existingRootContent, "`r`n")
+                finalContent := existingRootContent . "`r`n`r`n"
+            } else {
+                ; 使用默认root
+                defaultRootPath := "C:\Users\wz\Desktop\tools\" this.configType
+                finalContent := "[Root]`r`nname=root`r`npath=" defaultRootPath "`r`n`r`n"
+            }
+            
+            ; 添加导入的内容
+            finalContent .= iniContentWithoutRoot
+            
+            ; 写入文件
             FileDelete(this.configPath)
-            FileAppend(iniContent, this.configPath, "UTF-8")
+            FileAppend(finalContent, this.configPath, "UTF-8")
             
             return true
-        } catch {
+        } catch Error as e {
+            ; 显示具体错误以便调试
+            MsgBox("导入错误: " e.Message "`n位置: " e.What " 行: " e.Line)
             return false
         }
     }
 
-    ; TXT转INI格式
-    TxtToIni(txtContent) {
+    ; 提取Root section内容
+    ExtractRootSection(iniContent) {
+        rootLines := []
+        inRootSection := false
+        foundRoot := false
+        
+        Loop Parse, iniContent, "`n", "`r" {
+            line := Trim(A_LoopField)
+            
+            ; 解析section
+            if (SubStr(line, 1, 1) = "[") {
+                if (inRootSection) {
+                    ; Root section结束
+                    break
+                }
+                
+                section := SubStr(line, 2, InStr(line, "]") - 2)
+                if (section = "Root") {
+                    inRootSection := true
+                    foundRoot := true
+                    rootLines.Push("[Root]")
+                }
+                continue
+            }
+            
+            ; 在Root section中
+            if (inRootSection) {
+                ; 检查是否是其他section的开始
+                if (line != "" && SubStr(line, 1, 1) = "[") {
+                    break
+                }
+                
+                ; 添加root section的内容
+                if (line != "" && (SubStr(line, 1, 4) = "name" || SubStr(line, 1, 4) = "path")) {
+                    rootLines.Push(line)
+                }
+            }
+        }
+        
+        if (foundRoot && rootLines.Length > 0) {
+            ; 确保有name和path
+            hasName := false
+            hasPath := false
+            for line in rootLines {
+                if (SubStr(line, 1, 4) = "name") {
+                    hasName := true
+                }
+                if (SubStr(line, 1, 4) = "path") {
+                    hasPath := true
+                }
+            }
+            
+            ; 补全缺少的字段
+            if (!hasName) {
+                rootLines.Push("name=root")
+            }
+            if (!hasPath) {
+                ; 使用默认路径
+                rootLines.Push("path=C:\Users\wz\Desktop\tools\" this.configType)
+            }
+            
+            return this.StrJoin(rootLines, "`r`n")
+        }
+        
+        return ""  ; 没有找到有效的Root section
+    }
+
+    ; TXT转INI格式（不包括root）
+    TxtToIniWithoutRoot(txtContent) {
         lines := StrSplit(txtContent, "`n", "`r")
         iniLines := []
-        
-        ; 添加Root section（固定）
-        iniLines.Push("[Root]")
-        iniLines.Push("name=root")
-        
-        ; 尝试从txt中获取root路径，否则使用默认
-        rootPath := ""
         currentName := ""
         
         for i, line in lines {
             line := Trim(line)
             if (line = "") {
-                currentName := ""
                 continue
             }
             
-            ; 判断是名称还是路径
-            if (!InStr(line, "\") && !InStr(line, ":/") && !InStr(line, ":\") && line != "") {
-                ; 没有路径分隔符，是名称
+            ; 判断是否是路径（包含路径分隔符）
+            isPath := InStr(line, "\") || InStr(line, ":/") || InStr(line, ":\")
+            
+            if (!isPath && line != "root") {
+                ; 是名称
                 currentName := line
-                if (currentName = "root") {
-                    ; 尝试获取root路径
-                        ; 尝试获取root路径
-            for j, nextLine in lines {
-                if (j <= i)  ; 跳过当前行之前的行
-                    continue
-                nextLine := Trim(nextLine)
-                if (nextLine != "") {
-                    rootPath := nextLine
-                    break
-                }
-            }
-        }
-            } else if (InStr(line, "\") || InStr(line, ":/") || InStr(line, ":\")) {
-                ; 有路径分隔符，是路径
-                if (currentName != "") {
-                    if (currentName = "root") {
-                        rootPath := line
-                    } else {
-                        ; 普通软件项
-                        sectionName := currentName
-                        if (sectionName = "") {
-                            sectionName := "Item_" A_Index
-                        }
-                        
-                        iniLines.Push("")
-                        iniLines.Push("[" sectionName "]")
-                        iniLines.Push("name=" currentName)
-                        iniLines.Push("path=" line)
-                    }
-                    currentName := ""
-                }
+            } else if (isPath && currentName != "") {
+                ; 是路径，且有对应的名称
+                iniLines.Push("[" currentName "]")
+                iniLines.Push("name=" currentName)
+                iniLines.Push("path=" line)
+                iniLines.Push("")  ; 空行分隔
+                
+                currentName := ""
             }
         }
         
-        ; 设置root路径
-        if (rootPath = "") {
-            rootPath := "C:\Users\wz\Desktop\tools\" this.configType
+        ; 移除最后的空行（如果有）
+        if (iniLines.Length > 0 && iniLines[iniLines.Length] = "") {
+            iniLines.Pop()
         }
-        ; 在第3行（name=root后面）插入path
-        iniLines.InsertAt(3, "path=" rootPath)
         
-        return this.StrJoin(iniLines, "`r`n") . "`r`n"
+        return this.StrJoin(iniLines, "`r`n") . (iniLines.Length > 0 ? "`r`n" : "")
     }
 
     ; 追加配置
