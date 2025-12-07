@@ -36,6 +36,8 @@ class GuiManager {
 
         ; 添加一个属性来跟踪是否显示了提示信息
         this.showingPrompt := false
+        ; 添加一个标志，记录用户是否"刚刚"在搜索框中
+        this.userWasInSearchBox := false
 
     }
     
@@ -88,7 +90,7 @@ class GuiManager {
         ; btnOpen.OnEvent("Click", this.OpenSoftware.Bind(this))
         btnEdit.OnEvent("Click", this.ShowEditDialog.Bind(this))
         btnDelete.OnEvent("Click", this.DeleteSoftware.Bind(this))
-        btnRefresh.OnEvent("Click", this.RefreshList.Bind(this))
+        btnRefresh.OnEvent("Click", this.HandleRefreshButtonClick.Bind(this))
         ; btnClose.OnEvent("Click", this.CloseGui.Bind(this))
         btnLocate.OnEvent("Click", this.LocateSoftware.Bind(this))  ; 绑定定位事件
         btnMore.OnEvent("Click", this.ShowMoreDialog.Bind(this))  ; 绑定更多事件
@@ -122,6 +124,51 @@ class GuiManager {
     IsFirstItemPrompt() {
         return this.showingPrompt
     }
+
+    ; >>> 新增：处理刷新按钮点击
+    HandleRefreshButtonClick(*) {
+        ; 保存刷新前的状态
+        searchBoxWasEmpty  := this.searchBox.Value
+        wasInSearchBox  := this.userWasInSearchBox
+        
+        ; >>> 调试：显示当前状态
+        /* MsgBox("刷新前状态：`n"
+            . "userWasInSearchBox: " wasInSearchBox "`n"
+            . "searchBoxText: '" searchBoxWasEmpty "'`n"
+            . "searchBoxHasFocus: " this.searchBoxHasFocus) */
+
+
+        ; 执行刷新
+        this.RefreshList()
+        ; >>> 关键逻辑：如果应该跳过自动选中，确保不选中
+        if (wasInSearchBox && searchBoxWasEmpty = '') {
+            this.listBox.Value := 0
+            
+            ; >>> 调试：检查搜索框状态
+            /* isVisible := this.searchBox.Visible
+            isEnabled := this.searchBox.Enabled
+            hwnd := this.searchBox.Hwnd
+            guiHwnd := this.gui.Hwnd */
+            
+            /* MsgBox("搜索框状态：`n"
+                . "可见: " isVisible "`n"
+                . "启用: " isEnabled "`n"
+                . "搜索框句柄: " hwnd "`n"
+                . "GUI句柄: " guiHwnd) */
+            
+            ; 尝试设置焦点
+            try {
+                ControlFocus(this.searchBox, this.gui)
+                ; MsgBox("ControlFocus调用成功")
+            } catch as e {
+                MsgBox("ControlFocus失败: " e.Message)
+            }
+        } else {
+            ; >>> 只有条件不满足时才清除标记
+            this.userWasInSearchBox := false
+        }
+
+    }
     
     ; 处理ListBox获得焦点 - 简化版
     HandleListBoxFocus(*) {
@@ -137,6 +184,7 @@ class GuiManager {
     ; 处理搜索框获得焦点
     HandleSearchBoxFocus(*) {
         this.searchBoxHasFocus := true
+        this.userWasInSearchBox := true  ; >>> 标记用户进入了搜索框
         
         ; 如果搜索框为空，清除ListBox选中项
         if (this.searchBox.Value = "") {
@@ -147,11 +195,26 @@ class GuiManager {
     ; 处理搜索框失去焦点
     HandleSearchBoxLoseFocus(*) {
         this.searchBoxHasFocus := false
+
+        ; >>> 延迟检查用户是否离开了搜索框
+        SetTimer(() => this.CheckIfUserLeftSearchBox(), -100)
+    }
+
+    ; >>> 新增：检查用户是否真正离开了搜索框
+    CheckIfUserLeftSearchBox() {
+        try {
+            focusedControl := ControlGetFocus(this.gui)
+            ; 如果焦点还在搜索框，恢复标记
+            if (focusedControl = this.searchBox.ClassNN) {
+                this.userWasInSearchBox := true
+                return
+            }
+        } catch {
+            ; 获取焦点失败
+        }
         
-        ; 如果搜索框不为空，确保ListBox有选中项
-        /* if (this.searchBox.Value != "" && this.HasListItems() && this.listBox.Value = 0) {
-            this.listBox.Value := 1
-        } */
+        ; 用户真正离开了搜索框，清除标记
+        this.userWasInSearchBox := false
     }
     
     
@@ -202,12 +265,11 @@ class GuiManager {
 
         this.showingPrompt := false  ; 没有显示提示信息
 
-        ; 如果有实际软件且（搜索框没有焦点 或 搜索框有内容），选中第一项
-        if (!this.showingPrompt && (!this.searchBoxHasFocus || this.searchBox.Value != "")) {
+        ; 条件：不是提示信息 + 用户不在搜索框中 + 搜索框为空
+        /* if (!this.showingPrompt && !this.userWasInSearchBox && this.searchBox.Value = "") {
             this.listBox.Value := 1
-        }else {
-            this.listBox.Value := 0
-        }
+        } */
+
     }
 
     ; ==================== 核心功能方法 ====================
@@ -236,6 +298,9 @@ class GuiManager {
         software := this.softwareMap[selectedText]
         this.editMode := "edit"
         this.currentEditSection := software["section"]
+
+        ; >>> 保存要编辑的软件名称，用于编辑后重新选中
+        this.softwareToSelectAfterEdit := software["name"]
         
         this.ShowEditDialogGui(software["name"], software["path"])
     }
@@ -322,6 +387,14 @@ class GuiManager {
     
     ; 保存软件（创建或编辑）
     SaveSoftware(editGui, name, path, section, chkBatchAdd := "") {
+
+       ; >>> 保存旧的选择信息
+        oldSelectedText := ""
+        isEditingMode := (this.editMode = "edit")
+        if (isEditingMode && this.listBox.Value > 0) {
+            oldSelectedText := this.listBox.Text
+        }
+
         ; 输入验证
         if (name = "") {
             MsgBox("软件名称不能为空", "提示", "Owner" editGui.Hwnd)
@@ -420,8 +493,14 @@ class GuiManager {
             ; 非批量模式，关闭编辑窗口
             editGui.Destroy()
             
-            ; 刷新列表
-            this.RefreshList()
+            ; >>> 刷新列表并根据模式选择相应的项
+            if (this.editMode = "edit") {
+                ; 编辑模式：重新选中编辑的项（或新名称）
+                this.RefreshAndSelect(name)
+            } else {
+                ; 创建模式：选中新增的项
+                this.RefreshAndSelect(name)
+            }
         } else {
             ; 批量模式，清空表单但不关闭窗口
             editGui.ctlName.Value := ""
@@ -430,8 +509,92 @@ class GuiManager {
             ; 将焦点设置到名称输入框，方便继续输入
             editGui.ctlName.Focus()
             
-            ; 刷新列表以显示新添加的项
-            this.RefreshList()
+            ; >>> 刷新列表并选中新增的项
+            this.RefreshAndSelect(name)
+        }
+    }
+
+    ; >>> 新增：刷新列表并选择指定项
+    RefreshAndSelect(itemNameToSelect := "") {
+        ; 保存要选择的项名称
+        this.itemToSelectAfterRefresh := itemNameToSelect
+        
+        ; 重新加载配置
+        configMgr := ConfigManager(this.configType)
+        this.configManager := configMgr
+        this.softwareList := configMgr.GetSoftwareListArray()
+        this.rootPath := configMgr.GetRootPath()
+        
+        ; 重新填充原始列表
+        this.allSoftwareList := this.softwareList
+        
+        ; 根据当前搜索文本重新过滤
+        if (HasProp(this, "searchBox") && this.searchBox.Value != "") {
+            this.HandleSearchChange()
+        } else {
+            this.ShowAllSoftware()
+        }
+        
+        ; 如果有指定要选择的项，尝试选中它
+        if (itemNameToSelect != "") {
+            this.SelectItemByText(itemNameToSelect)
+        }
+        
+        ; 清除临时变量
+        this.itemToSelectAfterRefresh := ""
+    }
+
+    ; >>> 新增：根据文本选择列表项
+    SelectItemByText(textToSelect) {
+        if (textToSelect = "" || this.showingPrompt) {
+            return
+        }
+        
+        ; 遍历所有软件项，查找匹配的文本
+        for i in this.allSoftwareList {
+            if (i["name"] = textToSelect) {
+                ; 找到了匹配的项，现在需要在ListBox中找到它
+                this.SelectItemInListBox(textToSelect)
+                return
+            }
+        }
+    }
+
+    ; >>> 新增：在ListBox中选中指定文本的项（优化版）
+    SelectItemInListBox(textToSelect) {
+        if (textToSelect = "" || this.showingPrompt) {
+            return
+        }
+        
+        ; 先检查当前选中的项
+        if (this.listBox.Value > 0 && this.listBox.Text = textToSelect) {
+            return  ; 已经是选中的项
+        }
+        
+        ; 从第1项开始查找
+        index := 1
+        found := false
+        
+        while (true) {
+            try {
+                this.listBox.Value := index
+                if (this.listBox.Text = textToSelect) {
+                    found := true
+                    break  ; 找到了
+                }
+                index++
+            } catch {
+                break  ; 超出范围
+            }
+        }
+        
+        ; 如果没找到，清除选中状态
+        if (!found) {
+            try {
+                this.listBox.Value := 0
+            } catch {
+                ; 如果清除失败，不做处理
+            }
         }
     }
 
@@ -501,6 +664,27 @@ class GuiManager {
         if (response != "Yes") {
             return
         }
+
+        ; >>> 获取当前选中项之后的一项（如果有的话）
+        nextItemText := ""
+        try {
+            ; 尝试获取下一项的文本
+            this.listBox.Value := selectedIndex + 1
+            nextItemText := this.listBox.Text
+            ; 恢复原来的选中
+            this.listBox.Value := selectedIndex
+        } catch {
+            ; 没有下一项，尝试获取上一项
+            if (selectedIndex > 1) {
+                try {
+                    this.listBox.Value := selectedIndex - 1
+                    nextItemText := this.listBox.Text
+                    this.listBox.Value := selectedIndex
+                } catch {
+                    ; 也没有上一项
+                }
+            }
+        }
         
         ; 从INI文件中删除
         if (!this.DeleteFromIniFile(software["section"])) {
@@ -510,6 +694,11 @@ class GuiManager {
         
         ; 刷新列表
         this.RefreshList()
+
+        ; >>> 删除后尝试选中之前找到的下一项/上一项
+        if (nextItemText != "") {
+            this.SelectItemByText(nextItemText)
+        }
         
         MsgBox("删除成功！")
     }
@@ -561,6 +750,30 @@ class GuiManager {
                 if (FileExist(path)) {
                     try {
                         Run(path)
+                        ; ==================== 打开软件后的业务 ====================
+                        if (this.searchBox.Value != "") {
+                            ; >>> 情况1：搜索框有值，清空并设置焦点
+                            this.searchBox.Value := ""
+                            this.ShowAllSoftware()  ; 使用已有的方法显示全部软件
+                            this.listBox.Value := 0 ; 清除ListBox选中状态，让它失去焦点
+                            ; 设置焦点到搜索框
+                            try {
+                                this.searchBox.Focus()
+                                this.userWasInSearchBox := true
+                            } catch {
+                                ; 如果焦点设置失败，尝试其他方法
+                                try {
+                                    ControlFocus(this.searchBox, this.gui)
+                                    this.userWasInSearchBox := true
+                                }catch as e {
+                                    MsgBox("ControlFocus失败: " e.Message)
+                                }
+                            }
+                        }else {
+                            ; >>> 情况2：搜索框没值，保持选中刚才打开的项
+                            ; 使用已有的方法尝试选中
+                            this.SelectItemInListBox(software["name"])
+                        }
                     } catch as e {
                         MsgBox("打开失败: " e.Message)
                     }
@@ -575,6 +788,13 @@ class GuiManager {
     
     ; 刷新列表
     RefreshList(*) {
+
+        ; >>> 保存当前选中的文本
+        oldSelectedText := ""
+        if (this.listBox.Value > 0) {
+            oldSelectedText := this.listBox.Text
+        }
+
         ; 重新加载配置
         configMgr := ConfigManager(this.configType)
         this.configManager := configMgr
@@ -590,6 +810,11 @@ class GuiManager {
             this.HandleSearchChange()
         } else {
             this.ShowAllSoftware()
+        }
+
+        ; >>> 尝试恢复之前的选中项
+        if (oldSelectedText != "") {
+            this.SelectItemByText(oldSelectedText)
         }
         
         ; 提示刷新完成
@@ -666,6 +891,8 @@ class GuiManager {
     
     ; 处理搜索框变化（简化且高效）
     HandleSearchChange(*) {
+        ; >>> 用户正在搜索框中操作，设置标记
+        this.userWasInSearchBox := true
         searchText := Trim(this.searchBox.Value)
         
         ; 如果搜索文本为空
@@ -694,14 +921,12 @@ class GuiManager {
                 )
             }
             
-            ; 如果搜索框有焦点，清除选中项
-            if (this.searchBoxHasFocus) {
+            ; 搜索框为空时，如果用户在搜索框中，清除选中项
+            ; 否则，如果有实际软件，选中第一项
+            if (this.userWasInSearchBox) {
                 this.listBox.Value := 0
-            } else {
-                ; 搜索框没有焦点，且不是提示信息，选中第一项
-                /* if (!this.showingPrompt) {
-                    this.listBox.Value := 1
-                } */
+            } else if (!this.IsFirstItemPrompt()) {
+                this.listBox.Value := 1
             }
 
             return
