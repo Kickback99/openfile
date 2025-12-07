@@ -72,9 +72,17 @@ class GuiManager {
         
         ; 添加按钮区域
         this.gui.Add("Text", "w500", "双击列表项或点击按钮操作")
+
+        ; 计算按钮位置
+        buttonWidth := 80
+        buttonSpacing := 10
+        totalWidth := (buttonWidth * 6) + (buttonSpacing * 5)
+
+        ; GUI宽度是550，所以要居中在550宽度内
+        startX := (550 - totalWidth) // 2
         
         ; 创建按钮 - 调整顺序和位置
-        btnCreate := this.gui.Add("Button", "w80", "创建")
+        btnCreate := this.gui.Add("Button",  "x" startX " y+5 w80", "创建")
         ; btnOpen := this.gui.Add("Button", "x+10 w80", "打开")
         btnEdit := this.gui.Add("Button", "x+10 w80", "编辑")
         btnDelete := this.gui.Add("Button", "x+10 w80", "删除")
@@ -1000,13 +1008,23 @@ class GuiManager {
         
         ; 设置字体
         moreGui.SetFont("s9", "JetBrains Mono")
+
+        ; 设置边距，减少顶部间距
+        moreGui.MarginY := 5
         
         ; 添加说明
-        moreGui.Add("Text", "w300 Center", "配置管理操作")
-        moreGui.Add("Text", "w300 Center cGray", "管理" this.configType ".ini 配置文件")
+        moreGui.Add("Text", "w380 Center", "配置管理操作")
+        moreGui.Add("Text", "w380 Center cGray", "管理" this.configType ".ini 配置文件")
+
+        ; 创建按钮 - 计算居中位置
+        buttonWidth := 80
+        buttonSpacing := 10
+        totalWidth := (buttonWidth * 4) + (buttonSpacing * 3)
+        dialogWidth := 400  ; 增加对话框宽度
+        startX := (dialogWidth - totalWidth) // 2
         
         ; 创建按钮
-        btnImport := moreGui.Add("Button", "w80", "导入")
+        btnImport := moreGui.Add("Button", "x" startX " y+30 w80", "导入")
         btnExport := moreGui.Add("Button", "x+10 w80", "导出")
         btnAppend := moreGui.Add("Button", "x+10 w80", "追加")
         btnCancel := moreGui.Add("Button", "x+10 w80", "取消")
