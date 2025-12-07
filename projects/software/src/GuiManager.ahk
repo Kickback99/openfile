@@ -30,6 +30,13 @@ class GuiManager {
         this.editMode := ""
         ; 当前编辑的原始section名称（编辑模式时使用）
         this.currentEditSection := ""
+
+        ; 焦点状态跟踪
+        this.searchBoxHasFocus := false
+
+        ; 添加一个属性来跟踪是否显示了提示信息
+        this.showingPrompt := false
+
     }
     
     ; 显示软件列表GUI
@@ -48,10 +55,12 @@ class GuiManager {
 
         ; 创建搜索框
         this.gui.Add("Text", "w500", "搜索:")
-        this.searchBox := this.gui.Add("Edit", "w500 -Tabstop", "")
+        this.searchBox := this.gui.Add("Edit", "w500", "")
     
         ; 监听搜索框变化
         this.searchBox.OnEvent("Change", this.HandleSearchChange.Bind(this))
+        this.searchBox.OnEvent("Focus", this.HandleSearchBoxFocus.Bind(this))
+        this.searchBox.OnEvent("LoseFocus", this.HandleSearchBoxLoseFocus.Bind(this))
         
         ; 创建ListBox,作为第一个可Tab访问的控件
         this.listBox := this.gui.Add("ListBox", "w500 r15 Center Tabstop")
@@ -97,30 +106,54 @@ class GuiManager {
         this.gui.Show("w550")
 
         ; 使用一次性定时器启用搜索框Tabstop
-        SetTimer(ObjBindMethod(this, "EnableSearchBoxTab"), -50)
-        
+        ; SetTimer(ObjBindMethod(this, "EnableSearchBoxTab"), -50)
     }
 
-    EnableSearchBoxTab() {
+    /* EnableSearchBoxTab() {
     ; 启用搜索框的Tabstop
-    this.searchBox.Opt("+Tabstop")
+    ; this.searchBox.Opt("+Tabstop")
     
     ; 确保ListBox有选中项（再次确认）
     if (this.allSoftwareList.Length > 0 && this.listBox.Value = 0) {
         this.listBox.Value := 1
     }
-}
-
-    ; 处理ListBox获得焦点
-    HandleListBoxFocus(*) {
-        ; 当ListBox获得焦点时，确保有一个选中项
-
-        ; 如果有项目，默认选择第一项
-        if (this.allSoftwareList.Length > 0) {
-            this.listBox.Value := 1
-        }
-
+} */
+    ; 检查是否是提示信息 - 标记
+    IsFirstItemPrompt() {
+        return this.showingPrompt
     }
+    
+    ; 处理ListBox获得焦点 - 简化版
+    HandleListBoxFocus(*) {
+        ; 只有当ListBox当前没有选中项时，才设置选中第一项
+        if (this.listBox.Value = 0) {
+            ; 不是提示消息，设置为选中项
+           if(!this.IsFirstItemPrompt()){
+                this.listBox.Value := 1
+           }
+        }
+    }
+
+    ; 处理搜索框获得焦点
+    HandleSearchBoxFocus(*) {
+        this.searchBoxHasFocus := true
+        
+        ; 如果搜索框为空，清除ListBox选中项
+        if (this.searchBox.Value = "") {
+            this.listBox.Value := 0
+        }
+    }
+
+    ; 处理搜索框失去焦点
+    HandleSearchBoxLoseFocus(*) {
+        this.searchBoxHasFocus := false
+        
+        ; 如果搜索框不为空，确保ListBox有选中项
+        /* if (this.searchBox.Value != "" && this.HasListItems() && this.listBox.Value = 0) {
+            this.listBox.Value := 1
+        } */
+    }
+    
     
     ; 修改PopulateSoftwareList方法
     PopulateSoftwareList() {
@@ -143,6 +176,7 @@ class GuiManager {
     if (this.allSoftwareList.Length = 0) {
         ; 列表为空，显示提示信息
         this.listBox.Add([">>> 列表为空，点击'创建'按钮添加软件 <<<"])
+        this.showingPrompt := true  ; 设置标记
         return
     }
         
@@ -164,6 +198,15 @@ class GuiManager {
                 "section", section,
                 "displayName", displayName
             )
+        }
+
+        this.showingPrompt := false  ; 没有显示提示信息
+
+        ; 如果有实际软件且（搜索框没有焦点 或 搜索框有内容），选中第一项
+        if (!this.showingPrompt && (!this.searchBoxHasFocus || this.searchBox.Value != "")) {
+            this.listBox.Value := 1
+        }else {
+            this.listBox.Value := 0
         }
     }
 
@@ -596,6 +639,100 @@ class GuiManager {
     CloseGui(*) {
         this.gui.Destroy()
     }
+    
+    ; 处理搜索框变化（简化且高效）
+    HandleSearchChange(*) {
+        searchText := Trim(this.searchBox.Value)
+        
+        ; 如果搜索文本为空
+        if (searchText = "") {
+            ; 清空ListBox并显示所有软件
+            this.listBox.Delete()
+            this.softwareMap := Map()
+            
+            ; 重新填充所有软件
+            for software in this.allSoftwareList {
+                name := software["name"]
+                path := software["path"]
+                section := software["section"]
+                
+                displayName := name
+                
+                ; 添加到ListBox
+                this.listBox.Add([displayName])
+                
+                ; 存储到映射Map
+                this.softwareMap[displayName] := Map(
+                    "name", name,
+                    "path", path,
+                    "section", section,
+                    "displayName", displayName
+                )
+            }
+            
+            ; 如果搜索框有焦点，清除选中项
+            if (this.searchBoxHasFocus) {
+                this.listBox.Value := 0
+            } else {
+                ; 搜索框没有焦点，且不是提示信息，选中第一项
+                /* if (!this.showingPrompt) {
+                    this.listBox.Value := 1
+                } */
+            }
+
+            return
+        }
+        
+        ; 如果有搜索文本，进行过滤
+        searchTextLower := StrLower(searchText)
+        
+        ; 清空现有项
+        this.listBox.Delete()
+        this.softwareMap := Map()
+        
+        ; 记录找到的项目数量
+        foundCount := 0
+        
+        ; 过滤并添加匹配的软件到ListBox
+        for software in this.allSoftwareList {
+            name := software["name"]
+            path := software["path"]
+            section := software["section"]
+            
+            ; 转换为小写进行匹配
+            lowerName := StrLower(name)
+            
+            ; 简单匹配：是否包含搜索文本
+            if (InStr(lowerName, searchTextLower)) {
+                displayName := name
+                
+                ; 添加到ListBox
+                this.listBox.Add([displayName])
+                
+                ; 存储到映射Map
+                this.softwareMap[displayName] := Map(
+                    "name", name,
+                    "path", path,
+                    "section", section,
+                    "displayName", displayName
+                )
+                
+                foundCount++
+            }
+        }
+        
+        ; 设置选中项逻辑
+        if (foundCount > 0) {
+            ; 有匹配项，选择第一项
+            this.listBox.Value := 1
+            this.showingPrompt := false  ; 没有显示提示信息
+        } else {
+            ; 没有匹配项，显示提示
+            this.listBox.Add([">>> 未找到匹配项 <<<"])
+            this.showingPrompt := true  ; 设置标记
+            ; 不设置选中项
+        }
+    }
 
     ; ==================== 编辑对话框事件处理器 ====================
 
@@ -637,63 +774,7 @@ class GuiManager {
         }
     }
 
-    ; 处理搜索框变化（最终简化版）
-    HandleSearchChange(*) {
-        searchText := Trim(this.searchBox.Value)
-        
-        ; 如果搜索文本为空，显示所有软件
-        if (searchText = "") {
-            this.ShowAllSoftware()
-            return
-        }
-        
-        ; 转换为小写，实现不区分大小写的搜索
-        searchText := StrLower(searchText)
-        
-        ; 清空现有项
-        this.listBox.Delete()
-        
-        ; 清空当前映射Map（需要重新填充）
-        this.softwareMap := Map()
-        
-        ; 记录找到的项目数量
-        foundCount := 0
-        
-        ; 过滤并添加匹配的软件到ListBox
-        for software in this.allSoftwareList {
-            name := software["name"]
-            path := software["path"]
-            section := software["section"]
-            
-            ; 转换为小写进行匹配
-            lowerName := StrLower(name)
-            
-            ; 简单匹配：是否包含搜索文本
-            if (InStr(lowerName, searchText)) {
-                displayName := name
-                
-                ; 添加到ListBox
-                this.listBox.Add([displayName])
-                
-                ; 存储到映射Map
-                this.softwareMap[displayName] := Map(
-                    "name", name,
-                    "path", path,
-                    "section", section,
-                    "displayName", displayName
-                )
-                
-                foundCount++
-            }
-        }
-        
-        ; 如果没有找到匹配项
-        if (foundCount = 0) {
-            this.listBox.Add([">>> 未找到匹配项 <<<"])
-        }
-    }
 
-    ; ==================== 导入导出事件处理器 ====================
     ; 显示更多对话框
     ShowMoreDialog(btn,*) {
         ; 创建更多对话框
@@ -722,6 +803,8 @@ class GuiManager {
         
         moreGui.Show()
     }
+
+    ; ==================== 导入导出事件处理器 ====================
 
     ; 导出配置
     ExportConfig(moreGui) {
