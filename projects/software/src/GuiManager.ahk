@@ -247,11 +247,16 @@ class GuiManager {
         editGui.Title := (this.editMode = "create" ? "创建新软件" : "编辑软件")
         editGui.Opt("+AlwaysOnTop")
         
-        ; 存储相关控件到GUI对象，以便在事件处理器中访问
-        editGui.ctlName := ""
-        editGui.ctlSection := ""
-        editGui.autoUpdateSection := true
-        editGui.originalSection := defaultName
+        ; 存储必要属性到GUI对象
+        editGui.editMode := this.editMode  ; 必须：区分创建/编辑模式
+        editGui.ctlName := ""  ; 用于事件绑定
+        editGui.ctlPath := ""  ; 用于浏览文件
+        editGui.ctlSection := ""  ; 用于更新Section
+        
+        ; 如果需要，保存当前编辑的原始section（编辑模式）
+        if (this.editMode = "edit") {
+            editGui.currentEditSection := this.currentEditSection  ; 用于重复检查
+        }
         
         ; 添加输入控件
         editGui.Add("Text", "w400", "软件名称:")
@@ -264,53 +269,45 @@ class GuiManager {
         btnBrowse.OnEvent("Click", (*) => this.BrowseForFile(ctlPath))
         editGui.ctlPath := ctlPath 
         
-        editGui.Add("Text", "w400", "Section名称（自动生成，可修改）:")
-        ctlSection := editGui.Add("Edit", "w400")
+        editGui.Add("Text", "w400", "Section名称:")
+        ctlSection := editGui.Add("Edit", "w400 +ReadOnly +Disabled")
         editGui.ctlSection := ctlSection
         
-        ; 根据模式设置Section
+        ; 根据模式设置Section初始值
         if (this.editMode = "create") {
-            ; 创建模式：默认用软件名称作为section
+            ; 创建模式：使用软件名称作为section
             ctlSection.Value := defaultName
             
-            ; 绑定事件处理器
-            ctlName.OnEvent("Change", this.HandleNameChangeForEditGui.Bind(this, editGui))
-            ctlSection.OnEvent("Change", this.HandleSectionChangeForEditGui.Bind(this, editGui))
-            ctlSection.OnEvent("Focus", this.HandleSectionFocusForEditGui.Bind(this, editGui))
-            ctlSection.OnEvent("LoseFocus", this.HandleSectionLoseFocusForEditGui.Bind(this, editGui))
-            ctlName.OnEvent("Focus", this.HandleNameFocusForEditGui.Bind(this, editGui))
+            ; 绑定名称变化事件（自动更新Section）
+            ctlName.OnEvent("Change", (*) => ctlSection.Value := ctlName.Value)
+            
+            ; 创建复选框区域
+            editGui.Add("Text", "w400", "")
+            chkBatchAdd := editGui.Add("CheckBox", "w400", "批量添加模式")
+            editGui.chkBatchAdd := chkBatchAdd  ; 必须：用于批量添加判断
+            editGui.Add("Text", "w400 cGray", "勾选后，保存后不清空表单，可继续添加")
             
         } else {
             ; 编辑模式：显示当前section
             ctlSection.Value := this.currentEditSection
-            ctlSection.Opt("+ReadOnly")  ; 编辑时不允许修改section
-        }
-
-        ; 创建复选框区域（只在创建模式下显示）
-        if (this.editMode = "create") {
-            ; 添加一个空行分隔
-            editGui.Add("Text", "w400", "")
             
-            ; 添加批量添加复选框
-            chkBatchAdd := editGui.Add("CheckBox", "w400", "批量添加模式")
-            editGui.chkBatchAdd := chkBatchAdd  ; 保存到editGui对象中
-            
-            ; 添加提示文本
-            editGui.Add("Text", "w400 cGray", "勾选后，保存后不清空表单，可继续添加")
+            ; 绑定名称变化事件（自动更新Section）
+            ctlName.OnEvent("Change", (*) => ctlSection.Value := ctlName.Value)
         }
         
         ; 添加按钮
         btnSave := editGui.Add("Button", "w80", "保存")
         btnCancel := editGui.Add("Button", "x+10 w80", "取消")
         
-        ; 绑定事件
+        ; 绑定保存事件
         btnSave.OnEvent("Click", (*) => this.SaveSoftware(
             editGui, 
             ctlName.Value, 
             ctlPath.Value, 
             ctlSection.Value,
-            chkBatchAdd  ; 传递复选框控件
+            this.editMode = "create" ? editGui.chkBatchAdd : false  ; 编辑模式不传递复选框
         ))
+        
         btnCancel.OnEvent("Click", (*) => editGui.Destroy())
         
         editGui.Show()
@@ -327,58 +324,95 @@ class GuiManager {
     SaveSoftware(editGui, name, path, section, chkBatchAdd := "") {
         ; 输入验证
         if (name = "") {
-            MsgBox("软件名称不能为空")
+            MsgBox("软件名称不能为空", "提示", "Owner" editGui.Hwnd)
             return
         }
         
         if (path = "") {
-            MsgBox("软件路径不能为空")
+             MsgBox("软件路径不能为空", "提示", "Owner" editGui.Hwnd)
             return
         }
         
         if (section = "") {
-            MsgBox("Section名称不能为空")
+            MsgBox("Section名称不能为空", "提示", "Owner" editGui.Hwnd)
             return
         }
 
         ; 防止创建Root项    
         if (section = "Root" || section = "root") {
-            MsgBox("不能使用'Root'作为Section名称，这是保留名称")
+            MsgBox("不能使用'Root'作为Section名称，这是保留名称", "提示", "Owner" editGui.Hwnd)
             return
         }
+
+        ; ==================== 重名检查逻辑 ====================
         
-        ; 检查名称是否已存在（创建模式下）
-        if (this.editMode = "create") {
-            for displayName in this.softwareMap {
-                if (this.softwareMap[displayName]["name"] = name) {
-                    MsgBox("软件名称已存在，请使用其他名称")
+        if (this.editMode = "edit") {
+            ; ************** 编辑模式检查逻辑 **************
+            
+            ; 检查新的section名称是否已存在（排除自身）
+            if (section != this.currentEditSection) {
+                for displayName, software in this.softwareMap {
+                    ; 跳过自己（当前正在编辑的section）
+                    if (software["section"] = this.currentEditSection) {
+                        continue
+                    }
+                    
+                    ; 检查其他软件是否有相同的section
+                    if (software["section"] = section) {
+                        MsgBox("Section名称已存在，请使用其他名称", "提示", "Owner" editGui.Hwnd)
+                        return
+                    }
+                }
+            }
+            
+            ; 检查新的软件名称是否已存在（排除自身）
+            for displayName, software in this.softwareMap {
+                ; 跳过自己（当前正在编辑的软件）
+                if (software["section"] = this.currentEditSection) {
+                    continue
+                }
+                
+                ; 检查其他软件是否有相同的名称
+                if (software["name"] = name) {
+                    MsgBox("软件名称已存在，请使用其他名称", "提示", "Owner" editGui.Hwnd)
+                    return
+                }
+            }
+            
+        } else if (this.editMode = "create") {
+            ; ************** 创建模式检查逻辑 **************
+            
+            ; 检查软件名称是否已存在
+            for displayName, software in this.softwareMap {
+                if (software["name"] = name) {
+                    MsgBox("软件名称已存在，请使用其他名称", "提示", "Owner" editGui.Hwnd)
+                    return
+                }
+            }
+            
+            ; 检查section是否已存在
+            for displayName, software in this.softwareMap {
+                if (software["section"] = section) {
+                    MsgBox("Section名称已存在，请使用其他名称", "提示", "Owner" editGui.Hwnd)
                     return
                 }
             }
         }
         
-        ; 检查section是否已存在（创建模式下）
-        if (this.editMode = "create") {
-            for displayName in this.softwareMap {
-                if (this.softwareMap[displayName]["section"] = section) {
-                    MsgBox("Section名称已存在，请使用其他名称")
-                    return
-                }
-            }
-        }
+        ; ==================== 更新INI文件 ====================
         
-        ; 更新INI文件
+        ; 更新INI文件（用于：1.编辑模式但section未变化 2.创建模式）
         if (!this.UpdateIniFile(name, path, section)) {
-            MsgBox("保存失败，无法更新配置文件")
+            MsgBox("保存失败，无法更新配置文件", "错误", "Owner" editGui.Hwnd)
             return
         }
 
         ; 显示保存成功提示
         this.ShowToolTip("保存成功！", 1500)
         
-        ; 检查是否批量添加模式
+        ; 检查是否批量添加模式（只针对创建模式）
         isBatchMode := false
-        if (this.editMode = "create" && chkBatchAdd && chkBatchAdd.Value = 1) {
+        if (this.editMode = "create" && chkBatchAdd && chkBatchAdd != false && chkBatchAdd.Value = 1) {
             isBatchMode := true
         }
         
@@ -393,9 +427,6 @@ class GuiManager {
             editGui.ctlName.Value := ""
             editGui.ctlPath.Value := ""
             editGui.ctlSection.Value := ""
-            editGui.autoUpdateSection := true
-            editGui.originalSection := ""
-            
             ; 将焦点设置到名称输入框，方便继续输入
             editGui.ctlName.Focus()
             
@@ -444,7 +475,7 @@ class GuiManager {
             
             return true
         } catch as e {
-            MsgBox("更新配置文件时出错：`n" e.Message)
+            MsgBox("更新配置文件时出错：`n" e.Message, "错误", "Owner" this.gui.Hwnd)
             return false
         }
     }
@@ -541,13 +572,6 @@ class GuiManager {
             MsgBox("请先选择一个软件")
         }
     }
-
-    ; 更新Section名称（当软件名称变化时）
-    UpdateSectionFromName(nameControl, sectionControl, originalName, *) {
-    if (sectionControl.Value = "" || sectionControl.Value = originalName) {
-        sectionControl.Value := nameControl.Value
-    }
-}
     
     ; 刷新列表
     RefreshList(*) {
@@ -738,40 +762,7 @@ class GuiManager {
 
     ; 处理名称变化
     HandleNameChangeForEditGui(editGui, *) {
-        if (editGui.autoUpdateSection) {
-            editGui.ctlSection.Value := editGui.ctlName.Value
-        }
-    }
-
-    ; 处理Section变化
-    HandleSectionChangeForEditGui(editGui, *) {
-        ; 如果用户修改了Section，且新值不等于当前软件名称，则关闭自动更新
-        if (editGui.ctlSection.Value != editGui.ctlName.Value) {
-            editGui.autoUpdateSection := false
-        }
-    }
-
-    ; 处理Section获取焦点事件
-    HandleSectionFocusForEditGui(editGui, *) {
-        ; 当用户点击Section输入框时，暂时关闭自动更新
-        editGui.autoUpdateSection := false
-    }
-
-    ; 处理Section失去焦点事件
-    HandleSectionLoseFocusForEditGui(editGui, *) {
-        ; 当Section输入框失去焦点时，如果内容为空或等于原始值，恢复自动更新
-        if (editGui.ctlSection.Value = "" || editGui.ctlSection.Value = editGui.originalSection) {
-            editGui.autoUpdateSection := true
-            editGui.ctlSection.Value := editGui.ctlName.Value
-        }
-    }
-
-    ; 处理软件名称获取焦点事件
-    HandleNameFocusForEditGui(editGui, *) {
-        ; 当用户点击名称输入框时，检查是否可以恢复自动更新
-        if (editGui.ctlSection.Value = "" || editGui.ctlSection.Value = editGui.ctlName.Value) {
-            editGui.autoUpdateSection := true
-        }
+        editGui.ctlSection.Value := editGui.ctlName.Value
     }
 
 
