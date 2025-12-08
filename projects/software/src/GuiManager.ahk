@@ -675,11 +675,11 @@ class GuiManager {
             
             if (isRootSection) {
                 ; >>> 处理Root section
-                ; 检查是否已有Root section
+                ; 检查是否已有Root section（不区分大小写）
                 hasExistingRoot := false
                 existingRootSectionName := ""
                 
-                ; 解析现有内容，查找Root section
+                ; 解析现有内容，查找Root section（不区分大小写）
                 currentSection := ""
                 Loop Parse, iniContent, "`n", "`r" {
                     line := Trim(A_LoopField)
@@ -699,13 +699,15 @@ class GuiManager {
                 if (editMode = "create" || editMode = "edit") {
                     ; >>> 使用用户输入的大小写
                     rootContent := "[" section . "]`r`n"
-                    rootContent .= "name=" . (StrLower(section) = "root" ? "root" : section) . "`r`n"
+                    ; >>> name使用与section相同的大小写
+                    rootContent .= "name=" section . "`r`n"
                     rootContent .= "path=" path . "`r`n"
                 }
                 
                 if (hasExistingRoot) {
                     ; 已有Root，替换它
                     ; 构建正则表达式匹配Root section（不区分大小写）
+                    ; 使用原始的大小写来匹配
                     rootPattern := "\[" existingRootSectionName "\][\s\S]*?(?=\n\[|$)"
                     if (RegExMatch(iniContent, rootPattern, &match)) {
                         iniContent := StrReplace(iniContent, match[0], rootContent)
@@ -720,17 +722,57 @@ class GuiManager {
                 
             } else {
                 ; >>> 处理普通section
-                if (editMode = "create") {
-                    ; 创建模式：追加到文件末尾
-                    ; 确保末尾有空行
-                    iniContent := RTrim(iniContent, "`r`n")
-                    if (iniContent != "") {
-                        iniContent .= "`r`n`r`n"
-                    }
+                ; >>> 检查section是否已存在（区分大小写）
+                sectionExists := false
+                existingSectionName := ""
+                currentSection := ""
+                Loop Parse, iniContent, "`n", "`r" {
+                    line := Trim(A_LoopField)
                     
-                    iniContent .= "[" section . "]`r`n"
-                    iniContent .= "name=" name . "`r`n"
-                    iniContent .= "path=" path . "`r`n"
+                    if (SubStr(line, 1, 1) = "[") {
+                        currentSection := SubStr(line, 2, InStr(line, "]") - 2)
+                        if (currentSection = section) {
+                            sectionExists := true
+                            existingSectionName := currentSection
+                            break
+                        }
+                    }
+                }
+                
+                if (editMode = "create") {
+                    if (sectionExists) {
+                        ; section已存在，编辑模式处理
+                        oldSectionPattern := "\[" existingSectionName "\][\s\S]*?(?=\n\[|$)"
+                        if (RegExMatch(iniContent, oldSectionPattern, &match)) {
+                            ; 构建新的section内容
+                            newSectionContent := "[" section . "]`r`n"
+                            newSectionContent .= "name=" name . "`r`n"
+                            newSectionContent .= "path=" path . "`r`n"
+                            
+                            iniContent := StrReplace(iniContent, match[0], newSectionContent)
+                        } else {
+                            ; 如果没找到，追加到文件末尾
+                            iniContent := RTrim(iniContent, "`r`n")
+                            if (iniContent != "") {
+                                iniContent .= "`r`n`r`n"
+                            }
+                            
+                            iniContent .= "[" section . "]`r`n"
+                            iniContent .= "name=" name . "`r`n"
+                            iniContent .= "path=" path . "`r`n"
+                        }
+                    } else {
+                        ; 创建模式：追加到文件末尾
+                        ; 确保末尾有空行
+                        iniContent := RTrim(iniContent, "`r`n")
+                        if (iniContent != "") {
+                            iniContent .= "`r`n`r`n"
+                        }
+                        
+                        iniContent .= "[" section . "]`r`n"
+                        iniContent .= "name=" name . "`r`n"
+                        iniContent .= "path=" path . "`r`n"
+                    }
                     
                 } else if (editMode = "edit") {
                     ; 编辑模式：替换现有section
@@ -1454,109 +1496,6 @@ class GuiManager {
         return arr
     }
 
-    ; 提取Root section内容
-    ExtractRootSection(iniContent) {
-        rootLines := []
-        inRootSection := false
-        foundRoot := false
-        
-        Loop Parse, iniContent, "`n", "`r" {
-            line := Trim(A_LoopField)
-            
-            ; 解析section
-            if (SubStr(line, 1, 1) = "[") {
-                if (inRootSection) {
-                    ; Root section结束
-                    break
-                }
-                
-                section := SubStr(line, 2, InStr(line, "]") - 2)
-                if (section = "Root") {
-                    inRootSection := true
-                    foundRoot := true
-                    rootLines.Push("[Root]")
-                }
-                continue
-            }
-            
-            ; 在Root section中
-            if (inRootSection) {
-                ; 检查是否是其他section的开始
-                if (line != "" && SubStr(line, 1, 1) = "[") {
-                    break
-                }
-                
-                ; 添加root section的内容
-                if (line != "" && (SubStr(line, 1, 4) = "name" || SubStr(line, 1, 4) = "path")) {
-                    rootLines.Push(line)
-                }
-            }
-        }
-        
-        if (foundRoot && rootLines.Length > 0) {
-            ; 确保有name和path
-            hasName := false
-            hasPath := false
-            for line in rootLines {
-                if (SubStr(line, 1, 4) = "name") {
-                    hasName := true
-                }
-                if (SubStr(line, 1, 4) = "path") {
-                    hasPath := true
-                }
-            }
-            
-            ; 补全缺少的字段
-            if (!hasName) {
-                rootLines.Push("name=root")
-            }
-            if (!hasPath) {
-                ; 使用默认路径
-                rootLines.Push("path=C:\Users\wz\Desktop\tools\" this.configType)
-            }
-            
-            return this.StrJoin(rootLines, "`r`n")
-        }
-        
-        return ""  ; 没有找到有效的Root section
-    }
-
-    ; 简化版的TXT转INI格式（不包括root）（改进版）
-    TxtToIniWithoutRoot(txtContent) {
-        lines := StrSplit(txtContent, "`n", "`r")
-        iniLines := []
-        currentName := ""
-        
-        for i, line in lines {
-            line := Trim(line)
-            if (line = "") {
-                continue
-            }
-            
-            ; 判断是否是路径（包含路径分隔符）
-            isPath := InStr(line, "\") || InStr(line, ":/") || InStr(line, ":\")
-            
-            if (!isPath && line != "root") {
-                ; 是名称
-                currentName := line
-            } else if (isPath && currentName != "") {
-                ; 是路径，且有对应的名称
-                ; 添加空行（除非是第一个section）
-                if (iniLines.Length > 0) {
-                    iniLines.Push("")
-                }
-                
-                iniLines.Push("[" currentName "]")
-                iniLines.Push("name=" currentName)
-                iniLines.Push("path=" line)
-                
-                currentName := ""
-            }
-        }
-        
-        return this.StrJoin(iniLines, "`r`n") . (iniLines.Length > 0 ? "`r`n" : "")
-    }
-
     ; 追加配置
     AppendConfig(moreGui) {
         moreGui.Destroy()
@@ -1619,22 +1558,151 @@ class GuiManager {
         }
     }
 
-    ; 获取现有section名称
-    ;GetExistingSections
-    ParseIniSections(iniContent) {
-        sections := Map()
-        currentSection := ""
+    ; 合并INI内容
+    MergeIniContentWithRoot(oldContent, newData) {
+        newRoot := newData["root"]
+        newSections := newData["sections"]
         
-        Loop Parse, iniContent, "`n", "`r" {
+        ; 解析旧内容中的sections（建立不区分大小写的映射）
+        oldSections := Map()  ; 存储section名称 -> 原始大小写
+        oldSectionLines := Map()  ; 存储section名称 -> 对应的行数索引
+        
+        currentSection := ""
+        currentLineNumber := 0
+        sectionStartLine := 0
+        
+        ; >>> 第一次遍历：建立不区分大小写的section映射
+        Loop Parse, oldContent, "`n", "`r" {
+            currentLineNumber++
             line := Trim(A_LoopField)
             
             if (SubStr(line, 1, 1) = "[") {
+                if (currentSection != "") {
+                    ; 保存上一个section的信息
+                    oldSectionLines[currentSection] := Map("start", sectionStartLine, "end", currentLineNumber - 1)
+                }
+                
                 currentSection := SubStr(line, 2, InStr(line, "]") - 2)
-                sections[currentSection] := true
+                ; >>> 以小写为key存储，值为原始大小写
+                oldSections[StrLower(currentSection)] := currentSection
+                sectionStartLine := currentLineNumber
             }
         }
         
-        return sections
+        ; 保存最后一个section的信息
+        if (currentSection != "") {
+            oldSectionLines[currentSection] := Map("start", sectionStartLine, "end", currentLineNumber)
+        }
+        
+        ; >>> 处理Root：如果有新的Root，就替换或添加
+        if (newRoot.Count > 0) {
+            ; 如果旧内容中有Root（不区分大小写），先移除
+            rootKey := StrLower("Root")
+            if (oldSections.Has(rootKey)) {
+                rootSectionName := oldSections[rootKey]
+                ; 移除Root section
+                oldContent := this.RemoveSectionByLines(oldContent, oldSectionLines[rootSectionName]["start"], oldSectionLines[rootSectionName]["end"])
+                ; 从映射中移除
+                oldSections.Delete(rootKey)
+            }
+            
+            ; 将新的Root section添加到文件顶部
+            rootContent := ""
+            if (oldContent = "" || Trim(oldContent) = "") {
+                ; 如果是空文件，直接添加Root
+                rootContent := "[" newRoot["section"] . "]`r`n"
+                rootContent .= "name=" newRoot["name"] . "`r`n"
+                rootContent .= "path=" newRoot["path"] . "`r`n"
+                
+                if (newSections.Length > 0) {
+                    rootContent .= "`r`n"  ; 如果有其他section，加空行
+                }
+                oldContent := rootContent
+            } else {
+                ; 在非空文件中插入Root到顶部
+                rootContent := "[" newRoot["section"] . "]`r`n"
+                rootContent .= "name=" newRoot["name"] . "`r`n"
+                rootContent .= "path=" newRoot["path"] . "`r`n"
+                rootContent .= "`r`n"  ; 添加空行分隔
+                
+                oldContent := rootContent . oldContent
+            }
+        }
+        
+        ; >>> 处理普通section：不区分首字母大小写的匹配
+        for i, newSection in newSections {
+            sectionName := newSection["section"]
+            sectionNameLower := StrLower(sectionName)
+            
+            ; >>> 查找是否存在匹配的section（不区分大小写）
+            existingSectionName := ""
+            
+            ; 直接查找匹配的section
+            if (oldSections.Has(sectionNameLower)) {
+                existingSectionName := oldSections[sectionNameLower]
+        }
+            
+            if (existingSectionName != "") {
+                ; >>> 替换现有section
+                oldContent := this.ReplaceSection(oldContent, existingSectionName, newSection)
+            } else {
+                ; 追加新的section
+                oldContent := this.AppendSection(oldContent, newSection)
+            }
+        }
+        
+        ; 清理多余空行
+        oldContent := RegExReplace(oldContent, "(`r`n){3,}", "`r`n`r`n")
+        oldContent := RTrim(oldContent, "`r`n")
+        
+        ; 确保最后有一个换行符
+        return oldContent . "`r`n"
+    }
+
+    ; >>> 新增辅助函数：按行号移除section
+    RemoveSectionByLines(content, startLine, endLine) {
+        lines := StrSplit(content, "`n", "`r")
+        newLines := []
+        
+        for i, line in lines {
+            if (i < startLine || i > endLine) {
+                newLines.Push(line)
+            }
+        }
+        
+        ; 重新组合并清理空行
+        result := this.StrJoin(newLines, "`r`n")
+        result := RegExReplace(result, "(`r`n){3,}", "`r`n`r`n")
+        result := RTrim(result, "`r`n")
+        
+        return result
+    }
+
+    ; >>> 修改ReplaceSection函数，支持不区分大小写的section名称
+    ReplaceSection(content, existingSectionName, newSectionData) {
+        ; 构建正则表达式，匹配原始大小写的section
+        escapedSectionName := RegExReplace(existingSectionName, "[.*+?^${}()|[\]\\]", "\$0")
+        pattern := "\[" escapedSectionName "\][\s\S]*?(?=\n\[|$)"
+        
+        if (RegExMatch(content, pattern, &match)) {
+            ; 构建新的section内容
+            newSectionContent := "[" newSectionData["section"] . "]`r`n"
+            newSectionContent .= "name=" newSectionData["name"] . "`r`n"
+            newSectionContent .= "path=" newSectionData["path"] . "`r`n"
+            
+            content := StrReplace(content, match[0], newSectionContent)
+            
+            ; 清理可能产生的连续空行
+            content := RegExReplace(content, "(`r`n){3,}", "`r`n`r`n")
+            content := RTrim(content, "`r`n")
+            
+            ; 如果内容不为空，确保有换行符
+            if (content != "") {
+                content .= "`r`n"
+            }
+        }
+        
+        return content
     }
 
     ;ParseTxtSections
@@ -1691,95 +1759,6 @@ class GuiManager {
         return result
         }
 
-    ; 合并INI内容
-    MergeIniContentWithRoot(oldContent, newData) {
-        newRoot := newData["root"]
-        newSections := newData["sections"]
-        
-        ; 解析旧内容中的sections
-        oldSections := this.ParseIniSections(oldContent)
-        
-        ; >>> 处理Root：如果有新的Root，就替换或添加
-        if (newRoot.Count > 0) {
-            ; 如果旧内容中有Root，先移除
-            if (oldSections.Has("Root") || oldSections.Has("root") || oldSections.Has("ROOT")) {
-                ; 找到并移除Root section（不区分大小写）
-                for sectionName in oldSections {
-                    if (StrLower(sectionName) = "root") {
-                        ; 移除Root section
-                        oldContent := this.RemoveSection(oldContent, sectionName)
-                        break
-                    }
-                }
-            }
-            
-            ; 将新的Root section添加到文件顶部
-            rootSection := ""
-            if (oldContent = "" || Trim(oldContent) = "") {
-                ; 如果是空文件，直接添加Root
-                rootSection := "[" newRoot["section"] . "]`r`n"
-                rootSection .= "name=" newRoot["name"] . "`r`n"
-                rootSection .= "path=" newRoot["path"] . "`r`n"
-                
-                if (newSections.Length > 0) {
-                    rootSection .= "`r`n"  ; 如果有其他section，加空行
-                }
-                oldContent := rootSection
-            } else {
-                ; 在非空文件中插入Root到顶部
-                rootSection := "[" newRoot["section"] . "]`r`n"
-                rootSection .= "name=" newRoot["name"] . "`r`n"
-                rootSection .= "path=" newRoot["path"] . "`r`n"
-                rootSection .= "`r`n"  ; 添加空行分隔
-                
-                oldContent := rootSection . oldContent
-            }
-        }
-        
-        ; >>> 处理普通section：替换或追加
-        for i, newSection in newSections {
-            sectionName := newSection["section"]
-            
-            ; 如果section已存在，替换它
-            if (oldSections.Has(sectionName)) {
-                oldContent := this.ReplaceSection(oldContent, sectionName, newSection)
-            } else {
-                ; 追加新的section
-                oldContent := this.AppendSection(oldContent, newSection)
-            }
-        }
-        
-        ; 清理多余空行
-        oldContent := RegExReplace(oldContent, "(`r`n){3,}", "`r`n`r`n")
-        oldContent := RTrim(oldContent, "`r`n")
-        
-        ; 确保最后有一个换行符
-        return oldContent . "`r`n"
-    }
-
-    ; +++ 新增辅助函数：移除指定section
-    RemoveSection(content, sectionName) {
-        ; 构建正则表达式匹配section及其内容
-        ; 匹配从 [sectionName] 到下一个 [ 或文件结尾
-        pattern := "\[" RegExReplace(sectionName, "[.*+?^${}()|[\]\\]", "\$0") "\][\s\S]*?(?=\n\[|$)"
-        
-        if (RegExMatch(content, pattern, &match)) {
-            ; 移除匹配到的section
-            content := StrReplace(content, match[0], "")
-            
-            ; 清理可能产生的连续空行
-            content := RegExReplace(content, "(`r`n){3,}", "`r`n`r`n")
-            content := RTrim(content, "`r`n")
-            
-            ; 如果移除后内容不为空，确保有换行符
-            if (content != "") {
-                content .= "`r`n"
-            }
-        }
-        
-            return content
-    }
-
     ; +++ 新增辅助函数：追加section到文件末尾
     AppendSection(content, sectionData) {
         ; 清理末尾多余的空行
@@ -1797,10 +1776,6 @@ class GuiManager {
         
         return content
     }
-
-
-
-
 
     ; 辅助函数：连接数组
     StrJoin(arr, delimiter) {
@@ -1829,7 +1804,7 @@ class GuiManager {
 
     ; >>> 新增：校验TXT文件内容格式
     ;ValidateTxtContent
-    ValidateTxtContent(content, skipFirstPairCheck := false) {
+    ValidateTxtContent(content, skipFirstPairCheck := false, skipMsgBox := false) {
         ; 分割成行并过滤空行
         lines := StrSplit(content, "`n", "`r")
         nonEmptyLines := []
@@ -1842,17 +1817,18 @@ class GuiManager {
         
         ; 检查是否有内容
         if (nonEmptyLines.Length = 0) {
-            ; >>> 如果跳过第一个配对检查，允许空内容
-            if (!skipFirstPairCheck) {
+            if (!skipMsgBox && !skipFirstPairCheck) {
                 MsgBox("文件内容为空，请检查文件！", "格式错误", "Iconx")
             }
             return false
         }
         
-        ; >>> 如果skipFirstPairCheck为true，则跳过行数奇偶性检查
+        ; 如果skipFirstPairCheck为true，则跳过行数奇偶性检查
         if (!skipFirstPairCheck && Mod(nonEmptyLines.Length, 2) != 0) {
-            MsgBox("文件格式不正确！`n`n"
-                . "有效内容行数应为偶数（名称+路径成对出现）", "格式错误", "Iconx")
+            if (!skipMsgBox) {
+                MsgBox("文件格式不正确！`n`n"
+                    . "有效内容行数应为偶数（名称+路径成对出现）", "格式错误", "Iconx")
+            }
             return false
         }
         
@@ -1862,26 +1838,29 @@ class GuiManager {
                 if (Mod(i, 2) = 1) {  ; 奇数行：第1、3、5...行（i=1,3,5...）
                     ; 检查是否是合法的文件名
                     if (RegExMatch(line, '[\\/:*?"<>|]')) {
-                        MsgBox("第 " i " 行包含非法字符：`n`n" line "`n`n"
-                            . "文件名不能包含：\ / : * ? " . Chr(34) . " < > |", "格式错误", "Iconx")
+                        if (!skipMsgBox) {
+                            MsgBox("第 " i " 行包含非法字符：`n`n" line "`n`n"
+                                . "文件名不能包含：\ / : * ? " . Chr(34) . " < > |", "格式错误", "Iconx")
+                        }
                         return false
                     }
                     
                     ; 不能以点开头或结尾
                     if (SubStr(line, 1, 1) = "." || SubStr(line, 0, 1) = ".") {
-                        MsgBox("第 " i " 行格式错误：`n`n" line "`n`n"
-                            . "文件名不能以点开头或结尾", "格式错误", "Iconx")
+                        if (!skipMsgBox) {
+                            MsgBox("第 " i " 行格式错误：`n`n" line "`n`n"
+                                . "文件名不能以点开头或结尾", "格式错误", "Iconx")
+                        }
                         return false
                     }
                 } else {  ; 偶数行：第2、4、6...行（i=2,4,6...）
                     ; 检查是否是合法的路径
-                    if (!this.IsValidPath(line)) {
-                        MsgBox("第 " i " 行不是有效的路径：`n`n" line, "格式错误", "Iconx")
+                    if (!this.IsValidPath(line, i, skipMsgBox)) {
                         return false
                     }
                 }
             } else {
-                ; >>> 对于单个条目验证，根据位置判断是名称还是路径
+                ; 对于单个条目验证，根据位置判断是名称还是路径
                 if (Mod(i, 2) = 1) {
                     ; 奇数位置视为名称
                     if (RegExMatch(line, '[\\/:*?"<>|]')) {
@@ -1892,7 +1871,7 @@ class GuiManager {
                     }
                 } else {
                     ; 偶数位置视为路径
-                    if (!this.IsValidPath(line)) {
+                    if (!this.IsValidPath(line, i, true)) {
                         return false
                     }
                 }
