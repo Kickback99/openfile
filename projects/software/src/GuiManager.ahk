@@ -1129,6 +1129,17 @@ class GuiManager {
         if (importPath = "" || !FileExist(importPath)) {
             return
         }
+
+        ; >>> 新增：严格校验文件名必须完全匹配
+        SplitPath(importPath, , , , &fileNameNoExt)
+        
+        ; 严格检查：文件名必须完全等于当前configType
+        if (fileNameNoExt != this.configType) {
+            MsgBox("请选择 " this.configType ".txt 文件进行导入！`n`n"
+                . "当前选择的是: " fileNameNoExt ".txt`n"
+                . "当前配置类型是: " this.configType, "文件不匹配", "Iconx")
+            return
+        }
         
         if (this.ImportFromTxt(importPath)) {
             MsgBox("导入成功！")
@@ -1143,6 +1154,11 @@ class GuiManager {
         try {
             ; 读取TXT文件
             content := FileRead(filePath, "UTF-8")
+
+            ; >>> 新增：校验TXT文件内容格式
+            if (!this.ValidateTxtContent(content)) {
+                return false
+            }
             
             ; 获取现有的root配置（如果有）
             existingRootContent := ""
@@ -1429,6 +1445,8 @@ class GuiManager {
         return oldContent
     }
 
+
+
     ; 辅助函数：连接数组
     StrJoin(arr, delimiter) {
         result := ""
@@ -1439,6 +1457,95 @@ class GuiManager {
             result .= item
         }
         return result
+    }
+
+    ; >>> 新增：校验TXT文件内容格式
+    ValidateTxtContent(content) {
+        ; 分割成行并过滤空行
+        lines := StrSplit(content, "`n", "`r")
+        nonEmptyLines := []
+        
+        for line in lines {
+            if (Trim(line) != "") {
+                nonEmptyLines.Push(Trim(line))
+            }
+        }
+        
+        ; 检查是否有内容
+        if (nonEmptyLines.Length = 0) {
+            MsgBox("文件内容为空，请检查文件！", "格式错误", "Iconx")
+            return false
+        }
+        
+        ; 检查行数是否为偶数
+        if (Mod(nonEmptyLines.Length, 2) != 0) {
+            MsgBox("文件格式不正确！`n`n"
+                . "有效内容行数应为偶数（名称+路径成对出现）", "格式错误", "Iconx")
+            return false
+        }
+        
+        ; 逐对检查：奇数行（名称）+ 偶数行（路径）
+        for i, line in nonEmptyLines {
+            if (Mod(i, 2) = 1) {  ; 奇数行：第1、3、5...行（i=1,3,5...）
+                ; >>> 检查是否是合法的文件名（去掉扩展名）
+                ; 文件名不能包含：\ / : * ? " < > |
+                if (RegExMatch(line, '[\\/:*?"<>|]')) {
+                    MsgBox("第 " i " 行包含非法字符：`n`n" line "`n`n"
+                        . "文件名不能包含：\ / : * ? " . Chr(34) . " < > |", "格式错误", "Iconx")
+                    return false
+                }
+                
+                ; 不能以点开头或结尾
+                if (SubStr(line, 1, 1) = "." || SubStr(line, 0, 1) = ".") {
+                    MsgBox("第 " i " 行格式错误：`n`n" line "`n`n"
+                        . "文件名不能以点开头或结尾", "格式错误", "Iconx")
+                    return false
+                }
+            } else {  ; 偶数行：第2、4、6...行（i=2,4,6...）
+                ; >>> 修改：检查是否是合法的路径
+                ; 必须包含多个\或/（至少一个）
+                backslashCount := 0
+                slashCount := 0
+                colonCount := 0
+                
+                ; 统计字符数量
+                Loop Parse, line {
+                    switch A_LoopField {
+                        case "\": backslashCount++
+                        case "/": slashCount++
+                        case ":": colonCount++
+                    }
+                }
+                
+                ; 条件1：必须包含多个\或者多个/（至少一个）
+                if (backslashCount = 0 && slashCount = 0) {
+                    MsgBox("第 " i " 行不是有效的路径：`n`n" line "`n`n"
+                        . "路径必须包含路径分隔符（\或/）", "格式错误", "Iconx")
+                    return false
+                }
+                
+                ; 条件2：必须只包含一个:
+                if (colonCount != 1) {
+                    msg := "第 " i " 行不是有效的路径：`n`n" line "`n`n"
+                    if (colonCount = 0) {
+                        msg .= "路径缺少盘符（如C:）"
+                    } else {
+                        msg .= "路径只能包含一个盘符（:），当前包含 " colonCount " 个"
+                    }
+                    MsgBox(msg, "格式错误", "Iconx")
+                    return false
+                }
+                
+                ; 检查其他非法字符
+                if (RegExMatch(line, '[*?"<>|]')) {
+                    MsgBox("第 " i " 行包含非法字符：`n`n" line "`n`n"
+                        . "路径不能包含：* ? " . Chr(34) . " < > |", "格式错误", "Iconx")  ; 使用Chr(34)表示双引号
+                    return false
+                }
+            }
+        }
+        
+        return true
     }
 
     ; ==================== 格式化函数 ====================
