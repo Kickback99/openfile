@@ -333,5 +333,27 @@ class ConfigManager {
             return this.data["Root"]["path"]
         }
         return ""
+    }
+
+    ; >>> 新增：获取所有可用的配置类型（排除当前类型）
+    static GetAllConfigTypes(excludeType := "") {
+        ; 获取configs目录
+        configManagerPath := A_LineFile
+        SplitPath(configManagerPath, , &scriptDir)
+        configsDir := scriptDir "\configs"
+        
+        ; 查找所有.ini文件
+        configTypes := []
+        Loop Files, configsDir "\*.ini" {
+            ; 提取文件名（不含扩展名）
+            SplitPath(A_LoopFileName, , , , &nameOnly)
+            
+            ; 排除当前类型
+            if (nameOnly != excludeType) {
+                configTypes.Push(nameOnly)
+            }
+        }
+        
+        return configTypes
     }   
 }
