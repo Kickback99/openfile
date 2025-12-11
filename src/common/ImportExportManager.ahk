@@ -1,4 +1,3 @@
-#Include "./IniTools.ahk"
 ; ==============================
 ; ImportExportManager.ahk
 ; 导入导出管理类
@@ -175,9 +174,9 @@ class ImportExportManager {
         
         result := this.ImportFromTxtWithRoot(importPath)
         if (result) {
-            MsgBox("导入成功！")
+            SetTimer(() => MsgBox("导入成功！"), -100)  ; 100ms后显示
         } else {
-            MsgBox("导入失败！")
+            SetTimer(() => MsgBox("导入失败！"), -100)
         }
 
         return result

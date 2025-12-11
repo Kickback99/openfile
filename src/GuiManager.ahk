@@ -2,6 +2,7 @@
 #Include "./common/ImportExportManager.ahk"
 #Include "./common/PathUtils.ahk"
 #Include "./common/GuiEventHandlers.ahk"
+#Include "./common/PinyinHelper.ahk"
 ; ==============================
 ; GuiManager.ahk
 ; GUI管理类（支持增删改查）
@@ -53,7 +54,11 @@ class GuiManager {
         ; 创建GUI
         this.gui := Gui()
         this.gui.Title := (this.configType)
-        this.gui.Opt("+Resize") ; 允许调整大小
+
+        ; 移除最大化按钮
+        try {
+            WinSetStyle("-0x00010000", this.gui.Hwnd)
+        }
 
         ;设置字体
         this.gui.SetFont("s9", "JetBrains Mono")
@@ -404,7 +409,7 @@ class GuiManager {
             return
         }
         
-        ; 如果有搜索文本，进行过滤
+        ; 如果有搜索文本，进行过滤（增加拼音匹配）
         searchTextLower := StrLower(searchText)
         
         ; 清空现有项
@@ -420,24 +425,22 @@ class GuiManager {
             path := software["path"]
             section := software["section"]
             
-            ; 转换为小写进行匹配
-            lowerName := StrLower(name)
+            ; 只有当软件名包含中文且搜索文本看起来像拼音时才尝试拼音匹配
+             ; >>> 使用PinyinHelper进行匹配
+            directMatch := InStr(StrLower(name), searchTextLower)
+            pinyinScore := PinyinHelper.HasChinese(name) && PinyinHelper.LooksLikePinyin(searchTextLower) 
+                ? PinyinHelper.GetPinyinMatchScore(name, searchText)
+                : 0
             
-            ; 简单匹配：是否包含搜索文本
-            if (InStr(lowerName, searchTextLower)) {
-                displayName := name
-                
-                ; 添加到ListBox
-                this.listBox.Add([displayName])
-                
-                ; 存储到映射Map
-                this.softwareMap[displayName] := Map(
+            ; 如果直接匹配或拼音匹配成功
+            if (directMatch || pinyinScore > 0) {
+                this.listBox.Add([name])
+                this.softwareMap[name] := Map(
                     "name", name,
                     "path", path,
                     "section", section,
-                    "displayName", displayName
+                    "displayName", name
                 )
-                
                 foundCount++
             }
         }
