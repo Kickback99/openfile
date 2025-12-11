@@ -81,13 +81,19 @@ class GuiEventHandlers {
     
     ; 编辑按钮点击事件处理
     static HandleEditClick(guiManager) {
-        selectedIndex := guiManager.listBox.Value
-        if (selectedIndex <= 0) {
-            MessageManager.ShowError("请先选择一个要编辑的软件","提示")
+
+        ; 直接获取选中的文本（因为按钮启用时一定是单选）
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
+        
+        ; 检查是否有选中项
+        if (selectedTexts.Length = 0) {
+            MessageManager.ShowError("请先选择要编辑的软件","提示")
             return
         }
+
+        ; 取第一个选中项（如果是多选，按钮会被禁用，所以这里应该是单选）
+        selectedText := selectedTexts[1]
         
-        selectedText := guiManager.listBox.Text
         if (!guiManager.softwareMap.Has(selectedText)) {
             MessageManager.ShowError("未找到选中的软件信息","提示")
             return
@@ -104,14 +110,155 @@ class GuiEventHandlers {
     }
     
     ; 删除按钮点击事件处理
-    static HandleDeleteClick(guiManager) {
-        selectedIndex := guiManager.listBox.Value
-        if (selectedIndex <= 0) {
-            MessageManager.ShowError("请先选择一个要删除的软件","提示")
+    static HandleBulkDeleteClick(guiManager) {
+        ; 获取选中的文本数组
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
+        
+        ; 检查是否有选中项
+        if (selectedTexts.Length = 0) {
+            MessageManager.ShowError("请先选择要删除的软件","提示")
             return
         }
         
-        selectedText := guiManager.listBox.Text
+        ; 判断是单选还是多选
+        if (selectedTexts.Length = 1) {
+            ; 单选情况：使用原有的删除逻辑
+            this.HandleSingleDelete(guiManager, selectedTexts[1])
+        } else {
+            ; 多选情况：批量删除
+            this.HandleMultipleDelete(guiManager, selectedTexts)
+        }
+    }
+
+    ; >>> 修改：处理批量删除（同时处理单选和多选的数据类型）
+    static HandleMultipleDelete(guiManager, selectedTexts) {
+        ; 确认删除
+        response := MsgBox("确定要删除选中的 " selectedTexts.Length " 个软件吗？", "确认删除", "YesNo")
+        if (response != "Yes") {
+            return
+        }
+        
+        ; 获取要删除的section列表
+        sectionsToDelete := []
+        for text in selectedTexts {
+            if (guiManager.softwareMap.Has(text)) {
+                software := guiManager.softwareMap[text]
+                sectionsToDelete.Push(software["section"])
+            }
+        }
+        
+        ; >>> 在删除前获取关键信息
+        totalItems := guiManager.allSoftwareList.Length  ; 删除前的总项目数
+        
+        ; >>> 边界情况：如果要删除所有项目
+        if (sectionsToDelete.Length >= totalItems) {
+            ; 确认是否删除所有项目
+            confirmResponse := MsgBox("确定要删除所有软件吗？这将清空整个列表。", "确认删除所有", 0x24)
+            if (confirmResponse != "Yes") {
+                return
+            }
+            
+            ; 逐个删除选中的软件
+            deletedCount := 0
+            for section in sectionsToDelete {
+                if (this.DeleteFromIniFile(guiManager, section)) {
+                    deletedCount++
+                }
+            }
+            
+            ; 刷新列表（此时列表会为空）
+            guiManager.RefreshList()
+            
+            ; 显示删除成功消息
+            if (deletedCount > 0) {
+                this.ShowToolTip(guiManager, "已清空所有软件！", 1500)
+            }
+            
+            return  ; 不需要尝试选择任何项
+        }
+        
+        ; >>> 正常情况：不是删除所有项目
+        selectedIndices := ListBoxHelper.GetSelectedIndices(guiManager.listBox)  ; 选中的索引
+        
+        ; >>> 智能查找删除后应该选中的项（改进版）
+        nextItemText := ""
+        
+        if (selectedIndices.Length > 0) {
+            ; 对索引进行排序（升序）
+            sortedIndices := this.SimpleBubbleSort(selectedIndices.Clone())
+            
+            ; 获取最大的索引（排序后的最后一个）
+            maxIndex := sortedIndices[sortedIndices.Length]
+            
+            ; >>> 判断是否包含最后一项
+            containsLastItem := (maxIndex == totalItems)
+            
+            ; >>> 改进的智能选择逻辑（添加边界检查）
+            try {
+                if (containsLastItem) {
+                    ; 如果包含最后一项，向上找
+                    if (sortedIndices[1] > 1) {
+                        ; 尝试选择第一个选中项的前一项
+                        guiManager.listBox.Value := sortedIndices[1] - 1
+                        nextItemText := ListBoxHelper.GetListBoxText(guiManager.listBox)
+                    }
+                } else {
+                    ; 不包含最后一项，向下找
+                    guiManager.listBox.Value := maxIndex + 1
+                    nextItemText := ListBoxHelper.GetListBoxText(guiManager.listBox)
+                }
+            } catch {
+                ; 如果上述方法失败，尝试备选方案
+                try {
+                    ; 尝试选择第一个选中项的位置（如果可行）
+                    if (sortedIndices[1] <= guiManager.allSoftwareList.Length) {
+                        guiManager.listBox.Value := sortedIndices[1]
+                        nextItemText := ListBoxHelper.GetListBoxText(guiManager.listBox)
+                    }
+                } catch {
+                    ; 如果还失败，尝试第一个有效项
+                    for i in guiManager.allSoftwareList {
+                        try {
+                            guiManager.listBox.Value := A_Index
+                            nextItemText := ListBoxHelper.GetListBoxText(guiManager.listBox)
+                            break
+                        } catch {
+                            ; 继续尝试
+                        }
+                    }
+                }
+            }
+        }
+        
+        ; 逐个删除选中的软件
+        deletedCount := 0
+        for section in sectionsToDelete {
+            if (this.DeleteFromIniFile(guiManager, section)) {
+                deletedCount++
+            }
+        }
+        
+        ; 刷新列表
+        guiManager.RefreshList()
+        
+        ; 智能选择删除后的项（添加边界检查）
+        if (nextItemText != "" && guiManager.allSoftwareList.Length > 0) {
+            ; 使用新的选择方法，正确处理多选和单选
+            this.SelectItemInListBox(guiManager, nextItemText)
+        }
+        
+        ; 显示删除成功消息
+        if (deletedCount > 0) {
+            if (deletedCount = 1) {
+                this.ShowToolTip(guiManager, "删除成功！", 1500)
+            } else {
+                this.ShowToolTip(guiManager, "成功删除 " deletedCount " 个软件！", 1500)
+            }
+        }
+    }
+    
+    ; >>> 修改：处理单个删除
+    static HandleSingleDelete(guiManager, selectedText) {
         if (!guiManager.softwareMap.Has(selectedText)) {
             MessageManager.ShowError("未找到选中的软件信息","提示")
             return
@@ -125,89 +272,207 @@ class GuiEventHandlers {
             return
         }
 
-        ; >>> 获取当前选中项之后的一项（如果有的话）
-        nextItemText := ""
-        try {
-            ; 尝试获取下一项的文本
-            guiManager.listBox.Value := selectedIndex + 1
-            nextItemText := guiManager.listBox.Text
-            ; 恢复原来的选中
-            guiManager.listBox.Value := selectedIndex
-        } catch {
-            ; 没有下一项，尝试获取上一项
-            if (selectedIndex > 1) {
-                try {
-                    guiManager.listBox.Value := selectedIndex - 1
-                    nextItemText := guiManager.listBox.Text
-                    guiManager.listBox.Value := selectedIndex
-                } catch {
-                    ; 也没有上一项
-                }
+        ; >>> 获取选中索引（正确处理多选和单选的数据类型）
+        selectedIndices := ListBoxHelper.GetSelectedIndices(guiManager.listBox)
+        selectedIndex := 0
+        
+        if (selectedIndices.Length > 0) {
+            if (Type(selectedIndices[1]) = "Integer") {
+                selectedIndex := selectedIndices[1]
             }
         }
         
+        ; >>> 先获取总项目数
+        totalItems := guiManager.allSoftwareList.Length
+        if (totalItems == 0) {
+            return
+        }
+        
+        ; >>> 边界情况：如果只有一个项目
+        if (totalItems == 1) {
+            ; 从INI文件中删除
+            if (!this.DeleteFromIniFile(guiManager, software["section"])) {
+                MsgBox("删除失败，无法更新配置文件")
+                return
+            }
+            
+            ; 刷新列表（此时列表会为空）
+            guiManager.RefreshList()
+            
+            this.ShowToolTip(guiManager, "删除成功！列表已清空", 1500)
+            return  ; 不需要尝试选择任何项
+        }
+        
+        ; 判断是否是最后一个项目
+        isLastItem := (selectedIndex == totalItems)
+        
         ; 从INI文件中删除
-        if (!this.DeleteFromIniFile(guiManager,software["section"])) {
-            MessageManager.ShowError("删除失败，无法更新配置文件")
+        if (!this.DeleteFromIniFile(guiManager, software["section"])) {
+            MsgBox("删除失败，无法更新配置文件")
             return
         }
         
         ; 刷新列表
         guiManager.RefreshList()
 
-        ; >>> 删除后尝试选中之前找到的下一项/上一项
-        if (nextItemText != "") {
-            this.SelectItemByText(guiManager, nextItemText)
+        ; >>> 删除后尝试选中合适的项（添加边界检查）
+        if (guiManager.allSoftwareList.Length > 0) {  ; 确保删除后还有项目
+            if (isLastItem) {
+                ; 删除的是最后一个项目，选择上一个（倒数第二个）
+                try {
+                    guiManager.listBox.Value := totalItems - 1
+                } catch {
+                    ; 如果失败，尝试选择第一个
+                    try {
+                        guiManager.listBox.Value := 1
+                    } catch {
+                        ; 如果还失败，就什么都不做
+                    }
+                }
+            } else {
+                ; 删除的不是最后一个项目，尝试保持当前位置
+                ; 注意：删除后列表会缩短，所以selectedIndex可能超出范围
+                try {
+                    ; 先尝试选择原来的位置
+                    guiManager.listBox.Value := selectedIndex
+                } catch {
+                    ; 如果超出范围，选择最后一个
+                    try {
+                        ; 获取删除后的总项目数
+                        if (guiManager.allSoftwareList.Length > 0) {
+                            guiManager.listBox.Value := guiManager.allSoftwareList.Length
+                        }
+                    } catch {
+                        ; 如果还失败，就什么都不做
+                    }
+                }
+            }
         }
         
-        MessageManager.ShowSuccess("删除成功！")
+        this.ShowToolTip(guiManager, "删除成功！", 1500)
     }
-    
+
+
+    ; 简单的冒泡排序实现
+    static SimpleBubbleSort(arr) {
+        
+        ; 如果数组只有一个元素或为空，直接返回
+        if (arr.Length <= 1) {
+            return arr
+        }
+
+        n := arr.Length
+        Loop n {
+            swapped := false
+            Loop n - 1 {
+                j := A_Index
+                if (arr[j] > arr[j + 1]) {
+                    temp := arr[j]
+                    arr[j] := arr[j + 1]
+                    arr[j + 1] := temp
+                    swapped := true
+                }
+            }
+            if (!swapped) {
+                break
+            }
+        }
+        return arr
+    }
+
+    ; 在ListBox中选中指定文本的项
+    static SelectItemInListBox(guiManager, textToSelect) {
+        if (textToSelect = "" || guiManager.showingPrompt) {
+            return
+        }
+        
+        ; >>> 简化逻辑：直接遍历查找
+        ; 从第1项开始查找
+        index := 1
+        found := false
+        
+        while (true) {
+            try {
+                ; 临时选中该项以获取文本
+                guiManager.listBox.Value := index
+                
+                ; 获取选中项的文本
+                selectedText := ListBoxHelper.GetListBoxText(guiManager.listBox)
+                
+                ; 检查是否匹配
+                if (selectedText = textToSelect) {
+                    found := true
+                    ; 保持选中状态
+                    break
+                }
+                
+                index++
+            } catch {
+                break  ; 超出范围
+            }
+        }
+        
+        ; 如果没找到，清除选中状态
+        if (!found) {
+            try {
+                guiManager.listBox.Value := 0
+            } catch {
+                ; 如果清除失败，不做处理
+            }
+        }
+    }
+
     ; ==================== 刷新按钮事件处理 ====================
     
     ; 刷新按钮点击事件处理（特别注意userWasInSearchBox处理）
     static HandleRefreshClick(guiManager) {
-        ; >>> 保存刷新前的状态
-        searchBoxWasEmpty  := guiManager.searchBox.Value
-        wasInSearchBox  := guiManager.userWasInSearchBox
-        
-        ; >>> 执行刷新
-        guiManager.RefreshList()
-        
-        ; >>> 关键逻辑：如果应该跳过自动选中，确保不选中
-        if (wasInSearchBox && searchBoxWasEmpty = '') {
-            guiManager.listBox.Value := 0
+            ; >>> 保存刷新前的状态
+            searchBoxWasEmpty  := guiManager.searchBox.Value
+            wasInSearchBox  := guiManager.userWasInSearchBox
             
-            ; 尝试设置焦点
-            try {
-                ControlFocus(guiManager.searchBox, guiManager.gui)
-            } catch as e {
-                MessageManager.ShowError("ControlFocus失败: " e.Message)
+            ; >>> 执行刷新
+            guiManager.RefreshList()
+            
+            ; >>> 关键逻辑：如果应该跳过自动选中，确保不选中
+            if (wasInSearchBox && searchBoxWasEmpty = '') {
+                guiManager.listBox.Value := 0
+                
+                ; 尝试设置焦点
+                try {
+                    ControlFocus(guiManager.searchBox, guiManager.gui)
+                } catch as e {
+                    MessageManager.ShowError("ControlFocus失败: " e.Message)
+                }
+            } else {
+                ; >>> 只有条件不满足时才清除标记
+                guiManager.userWasInSearchBox := false
             }
-        } else {
-            ; >>> 只有条件不满足时才清除标记
-            guiManager.userWasInSearchBox := false
         }
-    }
     
     ; ==================== 定位按钮事件处理 ====================
     
     ; 定位按钮点击事件处理
     static HandleLocateClick(guiManager) {
-        ; >>> 使用PathUtils工具类的SmartLocate方法
-        if (guiManager.listBox.Value > 0) {
-            ; 如果选择了软件
-            selectedText := guiManager.listBox.Text
-            if (!guiManager.softwareMap.Has(selectedText)) {
-                return
-            }
-            software := guiManager.softwareMap[selectedText]
-            PathUtils.LocateFile(software["path"])
+        ; >>> 修改：按钮已被禁用时不会执行到这里，所以直接处理单选
+        ; 获取选中的文本
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
+        
+        ; 检查是否有选中项
+        if (selectedTexts.Length = 0) {
+            ; 没有选择软件，智能定位
+            PathUtils.SmartLocate("", guiManager.rootPath)
             return
         }
         
-        ; 没有选择软件，智能定位
-        PathUtils.SmartLocate("", guiManager.rootPath)
+        ; 取第一个选中项（如果是多选，按钮会被禁用，所以这里应该是单选）
+        selectedText := selectedTexts[1]
+        
+        if (!guiManager.softwareMap.Has(selectedText)) {
+            return
+        }
+        
+        software := guiManager.softwareMap[selectedText]
+        PathUtils.LocateFile(software["path"])
     }
     
     ; ==================== 设置按钮事件处理 ====================
@@ -1028,11 +1293,76 @@ class GuiEventHandlers {
     
     ; ==================== 打开软件事件处理 ====================
     
-    ; 打开软件事件处理
+    ; 打开软件事件处理（支持多选，保持原有选中状态）
     static HandleOpenSoftware(guiManager) {
-        selectedIndex := guiManager.listBox.Value
-        if (selectedIndex <= 0) {
-            MessageManager.ShowError("请先选择一个软件","提示")
+        ; 获取所有选中的软件
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
+        
+        ; 检查是否有选中项
+        if (selectedTexts.Length = 0) {
+            MessageManager.ShowError("请先选择软件","提示")
+            return
+        }
+        
+        ; 判断是单选还是多选
+        if (selectedTexts.Length == 1) {
+            ; 单选情况：使用原有的单选逻辑
+            this.HandleOpenSoftwareSingle(guiManager)
+            return
+        }
+        
+        ; 多选情况：打开所有选中软件，保持原有选中状态
+        openedCount := 0
+        failedCount := 0
+        
+        ; 逐个打开选中的软件
+        for text in selectedTexts {
+            if (!guiManager.softwareMap.Has(text)) {
+                failedCount++
+                continue
+            }
+            
+            software := guiManager.softwareMap[text]
+            path := software["path"]
+            
+            ; >>> 使用PathUtils工具类
+            result := PathUtils.RunProgram(path)
+            if (result = true) {
+                openedCount++
+            } else {
+                failedCount++
+            }
+        }
+        
+        ; 显示打开结果
+        if (openedCount > 0) {
+            if (openedCount == 1) {
+                this.ShowToolTip(guiManager, "已打开 1 个软件", 1500)
+            } else {
+                this.ShowToolTip(guiManager, "已打开 " openedCount " 个软件", 1500)
+            }
+        }
+        
+        ; >>> 重要：多选时不修改任何选中状态
+        
+        ; 如果有失败的情况，显示错误信息
+        if (failedCount > 0) {
+            if (failedCount == 1) {
+                MsgBox("有 1 个软件打开失败，请检查路径是否正确")
+            } else {
+                MsgBox("有 " failedCount " 个软件打开失败，请检查路径是否正确")
+            }
+        }
+    }
+    
+    ; 处理单选打开（保持原有逻辑）
+    static HandleOpenSoftwareSingle(guiManager) {
+        ; 获取选中的文本
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
+        
+        ; 检查是否有选中项
+        if (selectedTexts.Length = 0) {
+            MsgBox("请先选择一个软件")
             return
         }
 
@@ -1043,8 +1373,9 @@ class GuiEventHandlers {
             return
         }
         
-        selectedText := guiManager.listBox.Text
-
+        ; 取第一个选中项
+        selectedText := selectedTexts[1]
+        
         if (!guiManager.softwareMap.Has(selectedText)) {
             return
         }
@@ -1058,6 +1389,9 @@ class GuiEventHandlers {
             MessageManager.ShowError(result) ; 显示错误信息
             return
         }
+        
+        ; 显示打开成功提示
+        this.ShowToolTip(guiManager, "已打开 " software["name"], 1500)
         
         ; ==================== 打开软件后的业务 ====================
         if (guiManager.searchBox.Value != "") {
@@ -1078,13 +1412,13 @@ class GuiEventHandlers {
             }
         } else {
             ; >>> 情况2：搜索框没值，保持选中刚才打开的项
-            this.SelectItemInListBox(guiManager,software["name"])
+            this.SelectItemByText(guiManager, software["name"])
         }
     }
-    
     ; ==================== 搜索框事件处理 ====================
     
     ; 搜索框获得焦点事件处理
+    
     static HandleSearchBoxFocus(guiManager) {
         guiManager.searchBoxHasFocus := true
         guiManager.userWasInSearchBox := true
@@ -1311,7 +1645,7 @@ class GuiEventHandlers {
         ; >>> 保存旧的选择信息
         oldSelectedText := ""
         isEditingMode := (guiManager.editMode = "edit")
-        if (isEditingMode && guiManager.listBox.Value > 0) {
+        if (isEditingMode && ListBoxHelper.GetListBoxText(guiManager.listBox) != "") {
             oldSelectedText := guiManager.listBox.Text
         }
 
@@ -1632,47 +1966,33 @@ class GuiEventHandlers {
         guiManager.itemToSelectAfterRefresh := ""
     }
     
-    ; 根据文本选择列表项
+    ; >>> 修改：根据文本选择列表项（处理单选和多选的数据类型）
     static SelectItemByText(guiManager, textToSelect) {
         if (textToSelect = "" || guiManager.showingPrompt) {
             return
         }
-        
-        ; 遍历所有软件项，查找匹配的文本
-        for i in guiManager.allSoftwareList {
-            if (i["name"] = textToSelect) {
-                ; 找到了匹配的项，现在需要在ListBox中找到它
-                this.SelectItemInListBox(guiManager, textToSelect)
-                return
-            }
-        }
-    }
-    
-    ; 在ListBox中选中指定文本的项
-    static SelectItemInListBox(guiManager, textToSelect) {
-        if (textToSelect = "" || guiManager.showingPrompt) {
-            return
-        }
-        
-        ; 先检查当前选中的项
-        if (guiManager.listBox.Value > 0 && guiManager.listBox.Text = textToSelect) {
-            return  ; 已经是选中的项
-        }
-        
-        ; 从第1项开始查找
-        index := 1
+
+        ; 初始化 found 变量
         found := false
         
-        while (true) {
+        ; 遍历ListBox中的所有项
+        for index in guiManager.allSoftwareList {
             try {
-                guiManager.listBox.Value := index
-                if (guiManager.listBox.Text = textToSelect) {
+                ; 选中当前项
+                guiManager.listBox.Value := A_Index
+                
+                ; 获取选中项的文本
+                currentText := ListBoxHelper.GetListBoxText(guiManager.listBox)
+                
+                ; 检查是否匹配
+                if (currentText = textToSelect) {
+                    ; 找到匹配项，保持选中状态
                     found := true
-                    break  ; 找到了
+                    break
                 }
-                index++
             } catch {
-                break  ; 超出范围
+                ; 继续下一项
+                continue
             }
         }
         
@@ -1685,6 +2005,7 @@ class GuiEventHandlers {
             }
         }
     }
+
     
     ; 显示工具提示的方法
     static ShowToolTip(guiManager, message, duration := 1500) {
