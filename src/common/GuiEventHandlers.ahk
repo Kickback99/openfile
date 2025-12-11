@@ -1,5 +1,3 @@
-#Include "./PathUtils.ahk"
-#Include "./IniTools.ahk"
 ; ==============================
 ; GuiEventHandlers.ahk
 ; GUI事件处理工具类
@@ -153,6 +151,11 @@ class GuiEventHandlers {
         moreGui := Gui()
         moreGui.Title := "更多操作 - " guiManager.configType
         moreGui.Opt("+AlwaysOnTop")
+
+        ; 移除最小化按钮
+        try {
+           WinSetStyle("-0x00020000", moreGui.Hwnd)
+        }
         
         ; 设置字体
         moreGui.SetFont("s9", "JetBrains Mono")
