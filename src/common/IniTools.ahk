@@ -1,6 +1,6 @@
 ; ============================================================
 ; IniTools.ahk
-; INI 文件处理工具类
+; INI文件处理工具类
 ; ============================================================
 class IniTools {
 
@@ -16,11 +16,11 @@ class IniTools {
         return result
     }
 
-    ; ==================== 更新 INI 文件 ====================
+    ; ==================== 更新INI文件 ====================
 
     static UpdateIniFileWithRoot(guiManager, name, path, section, editMode) {
         try {
-            ; 读取现有 INI 内容
+            ; 读取现有INI内容
             iniContent := ""
             if (FileExist(guiManager.configPath)) {
                 iniContent := FileRead(guiManager.configPath)
@@ -55,7 +55,7 @@ class IniTools {
                 if (editMode = "create" || editMode = "edit") {
                     ; 使用用户输入的大小写
                     rootContent := "[" section . "]`r`n"
-                    ; name 使用与 section 相同的大小写
+                    ; name使用与section相同的大小写
                     rootContent .= "name=" section . "`r`n"
                     rootContent .= "path=" path . "`r`n"
                 }
@@ -71,7 +71,7 @@ class IniTools {
                         iniContent := rootContent . "`r`n" . iniContent
                     }
                 } else {
-                    ; 没有 Root，添加到文件顶部
+                    ; 没有Root，添加到文件顶部
                     iniContent := rootContent . (iniContent != "" ? "`r`n" : "") . iniContent
                 }
 
@@ -96,15 +96,15 @@ class IniTools {
 
                 if (editMode = "create") {
                     if (sectionExists) {
-                        ; section 已存在，编辑模式处理
+                        ; section已存在，编辑模式处理
                         escapedSection := this.RegExEscape(existingSectionName)
                         oldSectionPattern := "\[" escapedSection "\][\s\S]*?(?=\n\[|$)"
                         if (RegExMatch(iniContent, oldSectionPattern, &match)) {
-                            ; 构建新的 section 内容
+                            ; 构建新的section内容
                             newSectionContent := "[" section . "]`r`n"
                             newSectionContent .= "name=" name . "`r`n"
                             newSectionContent .= "path=" path . "`r`n"
-
+                            
                             iniContent := StrReplace(iniContent, match[0], newSectionContent)
                         } else {
                             ; 如果没找到，追加到文件末尾
@@ -112,7 +112,7 @@ class IniTools {
                             if (iniContent != "") {
                                 iniContent .= "`r`n`r`n"
                             }
-
+                            
                             iniContent .= "[" section . "]`r`n"
                             iniContent .= "name=" name . "`r`n"
                             iniContent .= "path=" path . "`r`n"
@@ -124,7 +124,7 @@ class IniTools {
                         if (iniContent != "") {
                             iniContent .= "`r`n`r`n"
                         }
-
+                        
                         iniContent .= "[" section . "]`r`n"
                         iniContent .= "name=" name . "`r`n"
                         iniContent .= "path=" path . "`r`n"
@@ -136,11 +136,11 @@ class IniTools {
                     escapedOldSection := this.RegExEscape(guiManager.currentEditSection)
                     oldSectionPattern := "\[" escapedOldSection "\][\s\S]*?(?=\n\[|$)"
                     if (RegExMatch(iniContent, oldSectionPattern, &match)) {
-                        ; 构建新的 section 内容
+                        ; 构建新的section内容
                         newSectionContent := "[" section . "]`r`n"
                         newSectionContent .= "name=" name . "`r`n"
                         newSectionContent .= "path=" path . "`r`n"
-
+                        
                         iniContent := StrReplace(iniContent, match[0], newSectionContent)
                     } else {
                         ; 如果没找到，当作创建处理
@@ -148,7 +148,7 @@ class IniTools {
                         if (iniContent != "") {
                             iniContent .= "`r`n`r`n"
                         }
-
+                        
                         iniContent .= "[" section . "]`r`n"
                         iniContent .= "name=" name . "`r`n"
                         iniContent .= "path=" path . "`r`n"
@@ -177,7 +177,7 @@ class IniTools {
     ; 从 INI 文件中删除 section
     static DeleteFromIniFile(guiManager, sectionName) {
         try {
-            ; 读取整个 INI 文件
+            ; 读取整个INI文件
             content := FileRead(guiManager.configPath)
 
             ; 构建正则表达式匹配要删除的 section
@@ -185,7 +185,7 @@ class IniTools {
             pattern := "\[" escapedSectionName "\][\s\S]*?(?=\n\[|$)"
 
             if (RegExMatch(content, pattern, &match)) {
-                ; 删除该 section
+                ; 删除该section
                 content := StrReplace(content, match[0] "`r`n", "")
                 content := StrReplace(content, match[0], "")
 
@@ -209,7 +209,7 @@ class IniTools {
 
     ; ==================== 格式化与清理 ====================
 
-    ; 删除 INI 文件中的注释（以;开头的行）
+    ; 删除INI文件中的注释（以;开头的行）
     static RemoveCommentsFromIniFile(filePath) {
         try {
             if (!FileExist(filePath)) {
@@ -241,12 +241,12 @@ class IniTools {
 
             return true
         } catch as e {
-            ; 静默失败，返回 false
+            ; 静默失败，返回false
             return false
         }
     }
 
-    ; 静态方法：格式化 INI 文件内容
+    ; 静态方法：格式化INI文件内容
     static FormatIniContent(iniContent) {
         ; 如果内容为空，直接返回
         if (iniContent = "") {
@@ -291,7 +291,7 @@ class IniTools {
         this.RemoveCommentsFromIniFile(configPath)
 
         try {
-            ; 读取当前 INI 文件内容
+            ; 读取当前INI文件内容
             content := FileRead(configPath)
 
             ; 格式化内容
@@ -313,7 +313,7 @@ class IniTools {
     ; 文件名校验
     static ValidateFileName(filePath, expectedConfigType) {
         SplitPath(filePath, , , , &fileNameNoExt)
-        ; 严格检查：文件名必须完全等于当前 configType
+        ; 严格检查：文件名必须完全等于当前configType
         if (fileNameNoExt != expectedConfigType) {
             MessageManager.ShowError(
                 "请选择 " expectedConfigType ".txt 文件进行操作！`n`n"
@@ -325,7 +325,7 @@ class IniTools {
         return true
     }
 
-    ; 智能校验 TXT 文件内容格式
+    ; 智能校验TXT文件内容格式
     static ValidateTxtContent(content, skipFirstPairCheck := false, skipMsgBox := false, skipDuplicateCheck := false) {
         ; 分割成行并过滤空行
         lines := StrSplit(content, "`n", "`r")
@@ -350,7 +350,7 @@ class IniTools {
             if (!skipMsgBox) {
                 MessageManager.ShowError(
                   "文件格式不正确！`n`n"
-                    . "有效内容行数应为偶数（名称+路径成对出现）", "格式错误"
+                    . "有效内容行数应为偶数（名称+路径成对出现）", "格式错误"  
                 )
             }
             return false
@@ -359,7 +359,7 @@ class IniTools {
         ; 逐对检查：奇数行（名称）+ 偶数行（路径）
         for i, line in nonEmptyLines {
             if (!skipFirstPairCheck) {
-                if (Mod(i, 2) = 1) {  ; 奇数行：第 1、3、5...行（i=1,3,5...）
+                if (Mod(i, 2) = 1) {  ; 奇数行：第1、3、5...行（i=1,3,5...）
                     ; 检查是否是合法的文件名
                     if (RegExMatch(line, '[\\/:*?"<>|]')) {
                         if (!skipMsgBox) {
@@ -381,7 +381,7 @@ class IniTools {
                         }
                         return false
                     }
-                } else {  ; 偶数行：第 2、4、6...行（i=2,4,6...）
+                } else {  ; 偶数行：第2、4、6...行（i=2,4,6...）
                     ; 检查是否是合法的路径
                     if (!this.IsValidPath(line, i, skipMsgBox)) {
                         return false
@@ -533,7 +533,7 @@ class IniTools {
 
     ; ==================== 正则工具 ====================
 
-    ; 正则表达式转义函数（转义 4 个）
+    ; 正则表达式转义函数(转义4个)
     static RegExEscape(str) {
         ; 只转义 ^ + ( ) 这四个字符
         specialChars := "^+()"
@@ -548,7 +548,7 @@ class IniTools {
         return result
     }
 
-    ; 正则表达式转义函数（转义 12 个）
+    ; 正则表达式转义函数(转义12个)
     static RegExEscapeFull(str) {
         ; 对正则表达式特殊字符进行转义
         specialChars := "\.*?+[{|()^$"
@@ -563,9 +563,9 @@ class IniTools {
         return result
     }
 
-    ; ==================== 重复和 section 校验 ====================
+    ; ==================== 重复和section校验 ====================
 
-    ; 检查 TXT 文件中的基本重复（奇数行名称重复）
+    ; 检查TXT文件中的基本重复（奇数行名称重复）
     static ValidateNameDuplicates(txtContent) {
         lines := StrSplit(txtContent, "`n", "`r")
         nonEmptyLines := []
@@ -614,7 +614,7 @@ class IniTools {
                 oldIndex := sectionMap[sectionName]
                 result[oldIndex] := item
             } else {
-                ; 新 section，添加到结果中
+                ; 新section，添加到结果中
                 result.Push(item)
                 sectionMap[sectionName] := result.Length
             }
@@ -660,7 +660,7 @@ class IniTools {
                         allItems.Push(item)
                     } else {
                         sectionName := getSmartSectionNameFunc.Call(itemName, itemPath)
-
+                        
                         item["section"] := sectionName
                         item["name"] := itemName
                         item["path"] := itemPath

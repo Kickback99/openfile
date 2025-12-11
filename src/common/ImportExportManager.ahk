@@ -62,10 +62,10 @@ class ImportExportManager {
         }
     }
 
-    ; 导出为 TXT 格式
+    ; 导出为TXT格式
     ExportToTxt(filePath) {
         try {
-            ; 读取 INI 文件（自动处理编码）
+            ; 读取INI文件（自动处理编码）
             content := FileRead(this.configPath)
             txtContent := this.IniToTxt(content)
 
@@ -100,7 +100,7 @@ class ImportExportManager {
             ; 解析 section
             if (SubStr(line, 1, 1) = "[") {
                 currentSection := SubStr(line, 2, InStr(line, "]") - 2)
-                ; 重置当前条目的 name 和 path
+                ; 重置当前条目的name和path
                 currentName := ""
                 currentPath := ""
                 continue
@@ -114,7 +114,7 @@ class ImportExportManager {
 
                 if (key = "name") {
                     currentName := value
-                    ; 重要：如果 name 与 section 不一致，使用 section 名
+                    ; 重要：如果name与section不一致，使用section名
                     /* if (currentSection != "" && currentName != currentSection) {
                         currentName := currentSection
                     } */
@@ -142,7 +142,7 @@ class ImportExportManager {
             ; 验证条目数据
             tempTxtForItem := item["name"] "`r`n" item["path"]
             if (IniTools.ValidateTxtContent(tempTxtForItem, true,true,true)) {
-                ; 导出时使用 name 字段
+                ; 导出时使用name字段
                 txtLines.Push(item["name"])
                 txtLines.Push(item["path"])
                 txtLines.Push("")  ; 空行分隔
@@ -198,7 +198,7 @@ class ImportExportManager {
     ; 从 TXT 导入 支持 Root 导入的 TXT 导入函数
     ImportFromTxtWithRoot(filePath) {
         try {
-            ; 读取 TXT 文件
+            ; 读取TXT文件
             content := FileRead(filePath, "UTF-8")
 
             ; 使用增强的 ValidateTxtContent（包含重复校验）
@@ -207,11 +207,11 @@ class ImportExportManager {
             }
 
             ; 使用新的智能解析方法
-            parseResult := IniTools.ParseTxtContentWithSmartSections(content,
+            parseResult := IniTools.ParseTxtContentWithSmartSections(content, 
                 objBindMethod(ImportExportManager, "GetSmartSectionName"))
 
             if (!parseResult.success) {
-                ; 错误信息已经在 ValidateTxtContent 中显示
+                ; 错误信息已经在ValidateTxtContent中显示
                 return false
             }
 
@@ -244,14 +244,14 @@ class ImportExportManager {
                     line := Trim(A_LoopField)
 
                     if (SubStr(line, 1, 1) = "[") {
-                        ; 如果之前解析的是 Root，保存它
+                        ; 如果之前解析的是Root，保存它
                         if (currentSection != "" && StrLower(currentSection) = "root") {
                             existingRootItem["section"] := currentSection
                             existingRootItem["name"] := currentName
                             existingRootItem["path"] := currentPath
                             existingRootItem["isRoot"] := true
                         }
-
+                        
                         currentSection := SubStr(line, 2, InStr(line, "]") - 2)
                         currentName := ""
                         currentPath := ""
@@ -259,7 +259,7 @@ class ImportExportManager {
                         pos := InStr(line, "=")
                         key := Trim(SubStr(line, 1, pos - 1))
                         value := Trim(SubStr(line, pos + 1))
-
+                        
                         if (key = "name") {
                             currentName := value
                         } else if (key = "path") {
@@ -282,10 +282,10 @@ class ImportExportManager {
             finalRootItem := Map()
 
             if (txtRootItem.Count > 0) {
-                ; 情况 1：TXT 有 Root → 使用 TXT 的 Root
+                ; 情况1：TXT有Root → 使用TXT的Root
                 finalRootItem := txtRootItem
             } else if (existingRootItem.Count > 0) {
-                ; 情况 2：TXT 无 Root，但原 INI 有 Root → 保留原 Root
+                ; 情况2：TXT无Root，但原INI有Root → 保留原Root
                 finalRootItem := existingRootItem
             }
 
@@ -337,7 +337,7 @@ class ImportExportManager {
         }
     }
 
-    ; Range 函数，添加步长参数
+    ; Range函数，添加步长参数
     static Range(start, end, step := 1) {
         arr := []
         if (step > 0) {
@@ -395,7 +395,7 @@ class ImportExportManager {
     ; 从 TXT 追加
     AppendFromTxtWithRoot(filePath,guiManager :="") {
         try {
-            ; 读取现有 INI 内容
+            ; 读取现有INI内容
             oldContent := FileRead(this.configPath)
 
             ; 读取要追加的 TXT 内容
@@ -412,7 +412,7 @@ class ImportExportManager {
 
             ; 检查是否解析成功（空数据可能表示校验失败）
             if (parsedData["sections"].Length = 0 && parsedData["root"].Count = 0) {
-                ; ParseTxtContentWithRoot 内部已经处理了错误信息
+                ; ParseTxtContentWithRoot内部已经处理了错误信息
                     MessageManager.ShowError("TXT内容解析失败，可能存在section重复问题")
                     return false
             }
@@ -444,7 +444,7 @@ class ImportExportManager {
 
         ; 如果提供了 TXT 内容，解析并获取最后一个文件名称
         if (txtContent != "") {
-            ; 解析 TXT 内容，获取最后一个非 Root 的 section 名称
+            ; 解析TXT内容，获取最后一个非Root的section名称
             parsedData := ImportExportManager.ParseTxtContentWithRoot(txtContent)
             newSections := parsedData["sections"]
 
@@ -490,13 +490,13 @@ class ImportExportManager {
         return result
     }
 
-    ; 用于 ContextMenuManager 调用
+    ; 用于ContextMenuManager调用
     static ParseTxtContentWithRootLegacy(txtContent) {
         result := Map()
         sections := []
         rootItem := Map()
 
-        ; 解析 TXT 内容
+        ; 解析TXT内容
         lines := StrSplit(txtContent, "`n", "`r")
         nonEmptyLines := []
 
@@ -523,7 +523,7 @@ class ImportExportManager {
                     if (StrLower(itemName) = "root") {
                         ; 保持原始大小写
                         item["section"] := itemName
-                        item["name"] := itemName  ; name 与 section 保持一致
+                        item["name"] := itemName  ; name与section保持一致
                         item["path"] := itemPath
                         rootItem := item
                     } else {
@@ -531,7 +531,7 @@ class ImportExportManager {
                         ; 处理 section-智能去除扩展名
                         sectionName := ImportExportManager.GetSmartSectionName(itemName, itemPath)
                         item["section"] := sectionName
-                        item["name"] := itemName    ; name 保持 TXT 中的原样（有扩展名）
+                        item["name"] := itemName    ; name保持TXT中的原样（有扩展名）
                         item["path"] := itemPath
                         sections.Push(item)
                     }
@@ -567,12 +567,12 @@ class ImportExportManager {
 
             if (SubStr(line, 1, 1) = "[") {
                 if (currentSection != "") {
-                    ; 保存上一个 section 的信息
+                    ; 保存上一个section的信息
                     oldSectionLines[currentSection] := Map("start", sectionStartLine, "end", currentLineNumber - 1)
                 }
 
                 currentSection := SubStr(line, 2, InStr(line, "]") - 2)
-                ; 以小写为 key 存储，值为原始大小写
+                ; 以小写为key存储，值为原始大小写
                 oldSections[StrLower(currentSection)] := currentSection
                 sectionStartLine := currentLineNumber
             }
@@ -585,11 +585,11 @@ class ImportExportManager {
 
         ; 处理 Root：如果有新的 Root，就替换或添加
         if (newRoot.Count > 0) {
-            ; 如果旧内容中有 Root（不区分大小写），先移除
+            ; 如果旧内容中有Root（不区分大小写），先移除
             rootKey := StrLower("Root")
             if (oldSections.Has(rootKey)) {
                 rootSectionName := oldSections[rootKey]
-                ; 移除 Root section
+                ; 移除Root section
                 oldContent := ImportExportManager.RemoveSectionByLines(oldContent, oldSectionLines[rootSectionName]["start"], oldSectionLines[rootSectionName]["end"])
                 ; 从映射中移除
                 oldSections.Delete(rootKey)
@@ -598,17 +598,17 @@ class ImportExportManager {
             ; 将新的 Root section 添加到文件顶部
             rootContent := ""
             if (oldContent = "" || Trim(oldContent) = "") {
-                ; 如果是空文件，直接添加 Root
+                ; 如果是空文件，直接添加Root
                 rootContent := "[" newRoot["section"] . "]`r`n"
                 rootContent .= "name=" newRoot["name"] . "`r`n"
                 rootContent .= "path=" newRoot["path"] . "`r`n"
 
                 if (newSections.Length > 0) {
-                    rootContent .= "`r`n"  ; 如果有其他 section，加空行
+                    rootContent .= "`r`n"  ; 如果有其他section，加空行
                 }
                 oldContent := rootContent
             } else {
-                ; 在非空文件中插入 Root 到顶部
+                ; 在非空文件中插入Root到顶部
                 rootContent := "[" newRoot["section"] . "]`r`n"
                 rootContent .= "name=" newRoot["name"] . "`r`n"
                 rootContent .= "path=" newRoot["path"] . "`r`n"
@@ -632,10 +632,10 @@ class ImportExportManager {
             }
 
             if (existingSectionName != "") {
-                ; 替换现有 section
+                ; 替换现有section
                 oldContent := ImportExportManager.ReplaceSection(oldContent, existingSectionName, newSection)
             } else {
-                ; 追加新的 section
+                ; 追加新的section
                 oldContent := ImportExportManager.AppendSection(oldContent, newSection)
             }
         }
@@ -648,7 +648,7 @@ class ImportExportManager {
         return oldContent . "`r`n"
     }
 
-    ; 按行号移除 section
+    ; 按行号移除section
     static RemoveSectionByLines(content, startLine, endLine) {
         lines := StrSplit(content, "`n", "`r")
         newLines := []
@@ -667,14 +667,14 @@ class ImportExportManager {
         return result
     }
 
-    ; 支持不区分大小写的 section 名称
+    ; 支持不区分大小写的section名称
     static ReplaceSection(content, existingSectionName, newSectionData) {
-        ; 构建正则表达式，匹配原始大小写的 section
+        ; 构建正则表达式，匹配原始大小写的section
         escapedSectionName := RegExReplace(existingSectionName, "[.*+?^${}()|[\]\\]", "\$0")
         pattern := "\[" escapedSectionName "\][\s\S]*?(?=\n\[|$)"
 
         if (RegExMatch(content, pattern, &match)) {
-            ; 构建新的 section 内容
+            ; 构建新的section内容
             newSectionContent := "[" newSectionData["section"] . "]`r`n"
             newSectionContent .= "name=" newSectionData["name"] . "`r`n"
             newSectionContent .= "path=" newSectionData["path"] . "`r`n"
@@ -694,7 +694,7 @@ class ImportExportManager {
         return content
     }
 
-    ; 辅助函数：追加 section 到文件末尾
+    ; 辅助函数：追加section到文件末尾
     static AppendSection(content, sectionData) {
         ; 清理末尾多余的空行
         content := RTrim(content, "`r`n")
@@ -714,7 +714,7 @@ class ImportExportManager {
 
     ; 处理用户取消选择的通用逻辑
     static HandleUserCancel(guiManager, selectedTexts) {
-        ; 恢复 Owner 关系
+        ; 恢复Owner关系
         if(guiManager.isTop){
             guiManager.gui.Opt("-OwnDialogs")
         }
@@ -770,7 +770,7 @@ class ImportExportManager {
         ; 如果有选中的文件，进行处理
         if (fileDialog.Length > 0) {
             ; 复用 HandleCreateClick 的处理逻辑
-            ; 重新激活我们的 GUI 窗口
+            ; 重新激活我们的GUI窗口
             WinActivate(guiManager.gui.Hwnd)
             Sleep(100)
 
@@ -800,9 +800,9 @@ class ImportExportManager {
         return false
     }
 
-    ; ==================== 处理 section-智能去除扩展名 ====================
+    ; ==================== 处理section-智能去除扩展名 ====================
 
-    ; 智能判断是否去除扩展名的方法（与 HandleNameChangeForEditGui 逻辑一致）
+    ; 智能判断是否去除扩展名的方法（与HandleNameChangeForEditGui逻辑一致）
     static ShouldRemoveExtension(itemName, itemPath) {
         ; 检查路径是否为空
         if (itemPath = "") {
@@ -833,7 +833,7 @@ class ImportExportManager {
 
         ; 如果应该去除扩展名
         if (ImportExportManager.ShouldRemoveExtension(itemName, itemPath)) {
-            ; 去除扩展名作为 section
+            ; 去除扩展名作为section
             dotPos := InStr(itemName, ".", , -1)
             if (dotPos > 1) {
                 return SubStr(itemName, 1, dotPos - 1)

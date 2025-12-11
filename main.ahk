@@ -34,7 +34,7 @@ RegisterMainShortcut() {
 ; 显示管理器函数
 ShowGuiManager(configType) {
 
-   ; 检查是否已有同名的且是 gui 类型的窗口
+   ; 检查是否已有同名的且是gui类型的窗口
     ; WinExist 标题匹配区分大小写，须用显示名
     windowTitle := ConfigManager.GetDisplayType(configType)
     hwnd := WinExist(windowTitle " ahk_class AutoHotkeyGUI")
@@ -42,7 +42,7 @@ ShowGuiManager(configType) {
     if (hwnd) {
         ; 如果窗口存在，激活它
         WinActivate(hwnd)
-
+        
         ; 如果窗口是最小化状态，恢复它
         if (WinGetMinMax(hwnd) = -1) {  ; -1 表示最小化
             WinRestore(hwnd)
@@ -53,14 +53,14 @@ ShowGuiManager(configType) {
 
         if(isTop){
             try{
-                GuiManager.gui.Opt("+AlwaysOnTop") ; 置顶
+                GuiManager.gui.Opt("+AlwaysOnTop") ; 置顶 
             }
         }else{
             try{
                 GuiManager.gui.Opt("-AlwaysOnTop") ; 取消置顶
             }
         }
-
+        
         ; 强制设置焦点到搜索框
         try {
             WinWaitActive(hwnd)
@@ -90,13 +90,13 @@ ShowGuiManager(configType) {
     guiMgr.ShowFileList()
 }
 
-; win+q 事件
+; win+q事件
 MainHotkeyHandler(*) {
-    ; 检查是否有 GUI 窗口在前台
+    ; 检查是否有GUI窗口在前台
     activeGuiHwnd := WinActive("ahk_class AutoHotkeyGUI")
 
     if (activeGuiHwnd) {
-        ; 如果有 GUI 窗口在前台，最小化它
+        ; 如果有GUI窗口在前台，最小化它
         WinMinimize(activeGuiHwnd)
     } else {
         ; 没有 GUI 窗口在前台，显示 GUI
