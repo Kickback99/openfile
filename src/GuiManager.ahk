@@ -64,10 +64,10 @@ class GuiManager {
         ; 标记是否为多选状态
         this._isMultiSelect := false
 
-        ; 防抖定时器相关属性
-        this.debounceTimer := 0
-        this.pendingFoundCount := 0
-        this.pendingSearchText := ""
+        ; >>> 新增：右键菜单相关属性
+        this.contextMenu := ""
+        this.moveMenu := ""
+        this.targetConfigs := []  ; 存储可移动的目标配置
 
     }
     
@@ -115,6 +115,12 @@ class GuiManager {
         
         ; 添加文件到ListBox
         this.PopulateFileList()
+
+        ; >>> 新增：创建右键菜单
+        this.CreateContextMenu()
+        
+        ; >>> 新增：绑定ListBox右键事件
+        this.listBox.OnEvent("ContextMenu", (*) => this.ShowContextMenu())
         
         ; 添加按钮区域
         this.gui.Add("Text", "w500", "双击列表项或点击按钮操作")
@@ -240,12 +246,6 @@ class GuiManager {
 
     ; 统一关闭函数
     CloseGui() {
-        ; 清理防抖定时器
-        if (this.debounceTimer) {
-            SetTimer(this.debounceTimer, 0)
-            this.debounceTimer := 0
-        }
-
         ; 取消消息监听
         if (this.messageListener) {
             OnMessage(0x47, this.messageListener, 0)  ; 取消监听
@@ -345,6 +345,57 @@ class GuiManager {
             this.listBox.Value := 1
         } */
 
+    }
+
+    ; ==================== 右键菜单功能方法 ====================
+
+    ; >>> 新增：创建上下文菜单
+    CreateContextMenu() {
+        ; 创建主菜单
+        this.contextMenu := Menu()
+        
+        ; 添加"移动到..."子菜单
+        this.moveMenu := Menu()
+        
+        ; 获取所有可用的配置类型（排除当前类型）
+        this.targetConfigs := ConfigManager.GetAllConfigTypes(this.configType)
+       
+        ; 只有在有可移动目标时才添加"移动到..."菜单
+        if (this.targetConfigs.Length > 0) {
+            ; 创建"移动到..."子菜单
+            this.moveMenu := Menu()
+            
+            ; 为每个目标配置创建子菜单项
+            for index, configType in this.targetConfigs {
+                ; >>> 修正：使用闭包捕获循环变量
+                this.moveMenu.Add(configType, ((config) => (*) => this.HandleMenuMove(config))(configType))
+            }
+            this.contextMenu.Add("移动到...", this.moveMenu)
+        }
+
+    }
+    
+    ; >>> 新增：显示上下文菜单
+    ShowContextMenu() {
+        ; 检查是否有选中项，如果没有，不显示菜单
+        selectedTexts := ListBoxHelper.GetSelectedTexts(this.listBox)
+        if (selectedTexts.Length = 0) {
+            return
+        }
+        
+        ; 检查是否显示提示信息，如果是，不显示菜单
+        if (this.showingPrompt) {
+            return
+        }
+        
+        ; 显示菜单
+        this.contextMenu.Show()
+    }
+    
+    ; >>> 新增：处理菜单移动
+    HandleMenuMove(targetConfigType) {
+        ; 直接调用GuiEventHandlers的移动方法
+        GuiEventHandlers.HandleMoveTo(this, targetConfigType)
     }
 
     ; ==================== 核心功能方法 ====================
@@ -611,20 +662,6 @@ class GuiManager {
         ; 如果原来的位置不匹配，使用SelectItemByText查找
         GuiEventHandlers.SelectItemByText(this, textToSelect)
     }
-
-    ; 执行实际的焦点转移（由防抖定时器调用）
-    ExecuteFocusTransfer() {
-        ; 检查条件：待转移的foundCount满足阈值，且搜索框文本没有变化
-        if (this.pendingFoundCount > 0 && 
-            WindowConstants.ShouldFocusListBox(this.pendingFoundCount) &&
-            this.searchBox.Value = this.pendingSearchText) {
-            this.listBox.Focus()
-        }
-        ; 清理待处理数据
-        this.pendingFoundCount := 0
-        this.pendingSearchText := ""
-        this.debounceTimer := 0
-    }
     
     ; 处理搜索框变化（简化且高效）
     ; 搜索框变化时也更新按钮状态
@@ -632,16 +669,6 @@ class GuiManager {
         ; 用户正在搜索框中操作，设置标记
         this.userWasInSearchBox := true
         searchText := Trim(this.searchBox.Value)
-
-        ; 清除之前的防抖定时器
-        if (this.debounceTimer) {
-            SetTimer(this.debounceTimer, 0)
-            this.debounceTimer := 0
-        }
-        
-        ; 同时清除待处理数据，防止过期定时器执行
-        this.pendingFoundCount := 0
-        this.pendingSearchText := ""
         
         ; 如果搜索文本为空
         if (searchText = "") {
@@ -700,21 +727,12 @@ class GuiManager {
             ; 有匹配项，选择第一项
             this.listBox.Value := 1
             this.showingPrompt := false
-
-            ; 保存待处理数据，启动防抖定时器
-            this.pendingFoundCount := foundCount
-            this.pendingSearchText := searchText
-
-            ; 创建防抖定时器（1秒后执行焦点转移）
-            this.debounceTimer := ObjBindMethod(this, "ExecuteFocusTransfer")
-            SetTimer(this.debounceTimer, -WindowConstants.SEARCH_DEBOUNCE_DELAY)
         } else {
             ; 没有匹配项，显示提示
             this.listBox.Add([">>> 未找到匹配项 <<<"])
             this.showingPrompt := true
             this.listEmptyPrompt := false  ; 这不是列表为空的情况
-            this.pendingFoundCount := 0
-            this.pendingSearchText := ""
+            ; 不设置选中项
         }
     }
 
