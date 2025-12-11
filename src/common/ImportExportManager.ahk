@@ -28,9 +28,9 @@ class ImportExportManager {
         }
 
         ; >>> 使用统一的文件名校验
-        if (!IniTools.ValidateFileName(exportPath, this.configType)) {
+        /* if (!IniTools.ValidateFileName(exportPath, this.configType)) {
             return false
-        }
+        } */
         
         ; 导出配置
         if (this.ExportToTxt(exportPath)) {
@@ -168,9 +168,9 @@ class ImportExportManager {
         }
 
         ; >>> 使用统一的文件名校验
-        if (!IniTools.ValidateFileName(importPath, this.configType)) {
+        /* if (!IniTools.ValidateFileName(importPath, this.configType)) {
             return false
-        }
+        } */
         
         result := this.ImportFromTxtWithRoot(importPath)
         if (result) {
@@ -322,15 +322,15 @@ class ImportExportManager {
         }
 
         ; >>> 使用统一的文件名校验
-        if (!IniTools.ValidateFileName(appendPath, this.configType)) {
+        /* if (!IniTools.ValidateFileName(appendPath, this.configType)) {
             return false
-        }
+        } */
 
         result := this.AppendFromTxtWithRoot(appendPath)
         if (result) {
-            MsgBox("追加成功！")
+            SetTimer(() => MsgBox("追加成功！"), -100)  ; 100ms后显示
         } else {
-            MsgBox("追加失败！")
+            SetTimer(() => MsgBox("追加失败！"), -100)
         }
         return result
     }
