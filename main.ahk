@@ -39,3 +39,24 @@ ShowManager(configType) {
 #q::{
     ShowManager('openfile')
 }
+
+!c::{
+    IB := InputBox('请输入内容','AHKScript','w440 h150')
+
+    IBv := IB.value 
+
+    if(IB.Result == 'Cancel'){
+        return
+    }
+
+    ;openfile
+    switch IBv{
+        case 'openfile':
+        ShowManager(IBv)
+        case 'ai':
+        ShowManager(IBv)
+        case 'developer':
+        ShowManager(IBv)   
+    }
+
+}

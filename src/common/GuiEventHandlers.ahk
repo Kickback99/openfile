@@ -1,10 +1,185 @@
-#Include "./PathUtils.ahk"
-#Include "./IniTools.ahk"
 ; ==============================
 ; GuiEventHandlers.ahk
 ; GUI事件处理工具类
 ; ==============================
 class GuiEventHandlers {
+
+    ; ==================== 主窗口右键事件处理 ====================
+    ; >>> 新增：处理移动到目标配置
+    static HandleMoveTo(guiManager, targetConfigType) {
+        ; 获取选中的软件
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
+        
+        ; 检查是否有选中项
+        if (selectedTexts.Length = 0) {
+            MsgBox("请先选择要移动的软件")
+            return
+        }
+        
+        ; 确认移动
+        moveCount := selectedTexts.Length
+        response := MsgBox("确定要将选中的 " moveCount " 个软件移动到 '" targetConfigType "' 吗？", "确认移动", "YesNo")
+        if (response != "Yes") {
+            return
+        }
+        
+        ; >>> 修改：使用当前目录下的temp目录
+        ; 获取脚本所在目录（common目录的父目录）
+        tempDir := this.EnsureTempDirectory()
+        if (tempDir = false) {
+            return  ; 目录创建失败，直接返回
+        }
+        
+        ; 创建临时TXT文件
+        tempTxtPath := tempDir . "\" A_TickCount "_move.txt"
+        if (!this.CreateMoveTxtFile(guiManager, selectedTexts, tempTxtPath)) {
+            MsgBox("创建移动文件失败")
+            return
+        }
+        
+        ; 追加到目标配置
+        if (this.AppendToConfig(targetConfigType, tempTxtPath)) {
+            ; 复用删除逻辑删除原项
+            if (selectedTexts.Length = 1) {
+                this.HandleSingleDelete(guiManager, selectedTexts[1], true)  ; true表示是移动操作
+            } else {
+                this.HandleMultipleDelete(guiManager, selectedTexts, true)  ; true表示是移动操作
+            }
+            
+            ; 显示成功消息
+            if (moveCount = 1) {
+                this.ShowToolTip(guiManager, "移动成功！", 1500)
+            } else {
+                this.ShowToolTip(guiManager, "成功移动 " moveCount " 个软件！", 1500)
+            }
+        } else {
+            MsgBox("移动到目标配置失败")
+        }
+        
+        ; >>> 修改：清理临时文件但不删除目录（保留temp目录）
+        try {
+            FileDelete(tempTxtPath)
+        } catch as e {
+            ; 忽略错误，只是临时文件清理失败不影响主要功能
+            ; MsgBox("清理临时文件失败: " e.Message)  ; 可以注释掉，不显示错误
+        }
+    }
+    
+    ; >>> 修改：创建移动用的TXT文件（支持temp目录）
+    static CreateMoveTxtFile(guiManager, selectedTexts, outputPath) {
+        content := ""
+        
+        ; 构建TXT内容
+        for text in selectedTexts {
+            if (guiManager.softwareMap.Has(text)) {
+                software := guiManager.softwareMap[text]
+                content .= software["name"] "`r`n"
+                content .= software["path"] "`r`n"
+            }
+        }
+        
+        ; 检查是否有内容
+        if (content = "") {
+            return false
+        }
+        
+        ; 写入临时文件
+        try {
+            ; >>> 确保文件不存在
+            if (FileExist(outputPath)) {
+                FileDelete(outputPath)
+            }
+            
+            ; 写入内容
+            FileAppend(content, outputPath, "UTF-8")
+            
+            ; 验证文件是否创建成功
+            if (!FileExist(outputPath)) {
+                return false
+            }
+            
+            return true
+        } catch as e {
+            ; 输出错误信息便于调试
+            ; MsgBox("创建TXT文件失败: " e.Message "`n路径: " outputPath)
+            return false
+        }
+    }
+    
+    ; >>> 修改：追加到目标配置（复用ImportExportManager）
+    static AppendToConfig(targetConfigType, txtFilePath) {
+        try {
+            ; 检查文件是否存在
+            if (!FileExist(txtFilePath)) {
+                MsgBox("临时TXT文件不存在: " txtFilePath)
+                return false
+            }
+            
+            ; 获取目标配置的完整路径
+            configMgr := ConfigManager(targetConfigType)
+            configPath := configMgr.GetConfigPath()
+            
+            ; 检查目标配置文件是否存在
+            if (!FileExist(configPath)) {
+                ; 如果不存在，创建空文件
+                FileAppend("", configPath, "UTF-8")
+            }
+            
+            ; 创建ImportExportManager实例并调用追加方法
+            importExportMgr := ImportExportManager(targetConfigType, configPath)
+            
+            ; >>> 复用ImportExportManager的追加逻辑
+            ; 读取现有INI内容
+            oldContent := FileRead(configPath)
+            
+            ; 读取要追加的TXT内容
+            appendContent := FileRead(txtFilePath, "UTF-8")
+            
+            ; 验证追加内容
+            if (!IniTools.ValidateTxtContent(appendContent, false, false)) {
+                MsgBox("追加内容验证失败")
+                return false
+            }
+            
+            ; 解析要追加的TXT内容
+            parsedData := ImportExportManager.ParseTxtContentWithRoot(appendContent)
+            
+            ; 合并内容
+            mergedContent := ImportExportManager.MergeIniContentWithRoot(oldContent, parsedData)
+            
+            ; 写入文件
+            FileDelete(configPath)
+            FileAppend(mergedContent, configPath, "UTF-8")
+
+            ; 格式化文件
+            IniTools.FormatAndSaveIniFile(configPath)
+            
+            return true
+        } catch as e {
+            MsgBox("追加到目标配置失败: " e.Message)
+            return false
+        }
+    }
+
+    ; >>> 新增：确保temp目录存在的辅助方法
+    static EnsureTempDirectory() {
+        scriptDir := A_ScriptDir
+        tempDir := scriptDir . "\temp"
+        
+        ; 如果目录不存在，创建它
+        if (!DirExist(tempDir)) {
+            try {
+                DirCreate(tempDir)
+                ; MsgBox("已创建临时目录: " tempDir)  ; 调试信息，可以注释掉
+            } catch as e {
+                MsgBox("创建临时目录失败: " e.Message)
+                return false
+            }
+        }
+        
+        return tempDir
+    }
+
     ; ==================== 主窗口按钮事件处理 ====================
     
     ; 创建按钮点击事件处理
@@ -66,11 +241,13 @@ class GuiEventHandlers {
     }
 
     ; >>> 修改：处理批量删除（同时处理单选和多选的数据类型）
-    static HandleMultipleDelete(guiManager, selectedTexts) {
-        ; 确认删除
-        response := MsgBox("确定要删除选中的 " selectedTexts.Length " 个软件吗？", "确认删除", "YesNo")
-        if (response != "Yes") {
-            return
+    static HandleMultipleDelete(guiManager, selectedTexts,isMove := false) {
+        ; 如果不是移动操作，显示确认对话框
+        if (!isMove) {
+            response := MsgBox("确定要删除选中的 " selectedTexts.Length " 个软件吗？", "确认删除", "YesNo")
+            if (response != "Yes") {
+                return
+            }
         }
         
         ; 获取要删除的section列表
@@ -87,10 +264,13 @@ class GuiEventHandlers {
         
         ; >>> 边界情况：如果要删除所有项目
         if (sectionsToDelete.Length >= totalItems) {
-            ; 确认是否删除所有项目
-            confirmResponse := MsgBox("确定要删除所有软件吗？这将清空整个列表。", "确认删除所有", 0x24)
-            if (confirmResponse != "Yes") {
-                return
+            ; 如果不是移动操作，显示确认对话框
+            if (!isMove) {
+                ; 确认是否删除所有项目
+                confirmResponse := MsgBox("确定要删除所有软件吗？这将清空整个列表。", "确认删除所有", 0x24)
+                if (confirmResponse != "Yes") {
+                    return
+                }
             }
             
             ; 逐个删除选中的软件
@@ -104,9 +284,13 @@ class GuiEventHandlers {
             ; 刷新列表（此时列表会为空）
             guiManager.RefreshList()
             
-            ; 显示删除成功消息
-            if (deletedCount > 0) {
-                this.ShowToolTip(guiManager, "已清空所有软件！", 1500)
+            ; 如果不是移动操作，显示删除成功消息
+            if (!isMove && deletedCount > 0) {
+                if (deletedCount = 1) {
+                    this.ShowToolTip(guiManager, "删除成功！", 1500)
+                } else {
+                    this.ShowToolTip(guiManager, "成功删除 " deletedCount " 个软件！", 1500)
+                }
             }
             
             return  ; 不需要尝试选择任何项
@@ -193,7 +377,7 @@ class GuiEventHandlers {
     }
     
     ; >>> 修改：处理单个删除
-    static HandleSingleDelete(guiManager, selectedText) {
+    static HandleSingleDelete(guiManager, selectedText,isMove := false) {
         if (!guiManager.softwareMap.Has(selectedText)) {
             MsgBox("未找到选中的软件信息")
             return
@@ -201,10 +385,13 @@ class GuiEventHandlers {
         
         software := guiManager.softwareMap[selectedText]
         
-        ; 确认删除
-        response := MsgBox("确定要删除 '" software["name"] "' 吗？", "确认删除", "YesNo")
-        if (response != "Yes") {
-            return
+        ; 如果不是移动操作，显示确认对话框
+        if (!isMove) {
+            software := guiManager.softwareMap[selectedText]
+            response := MsgBox("确定要删除 '" software["name"] "' 吗？", "确认删除", "YesNo")
+            if (response != "Yes") {
+                return
+            }
         }
 
         ; >>> 获取选中索引（正确处理多选和单选的数据类型）
@@ -284,7 +471,10 @@ class GuiEventHandlers {
             }
         }
         
-        this.ShowToolTip(guiManager, "删除成功！", 1500)
+        ; 如果不是移动操作，显示删除成功消息
+        if (!isMove) {
+            this.ShowToolTip(guiManager, "删除成功！", 1500)
+        }
     }
 
 
@@ -382,6 +572,8 @@ class GuiEventHandlers {
                 ; >>> 只有条件不满足时才清除标记
                 guiManager.userWasInSearchBox := false
             }
+            ; 重新创建右键菜单
+            guiManager.CreateContextMenu()
         }
     
     ; ==================== 定位按钮事件处理 ====================
