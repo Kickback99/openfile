@@ -1,5 +1,5 @@
-#Include projects\software\src\ConfigManager.ahk
-#Include projects\software\src\GuiManager.ahk
+#Include src\ConfigManager.ahk
+#Include src\GuiManager.ahk
 
 ; 显示管理器函数
 ShowManager(configType) {

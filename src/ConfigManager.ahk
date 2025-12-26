@@ -11,14 +11,14 @@ class ConfigManager {
         SplitPath(configManagerPath, , &scriptDir)
         
         ; 现在 scriptDir 是 ConfigManager.ahk 所在的目录
-        ; 应该是：L:\AutoHotkey\projects\software\src
+        ; 应该是：E:\release\openfile\src
         
         ; configs目录就在当前目录下
         configsDir := scriptDir "\configs"
 
         ; 自动构建配置文件路径：configs\{configType}.ini
         if (configType = "") {
-            configType := "software"  ; 默认使用software
+            configType := "openfile"  ; 默认使用openfile
         }
 
         this.configPath := configsDir "\" configType ".ini"
