@@ -11,7 +11,7 @@ class ConfigManager {
         SplitPath(configManagerPath, , &scriptDir)
         
         ; 现在 scriptDir 是 ConfigManager.ahk 所在的目录
-        ; 应该是：L:\AutoHotkey\projects\software\src
+        ; 应该是：E:\release\SoftManager\src
         
         ; configs目录就在当前目录下
         configsDir := scriptDir "\configs"
