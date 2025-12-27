@@ -21,7 +21,7 @@ ShowManager(configType) {
         
         ; 确保窗口在最前面
         WinSetAlwaysOnTop(1, windowTitle)
-        WinSetAlwaysOnTop(0, windowTitle)  ; 临时置顶然后取消，确保在前面
+        ; WinSetAlwaysOnTop(0, windowTitle)  ; 临时置顶然后取消，确保在前面
         
         return
     }

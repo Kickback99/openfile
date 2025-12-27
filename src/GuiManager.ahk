@@ -3,6 +3,8 @@
 #Include "./common/PathUtils.ahk"
 #Include "./common/GuiEventHandlers.ahk"
 #Include "./common/PinyinHelper.ahk"
+#Include "./common/FileProcessor.ahk"
+#Include "./common/SettingsManager.ahk"
 ; ==============================
 ; GuiManager.ahk
 ; GUI管理类（支持增删改查）
@@ -54,6 +56,9 @@ class GuiManager {
         ; 创建GUI
         this.gui := Gui()
         this.gui.Title := (this.configType)
+
+        ; ++++ 添加AlwaysOnTop选项确保窗口置顶 ++++
+        this.gui.Opt("+AlwaysOnTop")
 
         ; 移除最大化按钮
         try {

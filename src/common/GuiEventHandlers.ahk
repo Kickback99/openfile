@@ -7,9 +7,94 @@ class GuiEventHandlers {
     
     ; 创建按钮点击事件处理
     static HandleCreateClick(guiManager) {
-        guiManager.editMode := "create"
-        guiManager.currentEditSection := ""
-        guiManager.ShowEditDialogGui("", "")
+        ; 1. 检查是否存在资源管理器窗口
+        if (!WinExist("ahk_class CabinetWClass")) {
+            guiManager.editMode := "create"
+            guiManager.currentEditSection := ""
+            guiManager.ShowEditDialogGui("", "")
+            return
+        }
+        
+        ; 2. 获取资源管理器窗口句柄
+        explorerHwnd := WinExist("ahk_class CabinetWClass")
+        
+        ; 3. 先取消GUI窗口置顶
+        /* try {
+            WinSetAlwaysOnTop(false, guiManager.gui.Hwnd)
+        } */
+        
+        ; 4. 激活资源管理器窗口并等待激活完成
+        try {
+            WinActivate("ahk_id " . explorerHwnd)
+            loopCount := 0
+            while (!WinActive("ahk_id " . explorerHwnd) && loopCount < 10) {
+                Sleep(50)
+                loopCount++
+                WinActivate("ahk_id " . explorerHwnd)
+            }
+            
+            if (!WinActive("ahk_id " . explorerHwnd)) {
+                /* try {
+                    WinSetAlwaysOnTop(true, guiManager.gui.Hwnd)
+                } */
+                guiManager.editMode := "create"
+                guiManager.currentEditSection := ""
+                guiManager.ShowEditDialogGui("", "")
+                return
+            }
+            
+            Sleep(100)
+        }
+        
+        ; 5. 获取所有选中的文件（支持多选）
+        selectedFiles := FileProcessor.GetSelectedFilesInExplorer(explorerHwnd)
+        
+        ; 6. 恢复GUI窗口置顶并激活
+        try {
+            ; WinSetAlwaysOnTop(true, guiManager.gui.Hwnd)
+            WinActivate(guiManager.gui.Hwnd)
+            loopCount := 0
+            while (!WinActive("ahk_id " . guiManager.gui.Hwnd) && loopCount < 10) {
+                Sleep(50)
+                loopCount++
+                WinActivate(guiManager.gui.Hwnd)
+            }
+        }
+        
+        ; 7. 根据结果处理
+        if (selectedFiles.Length > 0) {
+            ; ++++ 使用SettingsManager读取配置 ++++
+            enableExtension := SettingsManager.GetBool("EnableExtension", false)
+            batchThreshold := SettingsManager.GetInt("BatchThreshold", 5)
+            
+            ; 根据文件数量和阈值决定使用哪个方法
+            if (selectedFiles.Length >= batchThreshold) {
+                ; 达到阈值，使用批量创建方法（显示进度条）
+                lastAddedName := FileProcessor.BatchCreateFromSelectedFiles(guiManager, selectedFiles,enableExtension)
+                
+                ; 将listbox选中项设置为最后一个添加的项
+                if (lastAddedName != "") {
+                    this.RefreshAndSelect(guiManager, lastAddedName)
+                }
+            } else {
+                ; 未达到阈值，使用单个文件创建方法（不显示进度条）
+                ; 注意：这里需要处理多个文件，但只显示最后一个添加的项
+                lastAddedName := ""
+                for filePath in selectedFiles {
+                    lastAddedName := FileProcessor.CreateSingleFileAndReturnName(guiManager, filePath,enableExtension)
+                }
+                
+                ; 选中最后添加的项
+                if (lastAddedName != "") {
+                    this.RefreshAndSelect(guiManager, lastAddedName)
+                }
+            }
+        } else {
+            ; 没有选中文件，显示编辑对话框
+            guiManager.editMode := "create"
+            guiManager.currentEditSection := ""
+            guiManager.ShowEditDialogGui("", "")
+        }
     }
     
     ; 编辑按钮点击事件处理
