@@ -52,7 +52,7 @@ class ConfigManager {
             try {
                 DirCreate(configsDir)
             } catch as e {
-                MsgBox("创建配置目录失败: " e.Message)
+                MessageManager.ShowError("创建配置目录失败: " e.Message)
             }
         }
     }
@@ -74,7 +74,7 @@ class ConfigManager {
                 
                 FileAppend(basicContent, this.configPath,"UTF-8")
             } catch as e {
-                MsgBox("创建配置文件失败: " e.Message)
+                MessageManager.ShowError("创建配置文件失败: " e.Message)
             }
         }
     }

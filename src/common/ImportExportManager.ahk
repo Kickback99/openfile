@@ -34,10 +34,10 @@ class ImportExportManager {
         
         ; 导出配置
         if (this.ExportToTxt(exportPath)) {
-            MsgBox("导出成功！`n文件保存到: " exportPath)
+            MessageManager.ShowSuccess("导出成功！`n文件保存到: " exportPath)
             return true
         } else {
-            MsgBox("导出失败！")
+            MessageManager.ShowError("导出失败！")
             return false
         }
     }
@@ -174,9 +174,9 @@ class ImportExportManager {
         
         result := this.ImportFromTxtWithRoot(importPath)
         if (result) {
-            SetTimer(() => MsgBox("导入成功！"), -100)  ; 100ms后显示
+            MessageManager.ShowSuccessDelayed("导入成功！",100)
         } else {
-            SetTimer(() => MsgBox("导入失败！"), -100)
+            MessageManager.ShowError("导入失败！")
         }
 
         return result
@@ -280,12 +280,12 @@ class ImportExportManager {
                 IniTools.FormatAndSaveIniFile(this.configPath)
                 return true
             } else {
-                MsgBox("导入失败：没有有效数据可以导入！")
+                MessageManager.ShowError("导入失败：没有有效数据可以导入！")
                 return false
             }
             
         } catch Error as e {
-            MsgBox("导入错误: " e.Message "`n位置: " e.What " 行: " e.Line)
+            MessageManager.ShowError("导入错误: " e.Message "`n位置: " e.What " 行: " e.Line)
             return false
         }
     }
@@ -312,7 +312,7 @@ class ImportExportManager {
         moreGui.Destroy()
         
         if (!FileExist(this.configPath)) {
-            MsgBox("配置文件不存在，无法追加！")
+            MessageManager.ShowError("配置文件不存在，无法追加！")
             return false
         }
         
@@ -328,9 +328,9 @@ class ImportExportManager {
 
         result := this.AppendFromTxtWithRoot(appendPath)
         if (result) {
-            SetTimer(() => MsgBox("追加成功！"), -100)  ; 100ms后显示
+            MessageManager.ShowSuccessDelayed("追加成功！",100)
         } else {
-            SetTimer(() => MsgBox("追加失败！"), -100)
+            MessageManager.ShowError("追加失败！")
         }
         return result
     }
@@ -364,7 +364,7 @@ class ImportExportManager {
             
             return true
         } catch Error as e {
-            MsgBox("追加错误: " e.Message)
+            MessageManager.ShowError("追加错误: " e.Message)
             return false
         }
     }

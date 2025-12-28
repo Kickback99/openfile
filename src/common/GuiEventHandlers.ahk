@@ -81,13 +81,13 @@ class GuiEventHandlers {
     static HandleEditClick(guiManager) {
         selectedIndex := guiManager.listBox.Value
         if (selectedIndex <= 0) {
-            MsgBox("请先选择一个要编辑的软件")
+            MessageManager.ShowError("请先选择一个要编辑的软件")
             return
         }
         
         selectedText := guiManager.listBox.Text
         if (!guiManager.softwareMap.Has(selectedText)) {
-            MsgBox("未找到选中的软件信息")
+            MessageManager.ShowError("未找到选中的软件信息")
             return
         }
         
@@ -105,20 +105,20 @@ class GuiEventHandlers {
     static HandleDeleteClick(guiManager) {
         selectedIndex := guiManager.listBox.Value
         if (selectedIndex <= 0) {
-            MsgBox("请先选择一个要删除的软件")
+            MessageManager.ShowError("请先选择一个要删除的软件")
             return
         }
         
         selectedText := guiManager.listBox.Text
         if (!guiManager.softwareMap.Has(selectedText)) {
-            MsgBox("未找到选中的软件信息")
+            MessageManager.ShowError("未找到选中的软件信息")
             return
         }
         
         software := guiManager.softwareMap[selectedText]
         
         ; 确认删除
-        response := MsgBox("确定要删除 '" software["name"] "' 吗？", "确认删除", "YesNo")
+        response := MessageManager.ShowConfirm("确定要删除 '" software["name"] "' 吗？", "确认删除")
         if (response != "Yes") {
             return
         }
@@ -146,7 +146,7 @@ class GuiEventHandlers {
         
         ; 从INI文件中删除
         if (!this.DeleteFromIniFile(guiManager,software["section"])) {
-            MsgBox("删除失败，无法更新配置文件")
+            MessageManager.ShowError("删除失败，无法更新配置文件")
             return
         }
         
@@ -158,7 +158,7 @@ class GuiEventHandlers {
             this.SelectItemByText(guiManager, nextItemText)
         }
         
-        MsgBox("删除成功！")
+        MessageManager.ShowSuccess("删除成功！")
     }
     
     ; ==================== 刷新按钮事件处理 ====================
@@ -180,7 +180,7 @@ class GuiEventHandlers {
             try {
                 ControlFocus(guiManager.searchBox, guiManager.gui)
             } catch as e {
-                MsgBox("ControlFocus失败: " e.Message)
+                MessageManager.ShowError("ControlFocus失败: " e.Message)
             }
         } else {
             ; >>> 只有条件不满足时才清除标记
@@ -260,7 +260,7 @@ class GuiEventHandlers {
     static HandleOpenSoftware(guiManager) {
         selectedIndex := guiManager.listBox.Value
         if (selectedIndex <= 0) {
-            MsgBox("请先选择一个软件")
+            MessageManager.ShowError("请先选择一个软件")
             return
         }
         
@@ -275,7 +275,7 @@ class GuiEventHandlers {
         ; >>> 使用PathUtils工具类
         result := PathUtils.RunProgram(path)
         if (result !== true) {
-            MsgBox(result)  ; 显示错误信息
+            MessageManager.ShowError(result) ; 显示错误信息
             return
         }
         
@@ -293,7 +293,7 @@ class GuiEventHandlers {
                     ControlFocus(guiManager.searchBox, guiManager.gui)
                     guiManager.userWasInSearchBox := true
                 } catch as e {
-                    MsgBox("ControlFocus失败: " e.Message)
+                    MessageManager.ShowError("ControlFocus失败: " e.Message)
                 }
             }
         } else {
@@ -487,7 +487,7 @@ class GuiEventHandlers {
             
             return true
         } catch as e{
-            MsgBox("保存配置文件时出错：`n" e.Message)
+            MessageManager.ShowError("保存配置文件时出错：`n" e.Message)
             return false
         }
     }
@@ -514,11 +514,11 @@ class GuiEventHandlers {
                 
                 return true
             } else {
-                MsgBox("在配置文件中未找到对应的section")
+                MessageManager.ShowError("在配置文件中未找到对应的section")
                 return false
             }
         } catch as e {
-            MsgBox("删除配置文件时出错：`n" e.Message)
+            MessageManager.ShowError("删除配置文件时出错：`n" e.Message)
             return false
         }
     }
@@ -537,41 +537,47 @@ class GuiEventHandlers {
 
         ; 输入验证
         if (name = "") {
-            MsgBox("软件名称不能为空", "提示", "Owner" editGui.Hwnd)
+            MessageManager.ShowError("软件名称不能为空", "提示", ,editGui.Hwnd)
             return
         }
         
         if (path = "") {
-             MsgBox("软件路径不能为空", "提示", "Owner" editGui.Hwnd)
+             MessageManager.ShowError("软件路径不能为空", "提示", ,editGui.Hwnd)
             return
         }
         
         if (section = "") {
-            MsgBox("Section名称不能为空", "提示", "Owner" editGui.Hwnd)
+            MessageManager.ShowError("Section名称不能为空", "提示", ,editGui.Hwnd)
             return
         }
 
         ; >>> 使用统一的名称和路径校验
         if (!IniTools.IsValidName(name, 0, true)) {
-            MsgBox("软件名称包含非法字符！`n`n"
+            MessageManager.ShowError(
+                "软件名称包含非法字符！`n`n"
                 . "名称不能包含：\ / : * ? " . Chr(34) . " < > |`n"
-                . "且不能以点开头或结尾", "提示", "Owner" editGui.Hwnd)
+                . "且不能以点开头或结尾", "提示", , editGui.Hwnd
+            )
             return
         }
 
         if (!IniTools.IsValidPath(path, 0, true)) {
-            MsgBox("软件路径格式不正确！`n`n"
+            MessageManager.ShowError(
+                "软件路径格式不正确！`n`n"
                 . "路径必须包含：`n"
                 . "1. 盘符（如C:）`n"
                 . "2. 路径分隔符（\或/）`n"
-                . "3. 不能包含非法字符：* ? " . Chr(34) . " < > |", "提示", "Owner" editGui.Hwnd)
+                . "3. 不能包含非法字符：* ? " . Chr(34) . " < > |", "提示", , editGui.Hwnd
+            )
             return
         }
 
         ; 编辑模式下不允许创建Root
          if (guiManager.editMode = "edit") {
             if (section = "Root" || section = "root" || StrLower(section) = "root") {
-                MsgBox("编辑模式不允许使用'Root'作为Section名称", "提示", "Owner" editGui.Hwnd)
+                MessageManager.ShowError(
+                    "编辑模式不允许使用'Root'作为Section名称", "提示", , editGui.Hwnd
+                )
                 return
             }
         }
@@ -591,13 +597,17 @@ class GuiEventHandlers {
 
                     ; 如果尝试编辑为Root，不允许
                     if (StrLower(section) = "root" && StrLower(software["section"]) = "root") {
-                        MsgBox("Root section已存在，请使用其他名称", "提示", "Owner" editGui.Hwnd)
+                        MessageManager.ShowError(
+                            "Root section已存在，请使用其他名称", "提示", , editGui.Hwnd
+                        )
                         return
                     }
                     
                     ; 检查其他软件是否有相同的section
                     if (software["section"] = section) {
-                        MsgBox("Section名称已存在，请使用其他名称", "提示", "Owner" editGui.Hwnd)
+                        MessageManager.ShowError(
+                           "Section名称已存在，请使用其他名称", "提示", , editGui.Hwnd 
+                        )
                         return
                     }
                 }
@@ -612,7 +622,9 @@ class GuiEventHandlers {
                 
                 ; 检查其他软件是否有相同的名称
                 if (software["name"] = name) {
-                    MsgBox("软件名称已存在，请使用其他名称", "提示", "Owner" editGui.Hwnd)
+                    MessageManager.ShowError(
+                        "软件名称已存在，请使用其他名称", "提示", , editGui.Hwnd
+                    )
                     return
                 }
             }
@@ -636,7 +648,9 @@ class GuiEventHandlers {
                 ; 检查软件名称是否已存在
                 for displayName, software in guiManager.softwareMap {
                     if (software["name"] = name) {
-                        MsgBox("软件名称已存在，请使用其他名称", "提示", "Owner" editGui.Hwnd)
+                        MessageManager.ShowError(
+                            "软件名称已存在，请使用其他名称", "提示", , editGui.Hwnd
+                        )
                         return
                     }
                 }
@@ -644,7 +658,9 @@ class GuiEventHandlers {
                 ; 检查section是否已存在
                 for displayName, software in guiManager.softwareMap {
                     if (software["section"] = section) {
-                        MsgBox("Section名称已存在，请使用其他名称", "提示", "Owner" editGui.Hwnd)
+                        MessageManager.ShowError(
+                            "Section名称已存在，请使用其他名称", "提示", , editGui.Hwnd
+                        )
                         return
                     }
                 }
@@ -655,7 +671,9 @@ class GuiEventHandlers {
         
         ; 更新INI文件（用于：1.编辑模式但section未变化 2.创建模式）
         if (!this.UpdateIniFileWithRoot(guiManager, name, path, section, guiManager.editMode)) {
-            MsgBox("保存失败，无法更新配置文件", "错误", "Owner" editGui.Hwnd)
+            MessageManager.ShowError(
+                "保存失败，无法更新配置文件", "错误", , editGui.Hwnd
+            )
             return
         }
 
