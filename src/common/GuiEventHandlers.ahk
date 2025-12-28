@@ -12,13 +12,13 @@ class GuiEventHandlers {
         
         ; 检查是否有选中项
         if (selectedTexts.Length = 0) {
-            MsgBox("请先选择要移动的软件")
+            MessageManager.ShowError("请先选择要移动的软件")
             return
         }
         
         ; 确认移动
         moveCount := selectedTexts.Length
-        response := MsgBox("确定要将选中的 " moveCount " 个软件移动到 '" targetConfigType "' 吗？", "确认移动", "YesNo")
+        response := MessageManager.ShowConfirm("确定要将选中的 " moveCount " 个软件移动到 '" targetConfigType "' 吗？", "确认移动", "YesNo")
         if (response != "Yes") {
             return
         }
@@ -33,7 +33,7 @@ class GuiEventHandlers {
         ; 创建临时TXT文件
         tempTxtPath := tempDir . "\" A_TickCount "_move.txt"
         if (!this.CreateMoveTxtFile(guiManager, selectedTexts, tempTxtPath)) {
-            MsgBox("创建移动文件失败")
+            MessageManager.ShowError("创建移动文件失败")
             return
         }
         
@@ -53,7 +53,7 @@ class GuiEventHandlers {
                 this.ShowToolTip(guiManager, "成功移动 " moveCount " 个软件！", 1500)
             }
         } else {
-            MsgBox("移动到目标配置失败")
+            MessageManager.ShowError("移动到目标配置失败")
         }
         
         ; >>> 修改：清理临时文件但不删除目录（保留temp目录）
@@ -62,6 +62,7 @@ class GuiEventHandlers {
         } catch as e {
             ; 忽略错误，只是临时文件清理失败不影响主要功能
             ; MsgBox("清理临时文件失败: " e.Message)  ; 可以注释掉，不显示错误
+            MessageManager.ShowError("清理临时文件失败: " e.Message)
         }
     }
     
@@ -102,6 +103,7 @@ class GuiEventHandlers {
         } catch as e {
             ; 输出错误信息便于调试
             ; MsgBox("创建TXT文件失败: " e.Message "`n路径: " outputPath)
+            MessageManager.ShowError("创建TXT文件失败: " e.Message "`n路径: " outputPath)
             return false
         }
     }
@@ -111,7 +113,7 @@ class GuiEventHandlers {
         try {
             ; 检查文件是否存在
             if (!FileExist(txtFilePath)) {
-                MsgBox("临时TXT文件不存在: " txtFilePath)
+                MessageManager.ShowError("临时TXT文件不存在: " txtFilePath)
                 return false
             }
             
@@ -137,7 +139,7 @@ class GuiEventHandlers {
             
             ; 验证追加内容
             if (!IniTools.ValidateTxtContent(appendContent, false, false)) {
-                MsgBox("追加内容验证失败")
+                MessageManager.ShowError("追加内容验证失败")
                 return false
             }
             
@@ -156,7 +158,7 @@ class GuiEventHandlers {
             
             return true
         } catch as e {
-            MsgBox("追加到目标配置失败: " e.Message)
+            MessageManager.ShowError("追加到目标配置失败: " e.Message)
             return false
         }
     }
@@ -172,7 +174,7 @@ class GuiEventHandlers {
                 DirCreate(tempDir)
                 ; MsgBox("已创建临时目录: " tempDir)  ; 调试信息，可以注释掉
             } catch as e {
-                MsgBox("创建临时目录失败: " e.Message)
+                MessageManager.ShowError("创建临时目录失败: " e.Message)
                 return false
             }
         }
@@ -358,10 +360,10 @@ class GuiEventHandlers {
                 ; 确认是否删除所有项目
                 ; confirmResponse := MsgBox("确定要删除所有文件吗？这将清空整个列表。", "确认删除所有", 0x24)
                 confirmResponse := MessageManager.ShowConfirm(
-                "确定要删除所有文件吗？这将清空整个列表。", 
-                "确认删除所有"
-            )
-            if (confirmResponse != "Yes") {
+                            "确定要删除所有文件吗？这将清空整个列表。", 
+                            "确认删除所有"
+                )
+                if (confirmResponse != "Yes") {
                     return
                 }
             }
