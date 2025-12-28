@@ -85,8 +85,19 @@ class PathUtils {
     }
     
     ; 静态方法：浏览选择文件
-    static BrowseForExecutable(currentPath := "") {
+    static BrowseForExecutable(currentPath := "",ownerGui := "") {
+        ; ++++ 关键：如果有父窗口，临时启用OwnDialogs ++++
+        if (IsObject(ownerGui)) {
+            ownerGui.Opt("+OwnDialogs")
+        }
+
         selectedFile := FileSelect(1, currentPath, "选择可执行文件", "可执行文件 (*.exe; *.bat; *.cmd)")
+        
+        ; >>> 无论用户选择还是取消，都恢复Owner关系
+        if (IsObject(ownerGui)) {
+            ownerGui.Opt("-OwnDialogs")
+        }
+
         return selectedFile
     }
     

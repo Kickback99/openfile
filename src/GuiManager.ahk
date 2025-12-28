@@ -258,7 +258,7 @@ class GuiManager {
         editGui.Add("Text", "w400", "软件路径:")
         ctlPath := editGui.Add("Edit", "w400", defaultPath)
         btnBrowse := editGui.Add("Button", "w80", "浏览...")
-        btnBrowse.OnEvent("Click", (*) => GuiEventHandlers.HandleBrowseClick(ctlPath))
+        btnBrowse.OnEvent("Click", (*) => GuiEventHandlers.HandleBrowseClick(ctlPath,editGui))
         editGui.ctlPath := ctlPath 
         
         editGui.Add("Text", "w400", "Section名称:")
@@ -441,7 +441,7 @@ class GuiManager {
     ; 导出配置
     ; >>> 新增：处理导入按钮点击
     HandleImport(moreGui) {
-        if (this.importExportMgr.ImportConfig(moreGui)) {
+        if (this.importExportMgr.ImportConfig(moreGui,this)) {
             ; 导入成功后刷新列表
             this.RefreshList()
         }
@@ -449,12 +449,12 @@ class GuiManager {
 
     ; >>> 新增：处理导出按钮点击
     HandleExport(moreGui) {
-        this.importExportMgr.ExportConfig(moreGui)
+        this.importExportMgr.ExportConfig(moreGui,this)
     }
 
     ; >>> 新增：处理追加按钮点击
     HandleAppend(moreGui) {
-        if (this.importExportMgr.AppendConfig(moreGui)) {
+        if (this.importExportMgr.AppendConfig(moreGui,this)) {
             ; 追加成功后刷新列表
             this.RefreshList()
         }
