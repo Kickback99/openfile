@@ -228,7 +228,7 @@ class GuiEventHandlers {
         }
 
         ; 获取主窗口位置
-        WinGetPos(&parentX, &parentY, &parentW, &parentH, "ahk_id " guiManager.gui.Hwnd)
+        ; WinGetPos(&parentX, &parentY, &parentW, &parentH, "ahk_id " guiManager.gui.Hwnd)
         
         ; 设置字体
         moreGui.SetFont("s9", "JetBrains Mono")
@@ -241,11 +241,16 @@ class GuiEventHandlers {
         moreGui.Add("Text", "w380 Center cGray", "管理" guiManager.configType ".ini 配置文件")
 
         ; 创建按钮 - 计算居中位置
-        buttonWidth := 80
+        /* buttonWidth := 80
         buttonSpacing := 10
         totalWidth := (buttonWidth * 4) + (buttonSpacing * 3)
         dialogWidth := 400  ; 增加对话框宽度
-        startX := (dialogWidth - totalWidth) // 2
+        startX := (dialogWidth - totalWidth) // 2 */
+        
+         ; 通过 WindowConstants 创建按钮（使用宽度和高度常量） - 计算居中位置
+        totalWidth := (WindowConstants.BUTTON_WIDTH * WindowConstants.MORE_GUI_BUTTON_COUNT) + 
+                    (WindowConstants.BUTTON_SPACING * (WindowConstants.MORE_GUI_BUTTON_COUNT - 1))
+        startX := (WindowConstants.MORE_GUI_WIDTH - totalWidth) // 2
         
         btnImport := moreGui.Add("Button", "x" startX " y+10 w80", "导入")
         btnExport := moreGui.Add("Button", "x+10 w80", "导出")
@@ -258,28 +263,14 @@ class GuiEventHandlers {
         btnAppend.OnEvent("Click", (btnCtrl, info) => guiManager.HandleAppend(moreGui))
         btnCancel.OnEvent("Click", (*) => moreGui.Destroy())
         
-        ; 子窗口客户区大小（保持原设计）
-        childClientW := 400
-        childClientH := 120
-        
-        ; 计算主窗口中心点
-        windowCenterX := parentX + parentW // 2
-        windowCenterY := parentY + parentH // 2
-        
-        ; 计算子窗口位置（使其中心对齐主窗口中心）
-        childX := windowCenterX - childClientW // 2
-        childY := windowCenterY - childClientH // 2
-        
-        ; ++++ 关键：稍微向左调整（基于你的反馈）++++
-        ; 原始计算：760
-        ; 现在向左调整：760 - 调整量
-        ; 调整量根据你感觉的偏差来定
-        
-        adjustLeft := 65  ; 向左调整65像素（可以根据效果微调这个值）
-        childX := childX - adjustLeft
-        
-        ; 显示窗口
-        moreGui.Show("x" childX " y" childY)
+        ; 使用工具类居中显示窗口
+        WindowPositionUtils.CenterChildWindowWithConstants(
+            guiManager.gui.Hwnd,
+            moreGui,
+            WindowConstants.MORE_GUI_WIDTH,
+            WindowConstants.MORE_GUI_HEIGHT,
+            WindowConstants.MORE_GUI_ADJUST_LEFT
+        )
     }
 
     
