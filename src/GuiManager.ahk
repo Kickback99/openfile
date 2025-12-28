@@ -18,8 +18,8 @@ class GuiManager {
         this.configManager := configManager
 
         ; 载入settings.ini配置
-        ; t_softmanager_settings：alwaysOnTop-get
-        this.isTop := SettingsManager.GetBool("AlwaysOnTop",true)
+        ; !!! 使用刷新方法来初始化配置
+        this.RefreshSettings()
         
         ; 获取软件列表
         this.softwareList := configManager.GetSoftwareListArray()
@@ -65,8 +65,11 @@ class GuiManager {
 
         ; ++++ 添加AlwaysOnTop选项确保窗口置顶 ++++
         ; t_softmanager_settings：alwaysOnTop
+        ; !!! 修改：根据配置动态设置窗口置顶
         if(this.isTop){
             this.gui.Opt("+AlwaysOnTop")
+        } else {
+            this.gui.Opt("-AlwaysOnTop")
         }
 
         ; 移除最大化按钮
@@ -143,9 +146,15 @@ class GuiManager {
 
         ; ++++ 关键：设置主窗口句柄给MessageManager ++++
         ; t_softmanager_settings：alwaysOnTop
-        if(this.isTop){
-            MessageManager.SetMainWindowHwnd(this.gui.Hwnd)
-        }
+        MessageManager.SetMainWindowHwnd(this.gui.Hwnd)
+    }
+    
+    ; t_softmanager_settings：alwaysOnTop-get
+    ; !!! 新增：刷新配置值的方法
+    RefreshSettings() {
+        ; 重新读取所有相关配置
+        this.isTop := SettingsManager.GetBool("AlwaysOnTop", true)
+        ; 可以在这里添加其他需要刷新的配置
     }
 
     /* EnableSearchBoxTab() {
