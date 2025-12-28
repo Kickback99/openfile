@@ -226,6 +226,9 @@ class GuiEventHandlers {
         try {
            WinSetStyle("-0x00020000", moreGui.Hwnd)
         }
+
+        ; 获取主窗口位置
+        WinGetPos(&parentX, &parentY, &parentW, &parentH, "ahk_id " guiManager.gui.Hwnd)
         
         ; 设置字体
         moreGui.SetFont("s9", "JetBrains Mono")
@@ -244,8 +247,7 @@ class GuiEventHandlers {
         dialogWidth := 400  ; 增加对话框宽度
         startX := (dialogWidth - totalWidth) // 2
         
-        ; 创建按钮
-        btnImport := moreGui.Add("Button", "x" startX " y+30 w80", "导入")
+        btnImport := moreGui.Add("Button", "x" startX " y+10 w80", "导入")
         btnExport := moreGui.Add("Button", "x+10 w80", "导出")
         btnAppend := moreGui.Add("Button", "x+10 w80", "追加")
         btnCancel := moreGui.Add("Button", "x+10 w80", "取消")
@@ -256,8 +258,30 @@ class GuiEventHandlers {
         btnAppend.OnEvent("Click", (btnCtrl, info) => guiManager.HandleAppend(moreGui))
         btnCancel.OnEvent("Click", (*) => moreGui.Destroy())
         
-        moreGui.Show()
+        ; 子窗口客户区大小（保持原设计）
+        childClientW := 400
+        childClientH := 120
+        
+        ; 计算主窗口中心点
+        windowCenterX := parentX + parentW // 2
+        windowCenterY := parentY + parentH // 2
+        
+        ; 计算子窗口位置（使其中心对齐主窗口中心）
+        childX := windowCenterX - childClientW // 2
+        childY := windowCenterY - childClientH // 2
+        
+        ; ++++ 关键：稍微向左调整（基于你的反馈）++++
+        ; 原始计算：760
+        ; 现在向左调整：760 - 调整量
+        ; 调整量根据你感觉的偏差来定
+        
+        adjustLeft := 65  ; 向左调整65像素（可以根据效果微调这个值）
+        childX := childX - adjustLeft
+        
+        ; 显示窗口
+        moreGui.Show("x" childX " y" childY)
     }
+
     
     ; ==================== 打开软件事件处理 ====================
     
