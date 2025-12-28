@@ -315,7 +315,33 @@ class GuiManager {
         
         btnCancel.OnEvent("Click", (*) => editGui.Destroy())
         
-        editGui.Show()
+        ; ++++ 在父窗口中居中显示（向左调整50像素）++++
+        if (IsObject(this.gui)) {
+            ; 获取父窗口位置
+            WinGetPos(&parentX, &parentY, &parentW, &parentH, "ahk_id " this.gui.Hwnd)
+            
+            ; editGui客户区大小
+            editClientW := 400
+            editClientH := (this.editMode = "create" ? 300 : 240)  ; 根据模式调整高度
+            
+            ; 计算主窗口中心点
+            windowCenterX := parentX + parentW // 2
+            windowCenterY := parentY + parentH // 2
+            
+            ; 计算editGui位置（使其中心对齐主窗口中心）
+            editX := windowCenterX - editClientW // 2
+            editY := windowCenterY - editClientH // 2
+            
+            ; 向左调整70像素
+            adjustLeft := 70
+            editX := editX - adjustLeft
+            
+            ; 显示窗口
+            editGui.Show("x" editX " y" editY)
+        } else {
+            ; 如果没有父窗口，居中显示
+            editGui.Show("Center")
+        }
     }
     
     ; ==================== 原有方法 ====================
