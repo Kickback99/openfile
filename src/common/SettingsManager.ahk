@@ -13,6 +13,7 @@ class SettingsManager {
         ; 设置默认值
         config["EnableExtension"] := false
         config["BatchThreshold"] := 5
+        config["ShowSuccessMsg"] := true
         
         try {
             settingsPath := this.ConfigPath

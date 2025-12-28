@@ -5,6 +5,7 @@
 #Include "./common/PinyinHelper.ahk"
 #Include "./common/FileProcessor.ahk"
 #Include "./common/SettingsManager.ahk"
+#Include "./common/MessageManager.ahk"
 ; ==============================
 ; GuiManager.ahk
 ; GUI管理类（支持增删改查）

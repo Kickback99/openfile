@@ -25,7 +25,7 @@ class FileProcessor {
             for existingName, software in guiManager.softwareMap {
                 if (software["name"] = displayName) {
                     duplicateFound := true
-                    response := this.ShowMessageBox("已存在同名软件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
+                    response := MessageManager.ShowConfirm("已存在同名软件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
                     if (response != "Yes") {
                         return ""  ; 跳过这个文件
                     }
@@ -153,7 +153,7 @@ class FileProcessor {
                             duplicateFound := true
                             
                             ; 批量模式下，如果已存在同名软件，询问是否覆盖
-                            response := this.ShowMessageBox("已存在同名软件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
+                            response := MessageManager.ShowConfirm("已存在同名软件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
                             if (response != "Yes") {
                                 ; 跳过这个文件
                                 continue
@@ -199,33 +199,15 @@ class FileProcessor {
                     GuiEventHandlers.ShowToolTip(guiManager, "批量创建完成，成功 " . successCount . "/" . totalCount, 2000)
                 }
             } else {
-                this.ShowMessageBox("批量创建失败，请检查配置")
+                MessageManager.ShowError("批量创建失败，请检查配置")
             }
             
         } catch as e {
             progressGui.Destroy()
-            this.ShowMessageBox("批量创建过程中出错：`n" . e.Message)
+            MessageManager.ShowError("批量创建过程中出错：`n" . e.Message)
         }
         
         return lastAddedName
     }
     
-    ; ++++ 新增：带MsgBox置顶处理的消息框 ++++
-    static ShowMessageBox(message, title := "", options := "") {
-        ; 先取消主窗口置顶
-        try {
-            ; 获取活动窗口（可能是GUI窗口）
-            WinSetAlwaysOnTop(false, "A")
-        }
-        
-        ; 显示消息框
-        result := MsgBox(message, title, options)
-        
-        ; 恢复主窗口置顶
-        try {
-            WinSetAlwaysOnTop(true, "A")
-        }
-        
-        return result
-    }
 }
