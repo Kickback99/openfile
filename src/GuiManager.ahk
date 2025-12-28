@@ -132,6 +132,9 @@ class GuiManager {
 
         ; 使用一次性定时器启用搜索框Tabstop
         ; SetTimer(ObjBindMethod(this, "EnableSearchBoxTab"), -50)
+
+        ; ++++ 关键：设置主窗口句柄给MessageManager ++++
+        MessageManager.SetMainWindowHwnd(this.gui.Hwnd)
     }
 
     /* EnableSearchBoxTab() {
@@ -227,37 +230,6 @@ class GuiManager {
         this.editMode := "create"
         this.currentEditSection := ""
         this.ShowEditDialogGui("", "")
-    }
-    
-    ; 显示编辑对话框
-    ShowEditDialog(*) {
-        selectedIndex := this.listBox.Value
-        if (selectedIndex <= 0) {
-            MsgBox("请先选择一个要编辑的软件")
-            return
-        }
-        
-        selectedText := this.listBox.Text
-        if (!this.softwareMap.Has(selectedText)) {
-            MsgBox("未找到选中的软件信息")
-            return
-        }
-        
-        software := this.softwareMap[selectedText]
-        this.editMode := "edit"
-        this.currentEditSection := software["section"]
-
-        ; >>> 检查是否为Root section，不允许编辑Root
-        if (StrLower(software["section"]) = "root") {
-            MsgBox("Root section不允许编辑，请使用其他方法修改Root设置。", "提示")
-            return
-        }
-
-
-        ; >>> 保存要编辑的软件名称，用于编辑后重新选中
-        this.softwareToSelectAfterEdit := software["name"]
-        
-        this.ShowEditDialogGui(software["name"], software["path"])
     }
     
     ; 显示编辑对话框（内部方法）- 修正版

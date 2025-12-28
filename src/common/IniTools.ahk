@@ -78,9 +78,11 @@ class IniTools {
         SplitPath(filePath, , , , &fileNameNoExt)
         ; >>> 严格检查：文件名必须完全等于当前configType
         if (fileNameNoExt != expectedConfigType) {
-            MsgBox("请选择 " expectedConfigType ".txt 文件进行操作！`n`n"
-                . "当前选择的是: " fileNameNoExt ".txt`n"
-                . "当前配置类型是: " expectedConfigType, "文件不匹配", "Iconx")
+            MessageManager.ShowError(
+                "请选择 " expectedConfigType ".txt 文件进行操作！`n`n"
+                        . "当前选择的是: " fileNameNoExt ".txt`n"
+                        . "当前配置类型是: " expectedConfigType, "文件不匹配"
+            )
             return false
         }
         return true
@@ -101,7 +103,7 @@ class IniTools {
         ; 检查是否有内容
         if (nonEmptyLines.Length = 0) {
             if (!skipMsgBox && !skipFirstPairCheck) {
-                MsgBox("文件内容为空，请检查文件！", "格式错误", "Iconx")
+                MessageManager.ShowError("文件内容为空，请检查文件！", "格式错误")
             }
             return false
         }
@@ -109,8 +111,10 @@ class IniTools {
         ; 如果skipFirstPairCheck为true，则跳过行数奇偶性检查
         if (!skipFirstPairCheck && Mod(nonEmptyLines.Length, 2) != 0) {
             if (!skipMsgBox) {
-                MsgBox("文件格式不正确！`n`n"
-                    . "有效内容行数应为偶数（名称+路径成对出现）", "格式错误", "Iconx")
+                MessageManager.ShowError(
+                  "文件格式不正确！`n`n"
+                    . "有效内容行数应为偶数（名称+路径成对出现）", "格式错误"  
+                )
             }
             return false
         }
@@ -122,8 +126,10 @@ class IniTools {
                     ; 检查是否是合法的文件名
                     if (RegExMatch(line, '[\\/:*?"<>|]')) {
                         if (!skipMsgBox) {
-                            MsgBox("第 " i " 行包含非法字符：`n`n" line "`n`n"
-                                . "文件名不能包含：\ / : * ? " . Chr(34) . " < > |", "格式错误", "Iconx")
+                            MessageManager.ShowError(
+                                "第 " i " 行包含非法字符：`n`n" line "`n`n"
+                                . "文件名不能包含：\ / : * ? " . Chr(34) . " < > |", "格式错误"
+                            )
                         }
                         return false
                     }
@@ -131,8 +137,10 @@ class IniTools {
                     ; 不能以点开头或结尾
                     if (SubStr(line, 1, 1) = "." || SubStr(line, 0, 1) = ".") {
                         if (!skipMsgBox) {
-                            MsgBox("第 " i " 行格式错误：`n`n" line "`n`n"
-                                . "文件名不能以点开头或结尾", "格式错误", "Iconx")
+                            MessageManager.ShowError(
+                                "第 " i " 行格式错误：`n`n" line "`n`n"
+                                . "文件名不能以点开头或结尾", "格式错误"
+                            )
                         }
                         return false
                     }
@@ -170,8 +178,10 @@ class IniTools {
         ; 文件名不能包含：\ / : * ? " < > |
         if (RegExMatch(name, '[\\/:*?"<>|]')) {
             if (!skipMsgBox) {
-                MsgBox("第 " lineNumber " 行包含非法字符：`n`n" name "`n`n"
-                    . "文件名不能包含：\ / : * ? " . Chr(34) . " < > |", "格式错误", "Iconx")
+                MessageManager.ShowError(
+                    "第 " lineNumber " 行包含非法字符：`n`n" name "`n`n"
+                    . "文件名不能包含：\ / : * ? " . Chr(34) . " < > |", "格式错误"
+                )
             }
             return false
         }
@@ -179,8 +189,10 @@ class IniTools {
         ; 不能以点开头或结尾
         if (SubStr(name, 1, 1) = "." || SubStr(name, 0, 1) = ".") {
             if (!skipMsgBox) {
-                MsgBox("第 " lineNumber " 行格式错误：`n`n" name "`n`n"
-                    . "文件名不能以点开头或结尾", "格式错误", "Iconx")
+                MessageManager.ShowError(
+                    "第 " lineNumber " 行格式错误：`n`n" name "`n`n"
+                    . "文件名不能以点开头或结尾", "格式错误"
+                )
             }
             return false
         }
@@ -188,7 +200,9 @@ class IniTools {
         ; >>> 新增：不允许为空
         if (name = "") {
             if (!skipMsgBox) {
-                MsgBox("第 " lineNumber " 行：名称不能为空", "格式错误", "Iconx")
+                MessageManager.ShowError(
+                    "第 " lineNumber " 行：名称不能为空", "格式错误"
+                )
             }
             return false
         }
@@ -215,8 +229,10 @@ class IniTools {
         ; 条件1：必须包含多个\或者多个/（至少一个）
         if (backslashCount = 0 && slashCount = 0) {
             if (!skipMsgBox) {
-                MsgBox("第 " lineNumber " 行不是有效的路径：`n`n" path "`n`n"
-                    . "路径必须包含路径分隔符（\或/）", "格式错误", "Iconx")
+                MessageManager.ShowError(
+                    "第 " lineNumber " 行不是有效的路径：`n`n" path "`n`n"
+                    . "路径必须包含路径分隔符（\或/）", "格式错误"
+                )
             }
             return false
         }
@@ -230,7 +246,9 @@ class IniTools {
                 } else {
                     msg .= "路径只能包含一个盘符（:），当前包含 " colonCount " 个"
                 }
-                MsgBox(msg, "格式错误", "Iconx")
+                MessageManager.ShowError(
+                    msg, "格式错误"
+                )
             }
             return false
         }
@@ -238,8 +256,10 @@ class IniTools {
         ; 检查其他非法字符
         if (RegExMatch(path, '[*?"<>|]')) {
             if (!skipMsgBox) {
-                MsgBox("第 " lineNumber " 行包含非法字符：`n`n" path "`n`n"
-                    . "路径不能包含：* ? " . Chr(34) . " < > |", "格式错误", "Iconx")
+                MessageManager.ShowError(
+                    "第 " lineNumber " 行包含非法字符：`n`n" path "`n`n"
+                    . "路径不能包含：* ? " . Chr(34) . " < > |", "格式错误"
+                )
             }
             return false
         }
@@ -247,7 +267,9 @@ class IniTools {
         ; >>> 新增：不允许为空
         if (path = "") {
             if (!skipMsgBox) {
-                MsgBox("第 " lineNumber " 行：路径不能为空", "格式错误", "Iconx")
+                MessageManager.ShowError(
+                    "第 " lineNumber " 行：路径不能为空", "格式错误"
+                )
             }
             return false
         }
