@@ -25,7 +25,7 @@ class FileProcessor {
             for existingName, software in guiManager.softwareMap {
                 if (software["name"] = displayName) {
                     duplicateFound := true
-                    response := MsgBox("已存在同名软件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
+                    response := this.ShowMessageBox("已存在同名软件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
                     if (response != "Yes") {
                         return ""  ; 跳过这个文件
                     }
@@ -153,7 +153,7 @@ class FileProcessor {
                             duplicateFound := true
                             
                             ; 批量模式下，如果已存在同名软件，询问是否覆盖
-                            response := MsgBox("已存在同名软件 '" . displayName . "'。`n`n是否覆盖？", "确认覆盖", "YesNo")
+                            response := this.ShowMessageBox("已存在同名软件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
                             if (response != "Yes") {
                                 ; 跳过这个文件
                                 continue
@@ -199,12 +199,12 @@ class FileProcessor {
                     GuiEventHandlers.ShowToolTip(guiManager, "批量创建完成，成功 " . successCount . "/" . totalCount, 2000)
                 }
             } else {
-                MsgBox("批量创建失败，请检查配置")
+                this.ShowMessageBox("批量创建失败，请检查配置")
             }
             
         } catch as e {
             progressGui.Destroy()
-            MsgBox("批量创建过程中出错：`n" . e.Message)
+            this.ShowMessageBox("批量创建过程中出错：`n" . e.Message)
         }
         
         return lastAddedName
