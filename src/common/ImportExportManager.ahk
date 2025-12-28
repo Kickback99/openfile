@@ -9,6 +9,7 @@ class ImportExportManager {
         this.configPath := configPath
     }
     
+    ; t_softmanager_settings：alwaysOnTop-multi
     ; ==================== 导出相关方法 ====================
     
     ; 导出配置（主方法）
@@ -19,7 +20,9 @@ class ImportExportManager {
         selectedText := guiManager.listBox.Text
         
         ; ++++ 关键：临时启用OwnDialogs ++++
-        guiManager.gui.Opt("+OwnDialogs")
+        if(guiManager.isTop){
+            guiManager.gui.Opt("+OwnDialogs")
+        }
 
         ; 自动填充文件名
         defaultFileName := this.configType ".txt"
@@ -27,7 +30,9 @@ class ImportExportManager {
 
         ; 用户取消选择
         if (exportPath = "") {
-            ImportExportManager.HandleUserCancel(guiManager,selectedText)
+            if(guiManager.isTop){
+                ImportExportManager.HandleUserCancel(guiManager,selectedText)
+            }
             return false
         }
         
@@ -175,11 +180,15 @@ class ImportExportManager {
         selectedText := guiManager.listBox.Text
         
         ; ++++ 关键：临时启用OwnDialogs ++++
-        guiManager.gui.Opt("+OwnDialogs")
+        if(guiManager.isTop){
+            guiManager.gui.Opt("+OwnDialogs")
+        }
 
         importPath := FileSelect(1, , "选择要导入的配置文件", "文本文件 (*.txt)")
         if (importPath = "" || !FileExist(importPath)) {
-            ImportExportManager.HandleUserCancel(guiManager,selectedText)
+            if(guiManager.isTop){
+                ImportExportManager.HandleUserCancel(guiManager,selectedText)
+            }
             return false
         }
 
@@ -336,11 +345,15 @@ class ImportExportManager {
         }
 
         ; ++++ 关键：临时启用OwnDialogs ++++
-        guiManager.gui.Opt("+OwnDialogs")
+        if(guiManager.isTop){
+            guiManager.gui.Opt("+OwnDialogs")
+        }
         
         appendPath := FileSelect(1, , "选择要追加的配置文件", "文本文件 (*.txt)")
         if (appendPath = "" || !FileExist(appendPath)) {
-            ImportExportManager.HandleUserCancel(guiManager,selectedText)
+            if(guiManager.isTop){
+                ImportExportManager.HandleUserCancel(guiManager,selectedText)
+            }
             return false
         }
 

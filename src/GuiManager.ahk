@@ -4,7 +4,6 @@
 #Include "./common/GuiEventHandlers.ahk"
 #Include "./common/PinyinHelper.ahk"
 #Include "./common/FileProcessor.ahk"
-#Include "./common/SettingsManager.ahk"
 #Include "./common/MessageManager.ahk"
 ; ==============================
 ; GuiManager.ahk
@@ -15,6 +14,10 @@ class GuiManager {
     __New(configManager) {
         ; 保存ConfigManager实例
         this.configManager := configManager
+
+        ; 载入settings.ini配置
+        ; t_softmanager_settings：alwaysOnTop-get
+        this.isTop := SettingsManager.GetBool("AlwaysOnTop",true)
         
         ; 获取软件列表
         this.softwareList := configManager.GetSoftwareListArray()
@@ -59,7 +62,10 @@ class GuiManager {
         this.gui.Title := (this.configType)
 
         ; ++++ 添加AlwaysOnTop选项确保窗口置顶 ++++
-        this.gui.Opt("+AlwaysOnTop")
+        ; t_softmanager_settings：alwaysOnTop
+        if(this.isTop){
+            this.gui.Opt("+AlwaysOnTop")
+        }
 
         ; 移除最大化按钮
         try {
@@ -134,7 +140,10 @@ class GuiManager {
         ; SetTimer(ObjBindMethod(this, "EnableSearchBoxTab"), -50)
 
         ; ++++ 关键：设置主窗口句柄给MessageManager ++++
-        MessageManager.SetMainWindowHwnd(this.gui.Hwnd)
+        ; t_softmanager_settings：alwaysOnTop
+        if(this.isTop){
+            MessageManager.SetMainWindowHwnd(this.gui.Hwnd)
+        }
     }
 
     /* EnableSearchBoxTab() {
@@ -237,7 +246,10 @@ class GuiManager {
         ; 创建编辑对话框
         editGui := Gui()
         editGui.Title := (this.editMode = "create" ? "创建新软件" : "编辑软件")
-        editGui.Opt("+AlwaysOnTop")
+        ; t_softmanager_settings：alwaysOnTop
+        if(this.isTop){
+            editGui.Opt("+AlwaysOnTop")
+        }
         
         ; 存储必要属性到GUI对象
         editGui.editMode := this.editMode  ; 必须：区分创建/编辑模式
@@ -258,7 +270,7 @@ class GuiManager {
         editGui.Add("Text", "w400", "软件路径:")
         ctlPath := editGui.Add("Edit", "w400", defaultPath)
         btnBrowse := editGui.Add("Button", "w80", "浏览...")
-        btnBrowse.OnEvent("Click", (*) => GuiEventHandlers.HandleBrowseClick(ctlPath,editGui))
+        btnBrowse.OnEvent("Click", (*) => GuiEventHandlers.HandleBrowseClick(ctlPath,editGui,this.isTop))
         editGui.ctlPath := ctlPath 
         
         editGui.Add("Text", "w400", "Section名称:")

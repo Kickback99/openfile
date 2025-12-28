@@ -2,6 +2,7 @@
 #SingleInstance Force
 #Include src\ConfigManager.ahk
 #Include src\GuiManager.ahk
+#Include "src\common\SettingsManager.ahk"
 
 ; 显示管理器函数
 ShowManager(configType) {
@@ -21,7 +22,16 @@ ShowManager(configType) {
         
         ; 确保窗口在最前面
         WinSetAlwaysOnTop(1, windowTitle)
-        ; WinSetAlwaysOnTop(0, windowTitle)  ; 临时置顶然后取消，确保在前面
+
+        ; t_softmanager_settings：alwaysOnTop-get
+        isTop := SettingsManager.GetBool("AlwaysOnTop",true)
+        if(!isTop){
+            try{
+                WinSetAlwaysOnTop(0, windowTitle) ; 取消置顶
+            }catch {
+
+            }
+        }
         
         return
     }
