@@ -12,13 +12,22 @@ class ImportExportManager {
     ; ==================== 导出相关方法 ====================
     
     ; 导出配置（主方法）
-    ExportConfig(moreGui) {
+    ExportConfig(moreGui,guiManager) {
         moreGui.Destroy()
+
+        ; >>> 保存当前选择的文本
+        selectedText := guiManager.listBox.Text
         
+        ; ++++ 关键：临时启用OwnDialogs ++++
+        guiManager.gui.Opt("+OwnDialogs")
+
         ; 自动填充文件名
         defaultFileName := this.configType ".txt"
         exportPath := FileSelect("S", defaultFileName, "导出配置文件", "文本文件 (*.txt)")
+
+        ; 用户取消选择
         if (exportPath = "") {
+            ImportExportManager.HandleUserCancel(guiManager,selectedText)
             return false
         }
         
@@ -159,11 +168,18 @@ class ImportExportManager {
     ; ==================== 导入相关方法 ====================
     
     ; 导入配置（主方法）
-    ImportConfig(moreGui) {
+    ImportConfig(moreGui,guiManager) {
         moreGui.Destroy()
+
+        ; >>> 保存当前选择的文本
+        selectedText := guiManager.listBox.Text
         
+        ; ++++ 关键：临时启用OwnDialogs ++++
+        guiManager.gui.Opt("+OwnDialogs")
+
         importPath := FileSelect(1, , "选择要导入的配置文件", "文本文件 (*.txt)")
         if (importPath = "" || !FileExist(importPath)) {
+            ImportExportManager.HandleUserCancel(guiManager,selectedText)
             return false
         }
 
@@ -308,16 +324,23 @@ class ImportExportManager {
     ; ==================== 追加相关方法 ====================
     
     ; 追加配置（主方法）
-    AppendConfig(moreGui) {
+    AppendConfig(moreGui,guiManager) {
         moreGui.Destroy()
+
+        ; >>> 保存当前选择的文本
+        selectedText := guiManager.listBox.Text
         
         if (!FileExist(this.configPath)) {
             MessageManager.ShowError("配置文件不存在，无法追加！")
             return false
         }
+
+        ; ++++ 关键：临时启用OwnDialogs ++++
+        guiManager.gui.Opt("+OwnDialogs")
         
         appendPath := FileSelect(1, , "选择要追加的配置文件", "文本文件 (*.txt)")
         if (appendPath = "" || !FileExist(appendPath)) {
+            ImportExportManager.HandleUserCancel(guiManager,selectedText)
             return false
         }
 
@@ -588,4 +611,21 @@ class ImportExportManager {
         
         return content
     }
+    
+    ; >>> 新增：处理用户取消选择的通用逻辑
+    static HandleUserCancel(guiManager, selectedText) {
+        ; 恢复Owner关系
+        guiManager.gui.Opt("-OwnDialogs")
+        
+        ; 恢复选择
+        if (selectedText != '') {
+            ; 恢复选中项
+            GuiEventHandlers.SelectItemInListBox(guiManager, selectedText)
+        } else {
+            ; 如果没有选中项，就让搜索框进入焦点
+            guiManager.searchBox.Focus()
+            guiManager.userWasInSearchBox := true
+        }
+    }
+
 }

@@ -714,9 +714,9 @@ class GuiEventHandlers {
     ; ==================== 浏览文件按钮事件处理 ====================
     
     ; 浏览文件按钮点击事件处理
-    static HandleBrowseClick(pathControl) {
+    static HandleBrowseClick(pathControl,ownerGui) {
         ; >>> 使用PathUtils工具类
-        selectedFile := PathUtils.BrowseForExecutable(pathControl.Value)
+        selectedFile := PathUtils.BrowseForExecutable(pathControl.Value,ownerGui)
         if (selectedFile != "") {
             pathControl.Value := selectedFile
         }
