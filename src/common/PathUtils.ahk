@@ -85,16 +85,18 @@ class PathUtils {
     }
     
     ; 静态方法：浏览选择文件
-    static BrowseForExecutable(currentPath := "",ownerGui := "") {
+    ; t_softmanager_settings：alwaysOnTop
+    static BrowseForExecutable(currentPath := "",ownerGui := "",isTop := "") {
         ; ++++ 关键：如果有父窗口，临时启用OwnDialogs ++++
-        if (IsObject(ownerGui)) {
+        if (IsObject(ownerGui) && isTop) {
             ownerGui.Opt("+OwnDialogs")
+        }else {
         }
 
         selectedFile := FileSelect(1, currentPath, "选择可执行文件", "可执行文件 (*.exe; *.bat; *.cmd)")
         
         ; >>> 无论用户选择还是取消，都恢复Owner关系
-        if (IsObject(ownerGui)) {
+        if (IsObject(ownerGui) && isTop) {
             ownerGui.Opt("-OwnDialogs")
         }
 

@@ -10,7 +10,9 @@ class SettingsManager {
     static ReadAllConfig() {
         config := Map()
         
+        ; t_softmanager_settings：default
         ; 设置默认值
+        config["AlwaysOnTop"] := true
         config["EnableExtension"] := false
         config["BatchThreshold"] := 5
         config["ShowSuccessMsg"] := true

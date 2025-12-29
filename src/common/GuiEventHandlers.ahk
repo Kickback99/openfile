@@ -50,6 +50,8 @@ class GuiEventHandlers {
         
         ; 8. 根据结果处理
         if (selectedFiles.Length > 0) {
+            ; t_softmanager_settings：enableExtension-get
+            ; t_softmanager_settings：batchThreshold-get
             enableExtension := SettingsManager.GetBool("EnableExtension", false)
             batchThreshold := SettingsManager.GetInt("BatchThreshold", 5)
             
@@ -215,7 +217,10 @@ class GuiEventHandlers {
         ; 创建更多对话框
         moreGui := Gui()
         moreGui.Title := "更多操作 - " guiManager.configType
-        moreGui.Opt("+AlwaysOnTop")
+        ; t_softmanager_settings：alwaysOnTop
+        if(guiManager.isTop){
+            moreGui.Opt("+AlwaysOnTop")
+        }
 
         ; 移除最小化按钮
         try {
@@ -714,9 +719,9 @@ class GuiEventHandlers {
     ; ==================== 浏览文件按钮事件处理 ====================
     
     ; 浏览文件按钮点击事件处理
-    static HandleBrowseClick(pathControl,ownerGui) {
+    static HandleBrowseClick(pathControl,ownerGui,isTop) {
         ; >>> 使用PathUtils工具类
-        selectedFile := PathUtils.BrowseForExecutable(pathControl.Value,ownerGui)
+        selectedFile := PathUtils.BrowseForExecutable(pathControl.Value,ownerGui,isTop)
         if (selectedFile != "") {
             pathControl.Value := selectedFile
         }
