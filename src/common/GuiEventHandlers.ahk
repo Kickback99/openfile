@@ -636,6 +636,9 @@ class GuiEventHandlers {
         if (guiManager.searchBox.Value = "") {
             guiManager.listBox.Value := 0
         }
+
+        ; >>> 关键：立即更新按钮状态(搜索框获得焦点时已取消多选)
+        guiManager.UpdateButtonStates()
     }
     
     ; 搜索框失去焦点事件处理
