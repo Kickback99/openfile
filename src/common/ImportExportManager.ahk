@@ -23,8 +23,8 @@ class ImportExportManager {
 
         SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
-        ; 保存当前选择的文本
-        selectedText := guiManager.listBox.Text
+        ; 修改：保存当前选择的文本数组
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
         ; 临时启用OwnDialogs
         if(guiManager.isTop){
@@ -38,7 +38,7 @@ class ImportExportManager {
         ; 用户取消选择
         if (exportPath = "") {
             if(guiManager.isTop){
-                ImportExportManager.HandleUserCancel(guiManager,selectedText)
+                ImportExportManager.HandleUserCancel(guiManager,selectedTexts)
             }
             return false
         }
@@ -166,8 +166,8 @@ class ImportExportManager {
         ; moreGui.Destroy()
         SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
-        ; 保存当前选择的文本
-        selectedText := guiManager.listBox.Text
+        ; 修改：保存当前选择的文本数组
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
         ; 临时启用OwnDialogs
         if(guiManager.isTop){
@@ -177,7 +177,7 @@ class ImportExportManager {
         importPath := FileSelect(1, , "选择要导入的配置文件", "文本文件 (*.txt)")
         if (importPath = "" || !FileExist(importPath)) {
             if(guiManager.isTop){
-                ImportExportManager.HandleUserCancel(guiManager,selectedText)
+                ImportExportManager.HandleUserCancel(guiManager,selectedTexts)
             }
             return false
         }
@@ -338,8 +338,8 @@ class ImportExportManager {
         ; moreGui.Destroy()
         SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
-        ; 保存当前选择的文本
-        selectedText := guiManager.listBox.Text
+        ; 修改：保存当前选择的文本数组
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
         if (!FileExist(this.configPath)) {
             MessageManager.ShowError("配置文件不存在，无法追加！")
@@ -354,7 +354,7 @@ class ImportExportManager {
         appendPath := FileSelect(1, , "选择要追加的配置文件", "文本文件 (*.txt)")
         if (appendPath = "" || !FileExist(appendPath)) {
             if(guiManager.isTop){
-                ImportExportManager.HandleUserCancel(guiManager,selectedText)
+                ImportExportManager.HandleUserCancel(guiManager,selectedTexts)
             }
             return false
         }
@@ -639,14 +639,14 @@ class ImportExportManager {
     }
     
     ; 新增：处理用户取消选择的通用逻辑
-    static HandleUserCancel(guiManager, selectedText) {
+    static HandleUserCancel(guiManager, selectedTexts) {
         ; 恢复Owner关系
         guiManager.gui.Opt("-OwnDialogs")
         
         ; 恢复选择
-        if (selectedText != '') {
-            ; 恢复选中项
-            GuiEventHandlers.SelectItemInListBox(guiManager, selectedText)
+        if (selectedTexts.Length > 0) {
+            ; >>> 修改：恢复选中项（只恢复第一项，因为实际是单选）
+            GuiEventHandlers.SelectItemInListBox(guiManager, selectedTexts[1])
         } else {
             ; 如果没有选中项，就让搜索框进入焦点
             guiManager.searchBox.Focus()
