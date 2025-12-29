@@ -20,6 +20,7 @@ class MessageManager {
     ; 主窗口句柄（用于智能判断）
     static MainWindowHwnd := 0
     
+    ; t_softmanager_settings：showSuccessMsg-get-multi
     ; ++++ 设置主窗口句柄（在GuiManager初始化时调用） ++++
     static SetMainWindowHwnd(hwnd) {
         this.MainWindowHwnd := hwnd
@@ -27,6 +28,13 @@ class MessageManager {
     
     ; ++++ 智能获取所有者窗口句柄 ++++
     static GetOwnerHwnd(ownerHwnd := 0) {
+
+        ;检查AlwaysOnTop配置
+        ; t_softmanager_settings：alwaysOnTop-get
+        if (!SettingsManager.GetBool("AlwaysOnTop", true)) {
+            return 0  ; AlwaysOnTop为false，不使用Owner
+        }
+
         ; 1. 如果调用方明确指定了ownerHwnd，使用指定的
         if (ownerHwnd != 0) {
             return ownerHwnd
