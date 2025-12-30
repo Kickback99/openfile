@@ -335,7 +335,8 @@ class GuiManager {
             editGui,
             WindowConstants.EDIT_GUI_WIDTH,
             editHeight,
-            WindowConstants.EDIT_GUI_ADJUST_LEFT
+            WindowConstants.EDIT_GUI_ADJUST_LEFT,
+            WindowConstants.EDIT_GUI_ADJUST_TOP
         )
     }
     
