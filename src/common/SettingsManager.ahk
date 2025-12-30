@@ -13,6 +13,7 @@ class SettingsManager {
         ; t_softmanager_settings：default
         ; 设置默认值
         config["AlwaysOnTop"] := true
+        config["SortByAlphabet"] := false
         config["EnableExtension"] := false
         config["BatchThreshold"] := 5
         config["ShowSuccessMsg"] := true
