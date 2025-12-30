@@ -1,3 +1,4 @@
+#Include "../lib/py-master/lib/py.ahk"
 ; ==============================
 ; ConfigManager.ahk
 ; 支持动态配置文件的INI管理器
@@ -44,8 +45,6 @@ class ConfigManager {
         this.softwareList := this.GetSoftwareList()
     }
 
-
-    
     ; 确保配置目录存在
     EnsureConfigDirectory(configsDir) {
         if (!DirExist(configsDir)) {
@@ -79,8 +78,25 @@ class ConfigManager {
         }
     }
     
-    ; 加载配置文件
+    ; 加载配置文件（支持两种模式）
+    ; t_softmanager_settings：sortByAlphabet-get
     LoadConfig() {
+        configData := Map()
+        
+        ; 读取排序配置
+        sortByAlphabet := SettingsManager.GetBool("SortByAlphabet", false)
+        
+        if (sortByAlphabet) {
+            ; v1模式：使用传统方式（但我们会重写GetSoftwareList方法）
+            return this.LoadConfigBasic()
+        } else {
+            ; v2模式：使用顺序记录方式
+            return this.LoadConfigWithOrder()
+        }
+    }
+    
+    ; 基础加载（不记录顺序）
+    LoadConfigBasic() {
         configData := Map()
         currentSection := ""
         
@@ -116,28 +132,163 @@ class ConfigManager {
         
         return configData
     }
+
+    ; 顺序记录加载（v2模式）
+    LoadConfigWithOrder() {
+        configData := Map()
+        ; configData["_sectionsInOrder"] := []  ; 记录section顺序
+        sectionOrder := []  ; >>> 使用简化的变量名 记录section顺序
+        
+        currentSection := ""
+        
+        Loop Read, this.configPath
+        {
+            line := Trim(A_LoopReadLine)
+            
+            ; 跳过注释和空行
+            if (line == "" || SubStr(line, 1, 1) == ";")
+                continue
+            
+            ; 解析section
+            if (SubStr(line, 1, 1) == "[") {
+                endPos := InStr(line, "]")
+                if (endPos > 1) {
+                    currentSection := SubStr(line, 2, endPos - 2)
+                    configData[currentSection] := Map()
+                     sectionOrder.Push(currentSection)  ; >>> 记录顺序到简化变量
+                }
+                continue
+            }
+            
+            ; 解析key=value
+            if (currentSection != "" && InStr(line, "=")) {
+                eqPos := InStr(line, "=")
+                key := Trim(SubStr(line, 1, eqPos - 1))
+                value := Trim(SubStr(line, eqPos + 1))
+                
+                if (key != "") {
+                    configData[currentSection][key] := value
+                }
+            }
+        }
+        ; >>> 将顺序数组存入配置数据
+        configData["_sectionsInOrder"] := sectionOrder
+        return configData
+    }
     
-    ; 获取所有软件列表
-    GetSoftwareList() {
+    ; V1模式：获取软件列表并按拼音智能排序
+    GetSoftwareListSortedByPinyin() {
         softwareList := []
         
+        ; >>> 收集所有软件
         for section, sectionData in this.data {
-
-            ; 跳过Root项
             if (section = "Root") {
                 continue
             }
-
+            
             if (sectionData.Has("name") && sectionData.Has("path")) {
-                softwareInfo := Map()
-                softwareInfo["name"] := sectionData["name"]
-                softwareInfo["path"] := sectionData["path"]
-                softwareInfo["section"] := section
-                softwareList.Push(softwareInfo)
+                softwareList.Push(Map(
+                    "name", sectionData["name"],
+                    "path", sectionData["path"],
+                    "section", section
+                ))
+            }
+        }
+        
+        ; >>> 如果软件数量大于1才需要排序
+        if (softwareList.Length > 1) {
+            softwareList := this.SimpleBubbleSort(softwareList)
+        }
+        
+        return softwareList
+    }
+    
+    ; >>> 简化版冒泡排序
+    SimpleBubbleSort(arr) {
+        count := arr.Length
+        
+        Loop count {  ; 外层循环
+            outer := A_Index
+            Loop count - outer {  ; 内层循环
+                current := A_Index
+                next := current + 1
+                
+                ; >>> 修正：Map访问应该使用中括号，不是点号
+                name1 := arr[current]["name"]
+                name2 := arr[next]["name"]
+                
+                if (this.CompareNames(name1, name2) > 0) {
+                    ; 交换位置
+                    temp := arr[current]
+                    arr[current] := arr[next]
+                    arr[next] := temp
+                }
+            }
+        }
+        
+        return arr
+    }
+    
+    ; >>> 简化版名称比较函数
+    CompareNames(name1, name2) {
+        ; >>> 转换为小写进行不区分大小写比较
+        lower1 := StrLower(name1)
+        lower2 := StrLower(name2)
+        
+        ; >>> 尝试获取拼音首字母进行比较
+        try {
+            py1 := py.initials_muti(lower1)
+            py2 := py.initials_muti(lower2)
+            
+            ; 比较拼音首字母
+            result := StrCompare(py1, py2, "Locale")
+            if (result != 0) {
+                return result
+            }
+        }
+        
+        ; >>> 拼音相同或拼音库失败，比较整个名称
+        return StrCompare(lower1, lower2, "Locale")
+    }
+
+    ; V2模式：按文件顺序获取软件列表
+    GetSoftwareListByFileOrder() {
+        softwareList := []
+        
+        ; 按照文件中的顺序遍历sections
+        if (this.data.Has("_sectionsInOrder")) {
+            sectionOrder := this.data["_sectionsInOrder"]  ; >>> 获取顺序数组
+            for section in sectionOrder {
+                ; 跳过Root项和顺序标记本身
+                if (section = "Root") {
+                    continue
+                }
+                
+                sectionData := this.data[section]
+                if (sectionData.Has("name") && sectionData.Has("path")) {
+                    softwareInfo := Map()
+                    softwareInfo["name"] := sectionData["name"]
+                    softwareInfo["path"] := sectionData["path"]
+                    softwareInfo["section"] := section
+                    softwareList.Push(softwareInfo)
+                }
             }
         }
         
         return softwareList
+    }
+    
+    ; 获取所有软件列表（根据配置选择排序方式）
+    ; t_softmanager_settings：sortByAlphabet-get
+    GetSoftwareList() {
+        ; 检查是否启用了字母排序
+        if (SettingsManager.GetBool("SortByAlphabet", false)) {
+            ; v1模式：使用拼音库进行智能排序
+            return this.GetSoftwareListSortedByPinyin()
+        } else {
+            ; v2模式：按文件顺序
+            return this.GetSoftwareListByFileOrder()
+        }
     }
     
     ; 获取软件列表（供外部调用）
