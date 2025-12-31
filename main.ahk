@@ -21,13 +21,23 @@ ShowManager(configType) {
         }
         
         ; 确保窗口在最前面
-        WinSetAlwaysOnTop(1, windowTitle)
+        ; WinSetAlwaysOnTop(1, windowTitle)
 
         ; t_softmanager_settings：alwaysOnTop-get
+        ; !!! 修改：不再直接设置置顶，而是根据配置设置
         isTop := SettingsManager.GetBool("AlwaysOnTop",true)
-        if(!isTop){
+        if(isTop){
             try{
-                WinSetAlwaysOnTop(0, windowTitle) ; 取消置顶
+                ; WinSetAlwaysOnTop(1, windowTitle) ; 置顶
+                ; 使用gui的Opt方法而不是WinSet
+                guiManager.gui.Opt("+AlwaysOnTop")
+            }catch {
+
+            }
+        } else {
+            try{
+                ; WinSetAlwaysOnTop(0, windowTitle) ; 取消置顶
+                guiManager.gui.Opt("-AlwaysOnTop")
             }catch {
 
             }

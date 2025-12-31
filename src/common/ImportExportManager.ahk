@@ -14,7 +14,8 @@ class ImportExportManager {
     
     ; 导出配置（主方法）
     ExportConfig(moreGui,guiManager) {
-        moreGui.Destroy()
+        ; moreGui.Destroy()
+        GuiEventHandlers.HandleMoreGuiClose(guiManager,moreGui)
 
         ; >>> 保存当前选择的文本
         selectedText := guiManager.listBox.Text
@@ -174,7 +175,8 @@ class ImportExportManager {
     
     ; 导入配置（主方法）
     ImportConfig(moreGui,guiManager) {
-        moreGui.Destroy()
+        ; moreGui.Destroy()
+        GuiEventHandlers.HandleMoreGuiClose(guiManager,moreGui)
 
         ; >>> 保存当前选择的文本
         selectedText := guiManager.listBox.Text
@@ -334,7 +336,8 @@ class ImportExportManager {
     
     ; 追加配置（主方法）
     AppendConfig(moreGui,guiManager) {
-        moreGui.Destroy()
+        ; moreGui.Destroy()
+        GuiEventHandlers.HandleMoreGuiClose(guiManager,moreGui)
 
         ; >>> 保存当前选择的文本
         selectedText := guiManager.listBox.Text
