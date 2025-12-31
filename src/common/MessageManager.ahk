@@ -31,7 +31,7 @@ class MessageManager {
 
         ;检查AlwaysOnTop配置
         ; t_softmanager_settings：alwaysOnTop-get
-        if (!SettingsManager.GetBool("AlwaysOnTop", true)) {
+        if (!SettingsManager.GetBool("AlwaysOnTop")) {
             return 0  ; AlwaysOnTop为false，不使用Owner
         }
 
@@ -95,7 +95,7 @@ class MessageManager {
             result := MsgBox(message, title, finalOptions)
         } else if (this.IsSuccessMessage(message)) {
             ; 成功消息受配置控制（默认使用信息图标）
-            if (SettingsManager.GetBool("ShowSuccessMsg", true)) {
+            if (SettingsManager.GetBool("ShowSuccessMsg")) {
                 if (icon = 0) {
                     finalOptions := this.BuildOptions(options, this.ICON_ASTERISK)
                     if (actualOwner != 0) {
@@ -109,7 +109,7 @@ class MessageManager {
             }
         } else {
             ; 其他消息按信息消息处理（默认使用信息图标）
-            if (SettingsManager.GetBool("ShowSuccessMsg", true)) {
+            if (SettingsManager.GetBool("ShowSuccessMsg")) {
                 if (icon = 0) {
                     finalOptions := this.BuildOptions(options, this.ICON_ASTERISK)
                     if (actualOwner != 0) {
@@ -128,7 +128,7 @@ class MessageManager {
     ; ++++ 显示成功消息（智能选择所有者窗口-受配置控制） ++++
     static ShowSuccess(message, title := "", options := "OK", ownerHwnd := 0) {
         ; 检查是否显示成功消息
-        if (!SettingsManager.GetBool("ShowSuccessMsg", true)) {
+        if (!SettingsManager.GetBool("ShowSuccessMsg")) {
             return "OK"  ; 配置为false，不显示成功消息
         }
         
@@ -162,7 +162,7 @@ class MessageManager {
     
     ; ++++ 延迟显示成功消息（智能选择所有者窗口-受配置控制） ++++
     static ShowSuccessDelayed(message, delay := 100, ownerHwnd := 0) {
-        if (SettingsManager.GetBool("ShowSuccessMsg", true)) {
+        if (SettingsManager.GetBool("ShowSuccessMsg")) {
             SetTimer(() => this.ShowMessageBoxInternal(message, , "OK", this.ICON_ASTERISK, ownerHwnd), -delay)
         }
     }

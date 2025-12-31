@@ -52,8 +52,8 @@ class GuiEventHandlers {
         if (selectedFiles.Length > 0) {
             ; t_softmanager_settings：enableExtension-get
             ; t_softmanager_settings：batchThreshold-get
-            enableExtension := SettingsManager.GetBool("EnableExtension", false)
-            batchThreshold := SettingsManager.GetInt("BatchThreshold", 5)
+            enableExtension := SettingsManager.GetBool("EnableExtension")
+            batchThreshold := SettingsManager.GetInt("BatchThreshold")
             
             if (selectedFiles.Length >= batchThreshold) {
                 ; 批量创建
@@ -223,7 +223,7 @@ class GuiEventHandlers {
         moreGui.Opt("+Owner" guiManager.gui.Hwnd)
 
         ; !!! 根据配置决定是否置顶
-        if(SettingsManager.GetBool("AlwaysOnTop", true)){
+        if(SettingsManager.GetBool("AlwaysOnTop")){
             moreGui.Opt("+AlwaysOnTop")
         }
 
@@ -317,31 +317,31 @@ class GuiEventHandlers {
 
     ; !!! 新增：获取置顶按钮文本
     static GetAlwaysOnTopButtonText() {
-        isOnTop := SettingsManager.GetBool("AlwaysOnTop", true)
+        isOnTop := SettingsManager.GetBool("AlwaysOnTop")
         return "置顶: " . (isOnTop ? "✓" : "✗")
     }
     
     ; !!! 新增：获取字母排序按钮文本
     static GetSortAlphabetButtonText() {
-        isSorted := SettingsManager.GetBool("SortByAlphabet", false)
+        isSorted := SettingsManager.GetBool("SortByAlphabet")
         return "字母排序: " . (isSorted ? "✓" : "✗")
     }
     
     ; !!! 新增：获取扩展名按钮文本
     static GetShowExtensionButtonText() {
-        showExt := SettingsManager.GetBool("EnableExtension", false)
+        showExt := SettingsManager.GetBool("EnableExtension")
         return "显示扩展名: " . (showExt ? "✓" : "✗")
     }
 
     ; !!! 新增：获取批量阈值按钮文本
     static GetBatchThresholdButtonText() {
-        threshold := SettingsManager.GetInt("BatchThreshold", 5)
+        threshold := SettingsManager.GetInt("BatchThreshold")
         return "批量阈值: " . threshold
     }
     
     ; !!! 新增：获取成功消息按钮文本
     static GetShowSuccessMsgButtonText() {
-        showMsg := SettingsManager.GetBool("ShowSuccessMsg", true)
+        showMsg := SettingsManager.GetBool("ShowSuccessMsg")
         return "成功消息: " . (showMsg ? "✓" : "✗")
     }
     
@@ -401,7 +401,7 @@ class GuiEventHandlers {
         parentGui.Opt("+Disabled")
         
         ; 获取当前值
-        currentValue := SettingsManager.GetInt("BatchThreshold", 5)
+        currentValue := SettingsManager.GetInt("BatchThreshold")
         
         ; 添加控件
         inputGui.SetFont("s9", "JetBrains Mono")
@@ -522,7 +522,7 @@ class GuiEventHandlers {
                 btnShowSuccessMsg.Text := this.GetShowSuccessMsgButtonText()
                 
                 ; 置顶状态会自动通过 GetBool 读取
-                newAlwaysOnTop := SettingsManager.GetBool("AlwaysOnTop", true)
+                newAlwaysOnTop := SettingsManager.GetBool("AlwaysOnTop")
                 guiManager.isTop := newAlwaysOnTop
                 guiManager.gui.Opt((newAlwaysOnTop ? "+" : "-") . "AlwaysOnTop")
                 

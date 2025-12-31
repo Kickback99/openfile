@@ -84,7 +84,7 @@ class ConfigManager {
         configData := Map()
         
         ; 读取排序配置
-        sortByAlphabet := SettingsManager.GetBool("SortByAlphabet", false)
+        sortByAlphabet := SettingsManager.GetBool("SortByAlphabet")
         
         if (sortByAlphabet) {
             ; v1模式：使用传统方式（但我们会重写GetSoftwareList方法）
@@ -282,7 +282,7 @@ class ConfigManager {
     ; t_softmanager_settings：sortByAlphabet-get
     GetSoftwareList() {
         ; 检查是否启用了字母排序
-        if (SettingsManager.GetBool("SortByAlphabet", false)) {
+        if (SettingsManager.GetBool("SortByAlphabet")) {
             ; v1模式：使用拼音库进行智能排序
             return this.GetSoftwareListSortedByPinyin()
         } else {
