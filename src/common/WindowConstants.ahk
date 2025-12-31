@@ -10,13 +10,13 @@ class WindowConstants {
     static MORE_GUI_WIDTH := 400
     
     ; MoreGui 高度
-    static MORE_GUI_HEIGHT := 120  ; 后期可能会增加界面交互，需要时可调整
+    static MORE_GUI_HEIGHT := 200  ; !!! 修改：增加高度以容纳设置按钮
     
     ; MoreGui 水平微调量（向左偏移）
-    static MORE_GUI_ADJUST_LEFT := 65
+    static MORE_GUI_ADJUST_LEFT := 90
     
     ; MoreGui 垂直微调量（目前为0，如需可调整）
-    static MORE_GUI_ADJUST_TOP := 0
+    static MORE_GUI_ADJUST_TOP := 40  ; !!! 新增：设置区域高度
     
     
     ; ==================== EditGui 窗口常量 ====================
@@ -50,4 +50,8 @@ class WindowConstants {
     
     ; 按钮总数（EditGui - 保存和取消）
     static EDIT_GUI_BUTTON_COUNT := 2
+
+    ; ==================== 设置按钮常量 ====================
+    static SETTING_BUTTON_WIDTH := 50  ; !!! 新增：设置按钮宽度
+    static SETTING_BUTTON_COUNT := 6   ; !!! 新增：设置按钮数量
 }

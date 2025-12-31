@@ -5,18 +5,26 @@
 class SettingsManager {
     ; 静态属性：配置文件路径
     static ConfigPath := A_ScriptDir "\settings.ini"
+
+    ; 配置段名称
+    static SectionName := "General"
+
+    ; 配置键的顺序（保持原有顺序）
+    static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg"]
+
+    ; t_softmanager_settings：default
+    static DefaultConfig := Map(
+        "AlwaysOnTop", "true",      ; 字符串
+        "SortByAlphabet", "false",  ; 字符串
+        "EnableExtension", "false", ; 字符串
+        "BatchThreshold", "5",      ; 字符串
+        "ShowSuccessMsg", "true"    ; 字符串
+    )
     
     ; ++++ 读取所有配置到Map中 ++++
     static ReadAllConfig() {
-        config := Map()
-        
-        ; t_softmanager_settings：default
-        ; 设置默认值
-        config["AlwaysOnTop"] := true
-        config["SortByAlphabet"] := false
-        config["EnableExtension"] := false
-        config["BatchThreshold"] := 5
-        config["ShowSuccessMsg"] := true
+        ; 先创建默认配置
+        config := this.CreateDefaultConfig()
         
         try {
             settingsPath := this.ConfigPath
@@ -56,7 +64,8 @@ class SettingsManager {
                 
                 ; 检查是否是段
                 if (SubStr(line, 1, 1) = "[") {
-                    if (line = "[General]") {
+                    ; 使用 SectionName 变量
+                    if (line = "[" . this.SectionName . "]") {
                         inGeneralSection := true
                     } else {
                         inGeneralSection := false
@@ -90,6 +99,16 @@ class SettingsManager {
         }
         
         return config
+    }
+
+    ; ++++ 重置所有设置为默认值 ++++
+    static ResetToDefault() {
+        return this.WriteConfig(this.CreateDefaultConfig())
+    }
+
+    ; ++++ 获取默认值（单个键）++++
+    static GetDefaultValue(key) {
+       return this.DefaultConfig.Get(key, "")
     }
     
     ; ++++ 读取单个配置值 ++++
@@ -133,7 +152,7 @@ class SettingsManager {
             config := this.ReadAllConfig()
             
             ; 更新值
-            config[key] := value
+            config[key] := String(value)
             
             ; 重新写入文件
             return this.WriteConfig(config)
@@ -148,14 +167,23 @@ class SettingsManager {
         try {
             settingsPath := this.ConfigPath
             
-            ; 构建文件内容
-            content := "[General]`r`n"
+            ; 构建文件内容，使用 SectionName 变量
+            content := "[" . this.SectionName . "]`r`n"
             
-            for key, value in config {
-                content .= key . "=" . value . "`r`n"
+            ; 按照指定顺序写入
+            for key in this.ConfigOrder {
+                if (config.Has(key)) {
+                    value := config[key]
+                    
+                    ; 由于现在所有值都是字符串，直接写入
+                    ; 但为了安全，确保是字符串
+                    if (Type(value) != "String") {
+                        value := String(value)
+                    }
+                    
+                    content .= key . "=" . value . "`r`n"
+                }
             }
-            
-            content .= "`r`n"
             
             ; 确保目录存在
             SplitPath(settingsPath, , &configDir)
@@ -183,7 +211,7 @@ class SettingsManager {
             
             if (!FileExist(settingsPath)) {
                 ; 创建默认配置文件
-                return this.CreateDefaultConfig()
+                 return this.ResetToDefault()
             }
             
             ; 检查文件内容是否正常
@@ -200,7 +228,7 @@ class SettingsManager {
             if (this.IsCorruptedContent(content)) {
                 ; 乱码，重新创建
                 FileDelete(settingsPath)
-                return this.CreateDefaultConfig()
+                return this.ResetToDefault()
             }
             
             return true
@@ -212,17 +240,17 @@ class SettingsManager {
     
     ; ++++ 创建默认配置文件 ++++
     static CreateDefaultConfig() {
-        try {
-            ; 默认配置
-            defaultConfig := Map()
-            defaultConfig["EnableExtension"] := "false"
-            defaultConfig["BatchThreshold"] := "5"
-            
-            return this.WriteConfig(defaultConfig)
-            
-        } catch {
-            return false
+        config := Map()
+        
+        ; 按照ConfigOrder顺序添加默认值
+        for key in this.ConfigOrder {
+            if (this.DefaultConfig.Has(key)) {
+                ; 直接使用字符串值
+                config[key] := this.DefaultConfig[key]
+            }
         }
+        
+        return config
     }
     
     ; ++++ 检查内容是否乱码 ++++
