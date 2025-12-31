@@ -24,7 +24,7 @@ ShowManager(configType) {
         ; WinSetAlwaysOnTop(1, windowTitle)
 
         ; t_softmanager_settings：alwaysOnTop-get
-        ; !!! 修改：不再直接设置置顶，而是根据配置设置
+        ;  修改：不再直接设置置顶，而是根据配置设置
         isTop := SettingsManager.GetBool("AlwaysOnTop")
         if(isTop){
             try{

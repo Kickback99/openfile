@@ -219,15 +219,15 @@ class GuiEventHandlers {
         moreGui := Gui()
         moreGui.Title := "更多操作 - " guiManager.configType
         
-        ; !!! 总是设置 Owner 关系
+        ;  总是设置 Owner 关系
         moreGui.Opt("+Owner" guiManager.gui.Hwnd)
 
-        ; !!! 根据配置决定是否置顶
+        ;  根据配置决定是否置顶
         if(SettingsManager.GetBool("AlwaysOnTop")){
             moreGui.Opt("+AlwaysOnTop")
         }
 
-        ; !!! 关键：禁用主窗口（灰色不可操作）
+        ;  关键：禁用主窗口（灰色不可操作）
         guiManager.gui.Opt("+Disabled")
 
         ; 移除最小化按钮
@@ -245,11 +245,13 @@ class GuiEventHandlers {
         moreGui.MarginY := 5
         
         ; 添加说明
-        moreGui.Add("Text", "w380 Center", "配置管理操作")
-        moreGui.Add("Text", "w380 Center cGray", "管理" guiManager.configType ".ini 配置文件")
+        ; moreGui.Add("Text", "w380 Center", "配置管理操作")
+        ; moreGui.Add("Text", "w380 Center cGray", "管理" guiManager.configType ".ini 配置文件")
+        moreGui.Add("Text", "w" WindowConstants.MORE_GUI_WIDTH " Center cGray", "管理" guiManager.configType ".ini 配置文件")
+        ; moreGui.Add("Text", "w380 Center", "配置管理操作")
 
-        ; !!! 新增：添加设置操作说明
-        moreGui.Add("Text", "w380 Center", "`n设置选项（实时生效）")
+        ;  新增：添加设置操作说明
+        ; moreGui.Add("Text", "w380 Center", "`n设置选项（实时生效）")
         
         ; moreGui关闭时恢复主窗口
         moreGui.OnEvent("Close", this.HandleMoreGuiClose.Bind(this, guiManager, moreGui))
@@ -260,44 +262,60 @@ class GuiEventHandlers {
         totalWidth := (buttonWidth * 4) + (buttonSpacing * 3)
         dialogWidth := 400  ; 增加对话框宽度
         startX := (dialogWidth - totalWidth) // 2 */
-        
-         ; 通过 WindowConstants 创建按钮（使用宽度和高度常量） - 计算居中位置
-        totalWidth := (WindowConstants.BUTTON_WIDTH * WindowConstants.MORE_GUI_BUTTON_COUNT) + 
-                    (WindowConstants.BUTTON_SPACING * (WindowConstants.MORE_GUI_BUTTON_COUNT - 1))
-        startX := (WindowConstants.MORE_GUI_WIDTH - totalWidth) // 2
 
-        ; !!! 新增：计算设置按钮位置
-        settingsTotalWidth := (WindowConstants.SETTING_BUTTON_WIDTH * WindowConstants.SETTING_BUTTON_COUNT) + 
-                            (WindowConstants.BUTTON_SPACING * (WindowConstants.SETTING_BUTTON_COUNT - 1))
-        settingsStartX := (WindowConstants.MORE_GUI_WIDTH - settingsTotalWidth) // 2
+        ; !!! 修改：计算设置按钮布局参数
+        ; 按钮宽度：置顶和重置较窄，其他较宽
+        narrowBtnWidth := WindowConstants.SETTING_BUTTON_NARROW_WIDTH    ; 置顶、重置按钮宽度
+        wideBtnWidth := WindowConstants.SETTING_BUTTON_WIDE_WIDTH       ; 字母排序、显示扩展名、批量阈值、成功消息按钮宽度
+        btnSpacing := WindowConstants.BUTTON_SPACING  ; !!! 修改：使用常量中的间距
+        dialogWidth := WindowConstants.MORE_GUI_WIDTH  ; !!! 修改：使用常量中的宽度
         
-        ; !!! 新增：创建设置按钮
-        btnAlwaysOnTop := moreGui.Add("Button", "x" settingsStartX " y+5 w" WindowConstants.SETTING_BUTTON_WIDTH, this.GetAlwaysOnTopButtonText())
-        btnSortAlphabet := moreGui.Add("Button", "x+10 w" WindowConstants.SETTING_BUTTON_WIDTH, this.GetSortAlphabetButtonText())
-        btnShowExtension := moreGui.Add("Button", "x+10 w" WindowConstants.SETTING_BUTTON_WIDTH, this.GetShowExtensionButtonText())
-        btnBatchThreshold := moreGui.Add("Button", "x+10 w" WindowConstants.SETTING_BUTTON_WIDTH, this.GetBatchThresholdButtonText())
-        btnShowSuccessMsg := moreGui.Add("Button", "x+10 w" WindowConstants.SETTING_BUTTON_WIDTH, this.GetShowSuccessMsgButtonText())
-        ; !!! 新增
-        btnResetSettings := moreGui.Add("Button", "x+10 w" WindowConstants.SETTING_BUTTON_WIDTH, "重置")
+        ; !!! 修改：计算按钮行总宽度并居中（使用常量）
+        ; 第一行总宽度
+        row1Width := narrowBtnWidth + wideBtnWidth + wideBtnWidth + (btnSpacing * 2)
+        row1StartX := (dialogWidth - row1Width) // 2
         
-        ; !!! 新增：绑定设置按钮事件
+        ; 第二行总宽度  
+        row2Width := wideBtnWidth + wideBtnWidth + narrowBtnWidth + (btnSpacing * 2)
+        row2StartX := (dialogWidth - row2Width) // 2    
+
+
+        ; !!! 修改：创建设置按钮（分两行）
+        ; 第一行按钮
+        btnAlwaysOnTop := moreGui.Add("Button", "x" row1StartX " w" narrowBtnWidth, this.GetAlwaysOnTopButtonText())
+        btnSortAlphabet := moreGui.Add("Button", "x+" btnSpacing " w" wideBtnWidth, this.GetSortAlphabetButtonText())
+        btnShowExtension := moreGui.Add("Button", "x+" btnSpacing " w" wideBtnWidth, this.GetShowExtensionButtonText())
+        
+        ; 第二行按钮
+        btnBatchThreshold := moreGui.Add("Button", "x" row2StartX " y+10 w" wideBtnWidth, this.GetBatchThresholdButtonText())
+        btnShowSuccessMsg := moreGui.Add("Button", "x+" btnSpacing " w" wideBtnWidth, this.GetShowSuccessMsgButtonText())
+        btnResetSettings := moreGui.Add("Button", "x+" btnSpacing " w" narrowBtnWidth, "重置")
+
+        ;  新增：绑定设置按钮事件
         btnAlwaysOnTop.OnEvent("Click", (*) => this.HandleSettingToggle("AlwaysOnTop", btnAlwaysOnTop, guiManager))
         btnSortAlphabet.OnEvent("Click", (*) => this.HandleSettingToggle("SortByAlphabet", btnSortAlphabet, guiManager))
         btnShowExtension.OnEvent("Click", (*) => this.HandleSettingToggle("EnableExtension", btnShowExtension, guiManager))
         btnBatchThreshold.OnEvent("Click", (*) => this.HandleBatchThresholdClick(guiManager, btnBatchThreshold,moreGui))
         btnShowSuccessMsg.OnEvent("Click", (*) => this.HandleSettingToggle("ShowSuccessMsg", btnShowSuccessMsg, guiManager))
-        ; !!! 新增
+        ;  新增
         btnResetSettings.OnEvent("Click", (*) => this.HandleResetSettings(btnAlwaysOnTop, btnSortAlphabet, btnShowExtension, btnBatchThreshold, btnShowSuccessMsg, guiManager))
+
+        ; !!! 新增：添加分割线
+        moreGui.Add("Text", "xm y+15 w" dialogWidth " 0x10")  ; 水平分割线
         
-        ; 创建常规操作按钮
-        totalWidth := (WindowConstants.BUTTON_WIDTH * WindowConstants.MORE_GUI_BUTTON_COUNT) + 
-                    (WindowConstants.BUTTON_SPACING * (WindowConstants.MORE_GUI_BUTTON_COUNT - 1))
-        startX := (WindowConstants.MORE_GUI_WIDTH - totalWidth) // 2
+
+        ; !!! 修改：计算常规按钮位置（使用常量）
+        ; 常规按钮宽度和数量
+        normalBtnWidth := WindowConstants.BUTTON_WIDTH  ; !!! 修改：使用常量
+        normalBtnCount := WindowConstants.MORE_GUI_BUTTON_COUNT  ; !!! 修改：使用常量
+        normalTotalWidth := (normalBtnWidth * normalBtnCount) + (btnSpacing * (normalBtnCount - 1))
+        normalStartX := (dialogWidth - normalTotalWidth) // 2 
         
-        btnImport := moreGui.Add("Button", "x" startX " y+10 w80", "导入")
-        btnExport := moreGui.Add("Button", "x+10 w80", "导出")
-        btnAppend := moreGui.Add("Button", "x+10 w80", "追加")
-        btnCancel := moreGui.Add("Button", "x+10 w80", "取消")
+        ; 创建常规操作按钮（使用新的计算位置）
+        btnImport := moreGui.Add("Button", "xm" normalStartX " y+2 w" normalBtnWidth, "导入")
+        btnExport := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "导出")
+        btnAppend := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "追加")
+        btnCancel := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "取消")
         
         ; 绑定事件
         btnImport.OnEvent("Click", (btnCtrl, info) => guiManager.HandleImport(moreGui))
@@ -315,37 +333,37 @@ class GuiEventHandlers {
         )
     }
 
-    ; !!! 新增：获取置顶按钮文本
+    ;  新增：获取置顶按钮文本
     static GetAlwaysOnTopButtonText() {
         isOnTop := SettingsManager.GetBool("AlwaysOnTop")
-        return "置顶: " . (isOnTop ? "✓" : "✗")
+        return "置顶: " . (isOnTop ? "✅" : "❌")
     }
     
-    ; !!! 新增：获取字母排序按钮文本
+    ;  新增：获取字母排序按钮文本
     static GetSortAlphabetButtonText() {
         isSorted := SettingsManager.GetBool("SortByAlphabet")
-        return "字母排序: " . (isSorted ? "✓" : "✗")
+        return "字母排序: " . (isSorted ? "✅" : "❌")
     }
     
-    ; !!! 新增：获取扩展名按钮文本
+    ;  新增：获取扩展名按钮文本
     static GetShowExtensionButtonText() {
         showExt := SettingsManager.GetBool("EnableExtension")
-        return "显示扩展名: " . (showExt ? "✓" : "✗")
+        return "显示扩展名: " . (showExt ? "✅" : "❌")
     }
 
-    ; !!! 新增：获取批量阈值按钮文本
+    ;  新增：获取批量阈值按钮文本
     static GetBatchThresholdButtonText() {
         threshold := SettingsManager.GetInt("BatchThreshold")
         return "批量阈值: " . threshold
     }
     
-    ; !!! 新增：获取成功消息按钮文本
+    ;  新增：获取成功消息按钮文本
     static GetShowSuccessMsgButtonText() {
         showMsg := SettingsManager.GetBool("ShowSuccessMsg")
-        return "成功消息: " . (showMsg ? "✓" : "✗")
+        return "成功消息: " . (showMsg ? "✅" : "❌")
     }
     
-    ; !!! 新增：处理设置切换
+    ;  新增：处理设置切换
     static HandleSettingToggle(settingKey, buttonCtrl, guiManager) {
         ; 获取当前值并切换
         currentValue := SettingsManager.GetBool(settingKey)
@@ -388,7 +406,7 @@ class GuiEventHandlers {
         }
     }
 
-    ; !!! 新增：处理批量阈值点击
+    ;  新增：处理批量阈值点击
     static HandleBatchThresholdClick(guiManager, btnBatchThreshold,parentGui) {
         ; 创建输入对话框
         inputGui := Gui()
@@ -397,7 +415,7 @@ class GuiEventHandlers {
         if (guiManager.isTop) {
             inputGui.Opt("+AlwaysOnTop")
         }
-        ; !!! 关键：禁用主窗口（灰色不可操作）
+        ;  关键：禁用主窗口（灰色不可操作）
         parentGui.Opt("+Disabled")
         
         ; 获取当前值
@@ -415,7 +433,7 @@ class GuiEventHandlers {
         btnSave := inputGui.Add("Button", "w80", "保存")
         btnCancel := inputGui.Add("Button", "x+10 w80", "取消")
         
-        ; !!! 修正：定义单独的函数
+        ;  修正：定义单独的函数
         ; btnSave.OnEvent("Click", this.HandleBatchThresholdSave.Bind(this, ctlThreshold, btnBatchThreshold,inputGui,parentGui))
         btnSave.OnEvent("Click", (*) => this.HandleBatchThresholdSave(ctlThreshold, btnBatchThreshold, inputGui, parentGui))
         ; btnCancel.OnEvent("Click", (*) => inputGui.Destroy())
@@ -428,18 +446,18 @@ class GuiEventHandlers {
         inputGui.Show("w320 h150 Center")
     }
     
-    ; !!! 新增：处理批量阈值保存
+    ;  新增：处理批量阈值保存
     static HandleBatchThresholdSave(ctlThreshold, btnBatchThreshold,inputGui,parentGui) {
         ; 获取原始值
         rawValue := Trim(ctlThreshold.Value)
         
-        ; !!! 检查是否为空
+        ;  检查是否为空
         if (rawValue = "") {
             MessageManager.ShowError("批量阈值不能为空")
             return  ; 不关闭窗口，让用户重新输入
         }
         
-        ; !!! 检查是否为有效数字
+        ;  检查是否为有效数字
         if (!RegExMatch(rawValue, "^\d+$")) {
             MessageManager.ShowError("请输入有效的数字")
             return
@@ -463,14 +481,14 @@ class GuiEventHandlers {
         if (SettingsManager.SetValue("BatchThreshold", value)) {
             MessageManager.ShowSuccessDelayed("批量阈值已更新: " . value)
             btnBatchThreshold.Text := this.GetBatchThresholdButtonText()
-            ; !!! 统一恢复和关闭
+            ;  统一恢复和关闭
             this.HandleInputGuiClose(inputGui, parentGui)
         } else {
             MessageManager.ShowError("更新失败")
         }
     }
     
-    ; !!! 新增：验证阈值输入（简化版，只过滤非数字字符）
+    ;  新增：验证阈值输入（简化版，只过滤非数字字符）
     static ValidateThresholdInput(ctrl, *) {
         rawValue := ctrl.Value
         
@@ -487,7 +505,7 @@ class GuiEventHandlers {
         }
     }
 
-    ; !!! 新增：简单的关闭处理
+    ;  新增：简单的关闭处理
     static HandleInputGuiClose(inputGui, parentGui) {
         ; 恢复主窗口
         parentGui.Opt("-Disabled")
@@ -496,7 +514,7 @@ class GuiEventHandlers {
         inputGui.Destroy()
     }
 
-    ; !!! 新增：处理moreGui关闭
+    ;  新增：处理moreGui关闭
     static HandleMoreGuiClose(guiManager, moreGui, *) {
         ; 恢复主窗口
         guiManager.gui.Opt("-Disabled")
@@ -506,7 +524,7 @@ class GuiEventHandlers {
     }
 
     ; 3. 最简化重置设置函数:
-    ; !!! 新增：处理重置设置到默认值
+    ;  新增：处理重置设置到默认值
     static HandleResetSettings(btnAlwaysOnTop, btnSortAlphabet, btnShowExtension, btnBatchThreshold, btnShowSuccessMsg, guiManager) {
         ; 简单确认
         result := MessageManager.ShowConfirm("确定要重置所有设置到默认值吗？", "重置设置确认")
