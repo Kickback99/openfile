@@ -153,7 +153,7 @@ class GuiManager {
     ; !!! 新增：刷新配置值的方法
     RefreshSettings() {
         ; 重新读取所有相关配置
-        this.isTop := SettingsManager.GetBool("AlwaysOnTop", true)
+        this.isTop := SettingsManager.GetBool("AlwaysOnTop")
         ; 可以在这里添加其他需要刷新的配置
     }
 

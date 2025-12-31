@@ -112,22 +112,34 @@ class SettingsManager {
     }
     
     ; ++++ 读取单个配置值 ++++
-    static GetValue(key, defaultValue := "") {
+    static GetValue(key) {
         config := this.ReadAllConfig()
-        return config.Get(key, defaultValue)
+    
+        ; 如果配置中有这个键，返回它的值
+        if (config.Has(key) && config[key] != "") {
+            return config[key]
+        }
+    
+        ; 否则返回DefaultConfig中的默认值
+        return this.DefaultConfig.Get(key, "")
     }
     
     ; ++++ 读取布尔值配置 ++++
-    static GetBool(key, defaultValue := false) {
-        value := this.GetValue(key, defaultValue ? "true" : "false")
-        value := StrLower(Trim(value))
-        
+    static GetBool(key) {
+            value := this.GetValue(key)
+            value := StrLower(Trim(value))
+    
         return (value = "true" || value = "1" || value = "yes" || value = "on")
     }
     
     ; ++++ 读取整数值配置 ++++
-    static GetInt(key, defaultValue := 0) {
-        value := this.GetValue(key, defaultValue)
+    static GetInt(key) {
+        value := this.GetValue(key)
+
+        ; 如果获取的值为空，尝试从DefaultConfig获取默认值
+        if (value = "") {
+            value := this.DefaultConfig.Get(key, "0")
+        }
         
         try {
             ; 提取数字部分
@@ -139,7 +151,7 @@ class SettingsManager {
         try {
             return Integer(value)
         } catch {
-            return defaultValue
+            return 0
         }
     }
     
