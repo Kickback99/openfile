@@ -490,7 +490,7 @@ class GuiEventHandlers {
             btnImport := moreGui.Add("Button", "xm+" normalStartX " " yPosition " w" normalBtnWidth, "导入")
             btnExport := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "导出")
             btnAppend := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "追加")
-            btnCancel := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "取消")
+            btnLoad   := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "载入")
             
         } else if (dialogWidth >= 100) {
             ; 方案2：宽度在100-300之间，垂直排列
@@ -518,14 +518,14 @@ class GuiEventHandlers {
             btnImport := moreGui.Add("Button", "x" buttonX " " firstButtonY " w" normalBtnWidth, "导入")
             btnExport := moreGui.Add("Button", "xp y+10 w" normalBtnWidth, "导出")
             btnAppend := moreGui.Add("Button", "xp y+10 w" normalBtnWidth, "追加")
-            btnCancel := moreGui.Add("Button", "xp y+10 w" normalBtnWidth, "取消")
+            btnLoad   := moreGui.Add("Button", "xp y+10 w" normalBtnWidth, "载入")
         }
     
         ; 绑定事件
         btnImport.OnEvent("Click", (btnCtrl, info) => guiManager.HandleImport(moreGui))
         btnExport.OnEvent("Click", (btnCtrl, info) => guiManager.HandleExport(moreGui))
         btnAppend.OnEvent("Click", (btnCtrl, info) => guiManager.HandleAppend(moreGui))
-        btnCancel.OnEvent("Click", (*) => moreGui.Destroy())
+        btnLoad.OnEvent("Click", (btnCtrl, info) => guiManager.HandleLoad(moreGui))
         
         ; 动态计算窗口高度
         ; 按钮行数 * (按钮高度 + 行间距) + 说明文本高度 + 分割线 + 常规按钮区域 + 边距
@@ -1015,8 +1015,16 @@ class GuiEventHandlers {
             MessageManager.ShowError("请先选择一个软件")
             return
         }
+
+        ; 检查是否是提示项（列表为空时显示的提示信息）
+        if (guiManager.listEmptyPrompt && guiManager.showingPrompt) {
+            ; 是列表完全为空的提示项，执行载入操作
+            guiManager.importExportMgr.HandleLoad("", guiManager)
+            return
+        }
         
         selectedText := guiManager.listBox.Text
+
         if (!guiManager.softwareMap.Has(selectedText)) {
             return
         }
@@ -1082,9 +1090,9 @@ class GuiEventHandlers {
         ; 只有当ListBox当前没有选中项时，才设置选中第一项
         if (guiManager.listBox.Value = 0) {
             ; 不是提示消息，设置为选中项
-           if(!guiManager.IsFirstItemPrompt()){
+        ;    if(!guiManager.IsFirstItemPrompt()){
                 guiManager.listBox.Value := 1
-           }
+        ;    }
         }
     }
 

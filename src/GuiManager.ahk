@@ -55,6 +55,8 @@ class GuiManager {
         ; 添加一个标志，记录用户是否"刚刚"在搜索框中
         this.userWasInSearchBox := false
 
+        this.listEmptyPrompt := false  ; 新增：标记列表是否完全为空
+
     }
     
     ; 显示软件列表GUI
@@ -211,6 +213,7 @@ class GuiManager {
         ; 列表为空，显示提示信息
         this.listBox.Add([">>> 列表为空，点击'创建'按钮添加软件 <<<"])
         this.showingPrompt := true  ; 设置标记
+        this.listEmptyPrompt := true  ; 设置列表为空标记
         return
     }
         
@@ -235,6 +238,7 @@ class GuiManager {
         }
 
         this.showingPrompt := false  ; 没有显示提示信息
+        this.listEmptyPrompt := false  ; 列表不为空
 
         ; 条件：不是提示信息 + 用户不在搜索框中 + 搜索框为空
         /* if (!this.showingPrompt && !this.userWasInSearchBox && this.searchBox.Value = "") {
@@ -410,7 +414,8 @@ class GuiManager {
             } else if (!this.IsFirstItemPrompt()) {
                 this.listBox.Value := 1
             }
-
+            ; 重置搜索无结果标志
+            this.listEmptyPrompt := false
             return
         }
         
@@ -459,6 +464,7 @@ class GuiManager {
             ; 没有匹配项，显示提示
             this.listBox.Add([">>> 未找到匹配项 <<<"])
             this.showingPrompt := true  ; 设置标记
+            this.listEmptyPrompt := false  ; 这不是列表为空的情况
             ; 不设置选中项
         }
     }
@@ -485,5 +491,11 @@ class GuiManager {
             ; 追加成功后刷新列表
             this.RefreshList()
         }
+    }
+    
+    ; >>> 新增：处理载入按钮点击
+    HandleLoad(moreGui){
+        ; 内部处理刷新列表
+        this.importExportMgr.HandleLoad(moreGui,this)
     }
 }
