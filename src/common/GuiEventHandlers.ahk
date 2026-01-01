@@ -215,28 +215,30 @@ class GuiEventHandlers {
     ; 更多按钮点击事件处理
     ; t_softmanager_settings：get&set
     static HandleMoreClick(guiManager) {
+        ; 检查最小宽度
+        if (WindowConstants.MORE_GUI_WIDTH < 100) {
+            MessageManager.ShowWarning("对话框宽度太小，无法正确显示所有按钮。`n请增加 MORE_GUI_WIDTH 的值。", "布局错误")
+            return  ; 直接返回，不创建对话框
+        }
         ; 创建更多对话框
         moreGui := Gui()
         moreGui.Title := "更多操作 - " guiManager.configType
         
-        ;  总是设置 Owner 关系
+        ; 总是设置 Owner 关系
         moreGui.Opt("+Owner" guiManager.gui.Hwnd)
 
-        ;  根据配置决定是否置顶
+        ; 根据配置决定是否置顶
         if(SettingsManager.GetBool("AlwaysOnTop")){
             moreGui.Opt("+AlwaysOnTop")
         }
 
-        ;  关键：禁用主窗口（灰色不可操作）
+        ; 关键：禁用主窗口（灰色不可操作）
         guiManager.gui.Opt("+Disabled")
 
         ; 移除最小化按钮
         try {
-           WinSetStyle("-0x00020000", moreGui.Hwnd)
+        WinSetStyle("-0x00020000", moreGui.Hwnd)
         }
-
-        ; 获取主窗口位置
-        ; WinGetPos(&parentX, &parentY, &parentW, &parentH, "ahk_id " guiManager.gui.Hwnd)
         
         ; 设置字体
         moreGui.SetFont("s9", "JetBrains Mono")
@@ -245,74 +247,445 @@ class GuiEventHandlers {
         moreGui.MarginY := 5
         
         ; 添加说明
-        ; moreGui.Add("Text", "w380 Center", "配置管理操作")
-        ; moreGui.Add("Text", "w380 Center cGray", "管理" guiManager.configType ".ini 配置文件")
         moreGui.Add("Text", "w" WindowConstants.MORE_GUI_WIDTH " Center cGray", "管理" guiManager.configType ".ini 配置文件")
-        ; moreGui.Add("Text", "w380 Center", "配置管理操作")
-
-        ;  新增：添加设置操作说明
-        ; moreGui.Add("Text", "w380 Center", "`n设置选项（实时生效）")
         
         ; moreGui关闭时恢复主窗口
         moreGui.OnEvent("Close", this.HandleMoreGuiClose.Bind(this, guiManager, moreGui))
 
-        ; 创建按钮 - 计算居中位置
-        /* buttonWidth := 80
-        buttonSpacing := 10
-        totalWidth := (buttonWidth * 4) + (buttonSpacing * 3)
-        dialogWidth := 400  ; 增加对话框宽度
-        startX := (dialogWidth - totalWidth) // 2 */
-
-        ; !!! 修改：计算设置按钮布局参数
-        ; 按钮宽度：置顶和重置较窄，其他较宽
-        narrowBtnWidth := WindowConstants.SETTING_BUTTON_NARROW_WIDTH    ; 置顶、重置按钮宽度
-        wideBtnWidth := WindowConstants.SETTING_BUTTON_WIDE_WIDTH       ; 字母排序、显示扩展名、批量阈值、成功消息按钮宽度
-        btnSpacing := WindowConstants.BUTTON_SPACING  ; !!! 修改：使用常量中的间距
-        dialogWidth := WindowConstants.MORE_GUI_WIDTH  ; !!! 修改：使用常量中的宽度
+        ; 预定义按钮变量
+        btnAlwaysOnTop := ""
+        btnSortAlphabet := ""
+        btnShowExtension := ""
+        btnBatchThreshold := ""
+        btnShowSuccessMsg := ""
+        btnResetSettings := ""
         
-        ; !!! 修改：计算按钮行总宽度并居中（使用常量）
-        ; 第一行总宽度
-        row1Width := narrowBtnWidth + wideBtnWidth + wideBtnWidth + (btnSpacing * 2)
-        row1StartX := (dialogWidth - row1Width) // 2
+        ; 按钮间距和对话框宽度
+        btnSpacing := WindowConstants.BUTTON_SPACING
+        dialogWidth := WindowConstants.MORE_GUI_WIDTH
+        maxRowWidth := WindowConstants.SETTING_MAX_ROW_WIDTH - 20  ; 减去边距，确保按钮不会贴边
         
-        ; 第二行总宽度  
-        row2Width := wideBtnWidth + wideBtnWidth + narrowBtnWidth + (btnSpacing * 2)
-        row2StartX := (dialogWidth - row2Width) // 2    
-
-
-        ; !!! 修改：创建设置按钮（分两行）
-        ; 第一行按钮
-        btnAlwaysOnTop := moreGui.Add("Button", "x" row1StartX " w" narrowBtnWidth, this.GetAlwaysOnTopButtonText())
-        btnSortAlphabet := moreGui.Add("Button", "x+" btnSpacing " w" wideBtnWidth, this.GetSortAlphabetButtonText())
-        btnShowExtension := moreGui.Add("Button", "x+" btnSpacing " w" wideBtnWidth, this.GetShowExtensionButtonText())
+        ;>>>重构：实现自适应分行算法
+        buttonLayout := []  ; 存储按钮布局信息：每行包含哪些按钮
         
-        ; 第二行按钮
-        btnBatchThreshold := moreGui.Add("Button", "x" row2StartX " y+10 w" wideBtnWidth, this.GetBatchThresholdButtonText())
-        btnShowSuccessMsg := moreGui.Add("Button", "x+" btnSpacing " w" wideBtnWidth, this.GetShowSuccessMsgButtonText())
-        btnResetSettings := moreGui.Add("Button", "x+" btnSpacing " w" narrowBtnWidth, "重置")
+        ; 第一步：计算所有按钮的宽度
+        buttonWidths := Map()
+        for btnName in WindowConstants.SETTING_BUTTON_ORDER {
+            buttonWidths[btnName] := WindowConstants.GetButtonWidth(btnName)
+        }
 
-        ;  新增：绑定设置按钮事件
-        btnAlwaysOnTop.OnEvent("Click", (*) => this.HandleSettingToggle("AlwaysOnTop", btnAlwaysOnTop, guiManager))
-        btnSortAlphabet.OnEvent("Click", (*) => this.HandleSettingToggle("SortByAlphabet", btnSortAlphabet, guiManager))
-        btnShowExtension.OnEvent("Click", (*) => this.HandleSettingToggle("EnableExtension", btnShowExtension, guiManager))
-        btnBatchThreshold.OnEvent("Click", (*) => this.HandleBatchThresholdClick(guiManager, btnBatchThreshold,moreGui))
-        btnShowSuccessMsg.OnEvent("Click", (*) => this.HandleSettingToggle("ShowSuccessMsg", btnShowSuccessMsg, guiManager))
-        ;  新增
-        btnResetSettings.OnEvent("Click", (*) => this.HandleResetSettings(btnAlwaysOnTop, btnSortAlphabet, btnShowExtension, btnBatchThreshold, btnShowSuccessMsg, guiManager))
-
-        ; !!! 新增：添加分割线
-        moreGui.Add("Text", "xm y+15 w" dialogWidth " 0x10")  ; 水平分割线
+        ; 调试：在布局计算完成后立即检查
+        if (WindowConstants.DEBUG_MODE) {
+            this.DebugLayoutInfo(buttonLayout, dialogWidth)
+        }
         
+        ; 第二步：自动分行算法（基于可用宽度）
+        currentRow := []
+        currentRowWidth := 0
+        totalButtons := WindowConstants.SETTING_BUTTON_ORDER.Length
+        
+        for btnName in WindowConstants.SETTING_BUTTON_ORDER {
+            btnWidth := buttonWidths[btnName]
+            
+            ; 如果是当前行的第一个按钮
+            if (currentRow.Length = 0) {
+                currentRow.Push(btnName)
+                currentRowWidth := btnWidth
+            } else {
+                ; 检查当前行是否能容纳这个按钮（加上间距）
+                neededWidth := currentRowWidth + btnSpacing + btnWidth
+                
+                if (neededWidth <= maxRowWidth) {
+                    ; 当前行还能放下这个按钮
+                    currentRow.Push(btnName)
+                    currentRowWidth := neededWidth
+                } else {
+                    ; 放不下了，保存当前行，开始新行
+                    buttonLayout.Push(currentRow.Clone())
+                    currentRow := [btnName]
+                    currentRowWidth := btnWidth
+                }
+            }
+        }
+        
+        ; 添加最后一行
+        if (currentRow.Length > 0) {
+            buttonLayout.Push(currentRow.Clone())
+        }
+        
+        ; 第三步：创建按钮，基于计算出的布局
+        ; 获取按钮文本的辅助函数
+        ; 第三步：创建按钮，基于计算出的布局
+        ; 获取按钮文本的辅助函数
+        getButtonText(btnName) {
+            if (btnName = "AlwaysOnTop") {
+                return this.GetAlwaysOnTopButtonText()
+            } else if (btnName = "SortByAlphabet") {
+                return this.GetSortAlphabetButtonText()
+            } else if (btnName = "EnableExtension") {
+                return this.GetShowExtensionButtonText()
+            } else if (btnName = "BatchThreshold") {
+                return this.GetBatchThresholdButtonText()
+            } else if (btnName = "ShowSuccessMsg") {
+                return this.GetShowSuccessMsgButtonText()
+            } else if (btnName = "ResetSettings") {
+                return "重置"
+            } else {
+                return btnName
+            }
+        }
+    
+        ; 创建所有按钮行
+        firstButtonPos := ""  ; 记录第一个按钮的位置信息
+        for rowIndex, rowButtons in buttonLayout {
+            ; 计算当前行的总宽度
+            rowTotalWidth := 0
+            firstBtnWidth := true  ; 标记是否是第一个按钮宽度
+            
+            for btnName in rowButtons {
+                btnWidth := WindowConstants.GetButtonWidth(btnName)
+                if (firstBtnWidth) {
+                    rowTotalWidth := btnWidth
+                    firstBtnWidth := false
+                } else {
+                    rowTotalWidth += btnSpacing + btnWidth
+                }
+            }
+        
+        ; 计算起始X位置（水平居中）
+        ; 计算起始X位置（水平居中并添加偏移量）
+        rowStartX := (dialogWidth - rowTotalWidth) // 2 + WindowConstants.SETTING_BUTTON_HORIZONTAL_OFFSET
 
-        ; !!! 修改：计算常规按钮位置（使用常量）
-        ; 常规按钮宽度和数量
-        normalBtnWidth := WindowConstants.BUTTON_WIDTH  ; !!! 修改：使用常量
-        normalBtnCount := WindowConstants.MORE_GUI_BUTTON_COUNT  ; !!! 修改：使用常量
+        ; 确保起始位置不为负
+        if (rowStartX < 5) {
+            rowStartX := 5
+        }
+        
+        ; 创建当前行的按钮
+        currentX := rowStartX
+        for btnIndex, btnName in rowButtons {
+            btnWidth := WindowConstants.GetButtonWidth(btnName)
+            btnText := getButtonText(btnName)
+            
+            ; 确定按钮位置参数
+            positionParams := ""
+            if (rowIndex = 1 && btnIndex = 1) {
+                ; 第一个按钮（整个按钮区域的第一按钮）
+                positionParams := "x" currentX
+            } else if (btnIndex = 1) {
+                ; 新行的第一个按钮
+                positionParams := "x" currentX " y+10"
+            } else {
+                ; 同一行的后续按钮
+                positionParams := "x+" btnSpacing
+            }
+            
+            ; 创建按钮
+            btn := moreGui.Add("Button", positionParams " w" btnWidth, btnText)
+            
+            ; 记录第一个按钮的位置信息（用于布局计算）
+            if (rowIndex = 1 && btnIndex = 1) {
+                firstButtonPos := "x" currentX
+            }
+            
+            ; 存储按钮引用并绑定事件
+            switch btnName {
+                case "AlwaysOnTop":
+                    btnAlwaysOnTop := btn
+                    btnAlwaysOnTop.OnEvent("Click", (*) => this.HandleSettingToggle("AlwaysOnTop", btnAlwaysOnTop, guiManager))
+                case "SortByAlphabet":
+                    btnSortAlphabet := btn
+                    btnSortAlphabet.OnEvent("Click", (*) => this.HandleSettingToggle("SortByAlphabet", btnSortAlphabet, guiManager))
+                case "EnableExtension":
+                    btnShowExtension := btn
+                    btnShowExtension.OnEvent("Click", (*) => this.HandleSettingToggle("EnableExtension", btnShowExtension, guiManager))
+                case "BatchThreshold":
+                    btnBatchThreshold := btn
+                    btnBatchThreshold.OnEvent("Click", (*) => this.HandleBatchThresholdClick(guiManager, btnBatchThreshold, moreGui))
+                case "ShowSuccessMsg":
+                    btnShowSuccessMsg := btn
+                    btnShowSuccessMsg.OnEvent("Click", (*) => this.HandleSettingToggle("ShowSuccessMsg", btnShowSuccessMsg, guiManager))
+                case "ResetSettings":
+                    btnResetSettings := btn
+                    ; 事件绑定在循环外处理
+            }
+            
+            currentX += btnWidth + btnSpacing
+        }
+    }
+
+        if (WindowConstants.DEBUG_MODE) {
+            this.DebugLayoutInfo(buttonLayout, dialogWidth)
+        }
+        
+        ; 绑定重置按钮事件
+        if (btnResetSettings) {
+            btnResetSettings.OnEvent("Click", (*) => this.HandleResetSettings(
+                btnAlwaysOnTop, 
+                btnSortAlphabet, 
+                btnShowExtension, 
+                btnBatchThreshold, 
+                btnShowSuccessMsg, 
+                guiManager
+            ))
+        }
+
+        ; 添加分割线
+        ; 计算分割线位置（在最后一个按钮行下方）
+        ; moreGui.Add("Text", "xm y+15 w" dialogWidth " 0x10")  ; 水平分割线
+        ; 添加分割线（根据常量决定是否显示）
+        if (WindowConstants.SHOW_DIVIDER_LINE) {
+            ; 计算分割线的实际宽度
+            dividerLineWidth := WindowConstants.MORE_GUI_WIDTH * WindowConstants.DIVIDER_LINE_WIDTH_PERCENT // 100
+            
+            ; 计算分割线的起始位置（居中并考虑偏移量）
+            if (WindowConstants.DIVIDER_LINE_WIDTH_PERCENT == 100) {
+                ; 100%宽度时，使用xm（自动居中）
+                dividerPosition := "xm"
+            } else {
+                ; 部分宽度时，计算居中位置
+                dividerStartX := (WindowConstants.MORE_GUI_WIDTH - dividerLineWidth) // 2 + WindowConstants.DIVIDER_LINE_HORIZONTAL_OFFSET
+                
+                ; 确保位置不为负
+                if (dividerStartX < 0) {
+                    dividerStartX := 0
+                }
+                dividerPosition := "x" dividerStartX
+            }
+            
+            ; 创建分割线
+            moreGui.Add("Text", dividerPosition " y+" WindowConstants.DIVIDER_LINE_TOP_MARGIN " w" dividerLineWidth " 0x10")
+            
+            ; 设置分割线后的垂直间距
+            nextControlYOffset := "y+" WindowConstants.DIVIDER_LINE_BOTTOM_MARGIN
+        } else {
+            ; 不显示分割线，设置较小的间距
+            nextControlYOffset := "y+10"
+        }
+        
+        ; 计算常规按钮位置（水平居中）
+        ; 在计算常规按钮位置部分，添加偏移量
+        normalBtnWidth := WindowConstants.BUTTON_WIDTH
+        normalBtnCount := WindowConstants.MORE_GUI_BUTTON_COUNT
+        btnSpacing := WindowConstants.BUTTON_SPACING
         normalTotalWidth := (normalBtnWidth * normalBtnCount) + (btnSpacing * (normalBtnCount - 1))
-        normalStartX := (dialogWidth - normalTotalWidth) // 2 
         
-        ; 创建常规操作按钮（使用新的计算位置）
-        btnImport := moreGui.Add("Button", "xm" normalStartX " y+2 w" normalBtnWidth, "导入")
+        ; 根据对话框宽度选择布局策略
+        if (dialogWidth >= 300) {
+            ; 方案1：宽度>=300，水平排列
+            normalStartX := (dialogWidth - normalTotalWidth) // 2 + WindowConstants.MORE_GUI_BUTTON_HORIZONTAL_OFFSET
+            
+            ; 确保起始位置不为负
+            if (normalStartX < 0) {
+                normalStartX := 0
+            }
+            
+            ; 使用正确的Y位置参数（考虑是否显示分割线）
+            if (WindowConstants.SHOW_DIVIDER_LINE) {
+                yPosition := nextControlYOffset
+            } else {
+                yPosition := "y+10"
+            }
+            
+            btnImport := moreGui.Add("Button", "xm+" normalStartX " " yPosition " w" normalBtnWidth, "导入")
+            btnExport := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "导出")
+            btnAppend := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "追加")
+            btnCancel := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "取消")
+            
+        } else if (dialogWidth >= 100) {
+            ; 方案2：宽度在100-300之间，垂直排列
+            ; 给出提示
+            if (dialogWidth < 200 && WindowConstants.DEBUG_MODE) {
+                ; 只在宽度较小时提示
+                MessageManager.ShowInfo("对话框宽度较小(" dialogWidth "px)，已自动切换为垂直布局")
+            }
+            
+            ; 计算垂直排列的X位置（居中）
+            buttonX := (dialogWidth - normalBtnWidth) // 2 + WindowConstants.MORE_GUI_BUTTON_HORIZONTAL_OFFSET
+            
+            ; 确保最小边距
+            if (buttonX < 10) {
+                buttonX := 10
+            }
+            
+            ; 使用正确的Y位置参数（考虑是否显示分割线）
+            if (WindowConstants.SHOW_DIVIDER_LINE) {
+                firstButtonY := nextControlYOffset
+            } else {
+                firstButtonY := "y+15"
+            }
+            
+            btnImport := moreGui.Add("Button", "x" buttonX " " firstButtonY " w" normalBtnWidth, "导入")
+            btnExport := moreGui.Add("Button", "xp y+10 w" normalBtnWidth, "导出")
+            btnAppend := moreGui.Add("Button", "xp y+10 w" normalBtnWidth, "追加")
+            btnCancel := moreGui.Add("Button", "xp y+10 w" normalBtnWidth, "取消")
+        }
+    
+        ; 绑定事件
+        btnImport.OnEvent("Click", (btnCtrl, info) => guiManager.HandleImport(moreGui))
+        btnExport.OnEvent("Click", (btnCtrl, info) => guiManager.HandleExport(moreGui))
+        btnAppend.OnEvent("Click", (btnCtrl, info) => guiManager.HandleAppend(moreGui))
+        btnCancel.OnEvent("Click", (*) => moreGui.Destroy())
+        
+        ; 动态计算窗口高度
+        ; 按钮行数 * (按钮高度 + 行间距) + 说明文本高度 + 分割线 + 常规按钮区域 + 边距
+       /*  estimatedHeight := 30 + ; 说明文本
+                        (buttonLayout.Length * 35) + ; 设置按钮行（每行约35像素）
+                        15 + ; 分割线
+                        35 + ; 常规按钮
+                        20 ; 上下边距
+        MsgBox('最终高度' . estimatedHeight) ;135 */
+
+        estimatedHeight := WindowConstants.CalculateEmpiricalHeight(buttonLayout.Length)
+
+        if(WindowConstants.MORE_GUI_HEIGHT < estimatedHeight){
+            if(WindowConstants.HEIGHT_MODE != "auto"){
+                WindowConstants.HEIGHT_MODE := "auto"
+                if(WindowConstants.DEBUG_MODE){
+                    tip := "当前高度小于计算高度，已为你切换到auto模式"
+                    tip .= "`n"  ; 这里使用 `n 而不是 \n
+                    tip .= "当前高度为：" . WindowConstants.MORE_GUI_HEIGHT
+                    tip .= "`n"  ; 这里也需要换行
+                    tip .= "计算高度为：" . estimatedHeight
+                    tip .= "`n"
+                    tip .= "如果需要调整偏移："
+                    tip .= "`n"
+                    tip .= "请调整WindowConstants.MORE_GUI_ADJUST_LEFT和WindowConstants.MORE_GUI_ADJUST_TOP"
+                    MessageManager.ShowInfo(tip)
+                }
+            }
+        }
+        
+        ; 根据高度模式决定最终高度
+        switch WindowConstants.HEIGHT_MODE {
+            case "fixed":
+                WindowPositionUtils.CenterChildWindow(
+                    guiManager.gui.Hwnd,
+                    moreGui,
+                    WindowConstants.MORE_GUI_WIDTH,
+                    WindowConstants.MORE_GUI_HEIGHT,
+                    WindowConstants.MORE_GUI_ADJUST_LEFT,
+                    WindowConstants.MORE_GUI_ADJUST_TOP  ; 添加垂直微调 
+                )
+            case "auto":
+                ; 动态计算高度
+                WindowPositionUtils.CenterChildWindowWithConstants(
+                    guiManager.gui.Hwnd,
+                    moreGui,
+                    WindowConstants.MORE_GUI_WIDTH,
+                    estimatedHeight,  ; 使用动态计算的高度
+                    WindowConstants.MORE_GUI_ADJUST_LEFT,
+                    WindowConstants.MORE_GUI_ADJUST_TOP
+                )
+            case "max":
+                ; max模式：取固定高度和自动计算高度的较大值
+                ; 先获取自动计算的高度
+                ; moreGui.Show("Hide")  ; 隐藏以获取尺寸
+                ; WinGetPos(, , &autoW, &autoH, "ahk_id " moreGui.Hwnd)
+                
+                ; 使用较大值
+                    if (WindowConstants.MORE_GUI_HEIGHT > estimatedHeight) {
+                        ; 固定高度更大，使用固定尺寸
+                        WindowPositionUtils.CenterChildWindow(
+                            guiManager.gui.Hwnd,
+                            moreGui,
+                            WindowConstants.MORE_GUI_WIDTH,
+                            WindowConstants.MORE_GUI_HEIGHT,
+                            WindowConstants.MORE_GUI_ADJUST_LEFT,
+                            WindowConstants.MORE_GUI_ADJUST_TOP
+                        )
+                    }else {
+                        ; 动态计算高度
+                        WindowPositionUtils.CenterChildWindowWithConstants(
+                            guiManager.gui.Hwnd,
+                            moreGui,
+                            WindowConstants.MORE_GUI_WIDTH,
+                            estimatedHeight,  ; 使用动态计算的高度
+                            WindowConstants.MORE_GUI_ADJUST_LEFT,
+                            WindowConstants.MORE_GUI_ADJUST_TOP
+                        )
+                    }
+            default:
+                ; 默认使用fixed模式
+                WindowPositionUtils.CenterChildWindowWithConstants(
+                    guiManager.gui.Hwnd,
+                    moreGui,
+                    WindowConstants.MORE_GUI_WIDTH,
+                    WindowConstants.MORE_GUI_HEIGHT,
+                    WindowConstants.MORE_GUI_ADJUST_LEFT,
+                    WindowConstants.MORE_GUI_ADJUST_TOP
+                )
+        }
+    }
+
+    ; 添加高度计算辅助函数
+    static CalculateDynamicHeight(buttonLayout, dialogWidth) {
+        baseHeight := 30  ; 说明文本高度
+        
+        ; 设置按钮区域高度
+        settingsHeight := buttonLayout.Length * 35  ; 每行约35像素
+        
+        ; 分割线区域高度
+        dividerHeight := 15
+        
+        ; 常规按钮区域高度
+        if (dialogWidth >= 300) {
+            buttonAreaHeight := 35  ; 水平布局
+        } else {
+            buttonAreaHeight := 35 + 30 * 3  ; 垂直布局：第一个按钮高度 + 3个按钮*30像素间距
+        }
+        
+        ; 边距
+        margin := 20
+        
+        return baseHeight + settingsHeight + dividerHeight + buttonAreaHeight + margin
+    }
+
+    ;>>>新增：绑定设置按钮事件的方法
+    static BindSettingButtonEvents(btnRefs, guiManager, moreGui) {
+        if (btnRefs.Has("AlwaysOnTop")) {
+            btnRefs["AlwaysOnTop"].OnEvent("Click", (*) => this.HandleSettingToggle("AlwaysOnTop", btnRefs["AlwaysOnTop"], guiManager))
+        }
+        if (btnRefs.Has("SortByAlphabet")) {
+            btnRefs["SortByAlphabet"].OnEvent("Click", (*) => this.HandleSettingToggle("SortByAlphabet", btnRefs["SortByAlphabet"], guiManager))
+        }
+        if (btnRefs.Has("EnableExtension")) {
+            btnRefs["EnableExtension"].OnEvent("Click", (*) => this.HandleSettingToggle("EnableExtension", btnRefs["EnableExtension"], guiManager))
+        }
+        if (btnRefs.Has("BatchThreshold")) {
+            btnRefs["BatchThreshold"].OnEvent("Click", (*) => this.HandleBatchThresholdClick(guiManager, btnRefs["BatchThreshold"], moreGui))
+        }
+        if (btnRefs.Has("ShowSuccessMsg")) {
+            btnRefs["ShowSuccessMsg"].OnEvent("Click", (*) => this.HandleSettingToggle("ShowSuccessMsg", btnRefs["ShowSuccessMsg"], guiManager))
+        }
+        if (btnRefs.Has("ResetSettings")) {
+            btnRefs["ResetSettings"].OnEvent("Click", (*) => this.HandleResetSettings(
+                btnRefs.Get("AlwaysOnTop", ""), 
+                btnRefs.Get("SortByAlphabet", ""), 
+                btnRefs.Get("EnableExtension", ""), 
+                btnRefs.Get("BatchThreshold", ""), 
+                btnRefs.Get("ShowSuccessMsg", ""), 
+                guiManager
+            ))
+        }
+    }
+    
+    ;>>>新增：创建常规操作按钮的方法
+    static CreateRegularButtons(moreGui, dialogWidth) {
+        normalBtnWidth := WindowConstants.BUTTON_WIDTH
+        normalBtnCount := WindowConstants.MORE_GUI_BUTTON_COUNT
+        btnSpacing := WindowConstants.BUTTON_SPACING
+        
+        normalTotalWidth := (normalBtnWidth * normalBtnCount) + (btnSpacing * (normalBtnCount - 1))
+        normalStartX := (dialogWidth - normalTotalWidth) // 2
+        
+        ; 确保常规按钮位置合理
+        if (normalStartX < 10) {
+            normalStartX := 10
+        }
+        
+        ; 创建常规操作按钮
+        btnImport := moreGui.Add("Button", "x" normalStartX " y+2 w" normalBtnWidth, "导入")
         btnExport := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "导出")
         btnAppend := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "追加")
         btnCancel := moreGui.Add("Button", "x+" btnSpacing " w" normalBtnWidth, "取消")
@@ -322,16 +695,80 @@ class GuiEventHandlers {
         btnExport.OnEvent("Click", (btnCtrl, info) => guiManager.HandleExport(moreGui))
         btnAppend.OnEvent("Click", (btnCtrl, info) => guiManager.HandleAppend(moreGui))
         btnCancel.OnEvent("Click", (*) => moreGui.Destroy())
-        
-        ; 使用工具类居中显示窗口
-        WindowPositionUtils.CenterChildWindowWithConstants(
-            guiManager.gui.Hwnd,
-            moreGui,
-            WindowConstants.MORE_GUI_WIDTH,
-            WindowConstants.MORE_GUI_HEIGHT,
-            WindowConstants.MORE_GUI_ADJUST_LEFT
-        )
     }
+    
+    ;>>>新增：调试方法
+    static DebugLayoutInfo(buttonLayout, dialogWidth) {
+        debugMsg := "=== 布局调试信息 ===`n"
+        debugMsg .= "对话框宽度：" dialogWidth "px`n"
+        debugMsg .= "按钮间距：" WindowConstants.BUTTON_SPACING "px`n"
+        debugMsg .= "最大行宽度：" WindowConstants.SETTING_MAX_ROW_WIDTH "px`n"
+        debugMsg .= "设置按钮总数：" WindowConstants.SETTING_BUTTON_ORDER.Length "`n"
+        debugMsg .= "实际布局行数：" buttonLayout.Length "`n`n"
+        
+        ; 显示布局详情
+        for rowIndex, rowButtons in buttonLayout {
+            debugMsg .= "【第" rowIndex "行】`n"
+            
+            ; 计算行总宽度
+            rowWidth := 0
+            for btnIndex, btnName in rowButtons {
+                btnWidth := WindowConstants.GetButtonWidth(btnName)
+                if (btnIndex = 1) {
+                    rowWidth := btnWidth
+                } else {
+                    rowWidth += WindowConstants.BUTTON_SPACING + btnWidth
+                }
+                
+                ; 显示按钮信息
+                debugMsg .= "  " btnIndex ". " btnName " (" btnWidth "px)"
+                
+                ; 如果是窄按钮或宽按钮
+                if (btnName = "AlwaysOnTop" || btnName = "ResetSettings") {
+                    debugMsg .= " [窄按钮]"
+                } else {
+                    debugMsg .= " [宽按钮]"
+                }
+                debugMsg .= "`n"
+            }
+            
+            ; 计算居中位置
+            centerX := (dialogWidth - rowWidth) // 2
+            offsetX := centerX + WindowConstants.SETTING_BUTTON_HORIZONTAL_OFFSET
+            
+            debugMsg .= "  行总宽度：" rowWidth "px`n"
+            debugMsg .= "  理论居中X：" centerX "px`n"
+            debugMsg .= "  实际起始X：" offsetX "px`n"
+            
+            ; 检查是否超出边界
+            if (rowWidth > WindowConstants.SETTING_MAX_ROW_WIDTH) {
+                debugMsg .= "  ⚠️ 警告：行宽度超出最大限制！`n"
+            }
+            
+            debugMsg .= "`n"
+        }
+        
+        ; 添加常规按钮信息
+        debugMsg .= "=== 常规按钮信息 ===`n"
+        normalBtnWidth := WindowConstants.BUTTON_WIDTH
+        normalBtnCount := WindowConstants.MORE_GUI_BUTTON_COUNT
+        normalTotalWidth := (normalBtnWidth * normalBtnCount) + 
+                        (WindowConstants.BUTTON_SPACING * (normalBtnCount - 1))
+        
+        debugMsg .= "按钮宽度：" normalBtnWidth "px`n"
+        debugMsg .= "按钮数量：" normalBtnCount "`n"
+        debugMsg .= "总宽度：" normalTotalWidth "px`n"
+        
+        if (dialogWidth >= 300) {
+            debugMsg .= "布局模式：水平排列`n"
+        } else if (dialogWidth >= 100) {
+            debugMsg .= "布局模式：垂直排列`n"
+        } else {
+            debugMsg .= "布局模式：宽度过小，可能出错`n"
+        }
+        
+        MessageManager.ShowInfo(debugMsg, "布局调试")
+}
 
     ;  新增：获取置顶按钮文本
     static GetAlwaysOnTopButtonText() {
@@ -417,14 +854,19 @@ class GuiEventHandlers {
         }
         ;  关键：禁用主窗口（灰色不可操作）
         parentGui.Opt("+Disabled")
+
+        ; 移除最小化按钮
+        try {
+            WinSetStyle("-0x00020000",inputGui.Hwnd)
+        }
         
         ; 获取当前值
         currentValue := SettingsManager.GetInt("BatchThreshold")
         
         ; 添加控件
         inputGui.SetFont("s9", "JetBrains Mono")
-        inputGui.Add("Text", "w300", "批量操作阈值：")
-        inputGui.Add("Text", "w300 cGray", "选中文件数量达到此值时显示进度条")
+        inputGui.Add("Text", "w" (WindowConstants.BATCH_THRESHOLD_WIDTH), "批量操作阈值：")
+        inputGui.Add("Text", "w" (WindowConstants.BATCH_THRESHOLD_WIDTH) " cGray", "选中文件数量达到此值时显示进度条")
         
         ctlThreshold := inputGui.Add("Edit", "w100 Number", currentValue)
         ctlThreshold.OnEvent("Change", (*) => this.ValidateThresholdInput(ctlThreshold))
@@ -443,7 +885,16 @@ class GuiEventHandlers {
         inputGui.OnEvent('Escape',(*) => this.HandleInputGuiClose(inputGui, parentGui))
         
         ; 居中显示
-        inputGui.Show("w320 h150 Center")
+        ; inputGui.Show("w320 h150 Center")
+        
+        WindowPositionUtils.CenterChildWindowWithConstants(
+            parentGui.Hwnd,                           ; 父窗口句柄
+            inputGui,                                 ; 子窗口对象
+            WindowConstants.BATCH_THRESHOLD_WIDTH,    ; 对话框宽度
+            WindowConstants.BATCH_THRESHOLD_HEIGHT,   ; 对话框高度
+            WindowConstants.BATCH_THRESHOLD_ADJUST_LEFT,   ; 水平微调
+            WindowConstants.BATCH_THRESHOLD_ADJUST_TOP     ; 垂直微调
+        )
     }
     
     ;  新增：处理批量阈值保存
