@@ -7,9 +7,9 @@
 ; 显示管理器函数
 ShowManager(configType) {
 
-    ; 检查是否已有同名的窗口
+   ; 检查是否已有同名的且是gui类型的窗口
     windowTitle := configType
-    hwnd := WinExist(windowTitle)
+    hwnd := WinExist(windowTitle " ahk_class AutoHotkeyGUI")
     
     if (hwnd) {
         ; 如果窗口存在，激活它

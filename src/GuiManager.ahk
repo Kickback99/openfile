@@ -245,13 +245,6 @@ class GuiManager {
 
     ; ==================== 核心功能方法 ====================
     
-    ; 显示创建对话框
-    ShowCreateDialog(*) {
-        this.editMode := "create"
-        this.currentEditSection := ""
-        this.ShowEditDialogGui("", "")
-    }
-    
     ; 显示编辑对话框（内部方法）- 修正版
     ShowEditDialogGui(defaultName, defaultPath) {
         ; 创建编辑对话框
