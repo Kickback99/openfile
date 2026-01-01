@@ -254,6 +254,8 @@ class GuiManager {
         ; 创建编辑对话框
         editGui := Gui()
         editGui.Title := (this.editMode = "create" ? "创建新软件" : "编辑软件")
+        ;!!! 修正：在 GUI 层面启用文件拖放
+        editGui.Opt("+E0x10")  ; +E0x10 允许拖放文件到窗口
         ; t_softmanager_settings：alwaysOnTop
         if(this.isTop){
             editGui.Opt("+AlwaysOnTop")
@@ -306,6 +308,10 @@ class GuiManager {
             ; 绑定名称变化事件（自动更新Section）
             ctlName.OnEvent("Change", (*) => GuiEventHandlers.HandleNameChangeForEditGui(editGui))
         }
+
+        ;!!! 添加拖放支持
+        editGui.OnEvent("DropFiles", (guiObj, ctrlObj, filesArray, x, y) => GuiEventHandlers.OnDropFilesCallback(guiObj, ctrlObj, filesArray, x, y))
+        
         
         ; 添加按钮
         btnSave := editGui.Add("Button", "w80", "保存")
@@ -336,6 +342,8 @@ class GuiManager {
             WindowConstants.EDIT_GUI_ADJUST_TOP
         )
     }
+
+
     
     ; ==================== 原有方法 ====================
     
