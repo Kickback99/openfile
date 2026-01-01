@@ -650,4 +650,57 @@ class ImportExportManager {
         }
     }
 
+    ; ==================== 载入相关方法 ====================
+    HandleLoad(moreGui,guiManager) {
+        ; 如果传入了 moreGui，才需要关闭对话框
+        if(moreGui != ""){
+            ; 关闭更多对话框
+            GuiEventHandlers.HandleMoreGuiClose(guiManager,moreGui)
+        }
+
+        ; ++++ 关键：临时启用OwnDialogs ++++
+        if(guiManager.isTop){
+            guiManager.gui.Opt("+OwnDialogs")
+        }
+
+        
+        ; 显示文件选择对话框（支持多选，只能选择文件）
+        fileDialog := FileSelect("M", , "选择要载入的文件", "所有文件 (*.*)")
+        
+        if (fileDialog = "") {
+            return false
+        }
+        
+        ; 如果有选中的文件，进行处理
+        if (fileDialog.Length > 0) {
+            ; 复用 HandleCreateClick 的处理逻辑
+            ; 重新激活我们的GUI窗口
+            WinActivate(guiManager.gui.Hwnd)
+            Sleep(100)
+            
+            ; 获取设置
+            enableExtension := SettingsManager.GetBool("EnableExtension")
+            batchThreshold := SettingsManager.GetInt("BatchThreshold")
+            
+            if (fileDialog.Length >= batchThreshold) {
+                ; 批量创建
+                lastAddedName := FileProcessor.BatchCreateFromSelectedFiles(guiManager, fileDialog, enableExtension)
+                if (lastAddedName != "") {
+                    GuiEventHandlers.RefreshAndSelect(guiManager, lastAddedName)
+                }
+            } else {
+                ; 单个创建
+                lastAddedName := ""
+                for filePath in fileDialog {
+                    lastAddedName := FileProcessor.CreateSingleFileAndReturnName(guiManager, filePath, enableExtension)
+                }
+                if (lastAddedName != "") {
+                    GuiEventHandlers.RefreshAndSelect(guiManager, lastAddedName)
+                }
+            }
+            return true
+        }
+    
+        return false
+    }
 }

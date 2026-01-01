@@ -5,6 +5,12 @@
 class FileProcessor {
     ; ++++ 创建单个文件并返回名称（不显示进度条） ++++
     static CreateSingleFileAndReturnName(guiManager, filePath, enableExtension) {
+        ; 首先检查文件是否存在
+        if (!FileExist(filePath) || DirExist(filePath)) {
+            ; 文件不存在或是目录，显示警告
+            MessageManager.ShowWarning("文件不存在或无效：`n" filePath)
+            return ""
+        }
         try {
             ; 解析文件名和路径
             SplitPath(filePath, &fileName, &fileDir, &fileExt, &fileNameNoExt)
@@ -98,9 +104,29 @@ class FileProcessor {
     
     ; ++++ 批量从选中的文件创建软件条目 ++++
     static BatchCreateFromSelectedFiles(guiManager, filePaths, enableExtension) {
+
+        ; 首先过滤掉不存在的文件
+        validFiles := []
+        for filePath in filePaths {
+            if (FileExist(filePath) && !DirExist(filePath)) {
+                validFiles.Push(filePath)
+            } else {
+                ; 可以在这里记录日志或提示用户
+                ; 文件不存在或是目录，显示警告
+                MessageManager.ShowWarning("文件不存在或无效：`n" filePath)
+                return ""
+            }
+        }
+        
+        if (validFiles.Length = 0) {
+            MessageManager.ShowError("没有有效的文件可以处理")
+            return ""
+        }
+
         lastAddedName := ""
         successCount := 0
-        totalCount := filePaths.Length
+        ; totalCount := filePaths.Length
+        totalCount := validFiles.Length  ; 使用有效文件的数量
         
         ; 显示批量操作进度
         progressGui := Gui()
@@ -128,7 +154,7 @@ class FileProcessor {
         Sleep(100)
         
         try {
-            for i, filePath in filePaths {
+            for i, filePath in validFiles {
                 try {
                     ; 更新进度显示 - 添加适当延迟让用户能看到变化
                     progressText.Value := "正在处理: " . (i) . "/" . totalCount
