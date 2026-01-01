@@ -127,6 +127,9 @@ class FileProcessor {
         successCount := 0
         ; totalCount := filePaths.Length
         totalCount := validFiles.Length  ; 使用有效文件的数量
+
+        ;!!! 添加：创建中止标志变量
+        isCancelled := false
         
         ; 显示批量操作进度
         progressGui := Gui()
@@ -134,6 +137,12 @@ class FileProcessor {
         progressGui.Opt("+AlwaysOnTop +ToolWindow")
         progressGui.Add("Text", "w300 Center", "正在批量创建软件条目...")
         progressText := progressGui.Add("Text", "w300 Center", "准备开始 (0/" . totalCount . ")")
+
+        ;!!! 添加：创建中止按钮
+        cancelBtn := progressGui.Add("Button", "x250 y5 w60", "中止")
+    
+        ;!!! 添加：中止按钮点击事件
+        cancelBtn.OnEvent("Click", (*) => isCancelled := true)
         
         ; 计算窗口位置：屏幕顶部居中
         screenWidth := A_ScreenWidth
@@ -141,20 +150,26 @@ class FileProcessor {
         
         ; 设置窗口大小
         windowWidth := 320
-        windowHeight := 60
         
         ; 计算位置：屏幕顶部居中，尽量靠上
         windowX := (screenWidth - windowWidth) // 2
         windowY := 20
         
         ; 显示窗口在指定位置
-        progressGui.Show("x" . windowX . " y" . windowY . " w" . windowWidth . " h" . windowHeight)
+        progressGui.Show("x" . windowX . " y" . windowY . " w" . windowWidth)
         
         ; 添加延迟确保窗口完全显示
         Sleep(100)
         
         try {
             for i, filePath in validFiles {
+                ;!!! 添加：检查中止标志
+                if (isCancelled) {
+                    progressText.Value := "已中止 - 已处理 " . successCount . "/" . totalCount
+                    Sleep(500)  ; 让用户看到中止状态
+                    break
+                }
+
                 try {
                     ; 更新进度显示 - 添加适当延迟让用户能看到变化
                     progressText.Value := "正在处理: " . (i) . "/" . totalCount
@@ -211,7 +226,8 @@ class FileProcessor {
             }
             
             ; 进度完成后保持显示一小段时间
-            if (successCount > 0) {
+            ;!!! 修改：处理完成或中止后的逻辑
+            if (!isCancelled && successCount > 0) {
                 ; 格式化文件
                 IniTools.FormatAndSaveIniFile(guiManager.configPath)
                 progressText.Value := "处理完成: " . successCount . "/" . totalCount
@@ -222,9 +238,11 @@ class FileProcessor {
             progressGui.Destroy()
             
             ; 显示批量操作结果
-            if (successCount > 0) {
+            if (isCancelled) {
+                GuiEventHandlers.ShowToolTip(guiManager, "批量创建已中止，已处理 " . successCount . " 个文件", 2000)
+            } else if (successCount > 0) {
                 if (successCount = totalCount) {
-                    GuiEventHandlers.ShowToolTip(guiManager, "批量创建完成，共添加 " . successCount . " 个软件", 2000)
+                    GuiEventHandlers.ShowToolTip(guiManager, "批量创建完成，共添加 " . successCount . " 个文件", 2000)
                 } else {
                     GuiEventHandlers.ShowToolTip(guiManager, "批量创建完成，成功 " . successCount . "/" . totalCount, 2000)
                 }
