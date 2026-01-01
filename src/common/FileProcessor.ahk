@@ -37,6 +37,8 @@ class FileProcessor {
             success := GuiEventHandlers.UpdateIniFileWithRoot(guiManager, displayName, filePath, sectionName, "create")
             
             if (success) {
+                ; 格式化文件
+                IniTools.FormatAndSaveIniFile(guiManager.configPath)
                 ; 显示单个文件的成功提示
                 if (duplicateFound) {
                     GuiEventHandlers.ShowToolTip(guiManager, "已覆盖: " . displayName, 1500)
@@ -184,6 +186,8 @@ class FileProcessor {
             
             ; 进度完成后保持显示一小段时间
             if (successCount > 0) {
+                ; 格式化文件
+                IniTools.FormatAndSaveIniFile(guiManager.configPath)
                 progressText.Value := "处理完成: " . successCount . "/" . totalCount
                 Sleep(500)  ; 让用户看到完成状态
             }

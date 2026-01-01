@@ -15,6 +15,12 @@ class ImportExportManager {
     ; 导出配置（主方法）
     ExportConfig(moreGui,guiManager) {
         ; moreGui.Destroy()
+
+        if(guiManager.showingPrompt){
+            MessageManager.ShowError("请先创建软件","提示")
+            return
+        }
+
         GuiEventHandlers.HandleMoreGuiClose(guiManager,moreGui)
 
         ; >>> 保存当前选择的文本
