@@ -184,14 +184,20 @@ class GuiManager {
 
         ; 设置主窗口句柄给MessageManager
         ; t_openfile_settings：alwaysOnTop
-        MessageManager.SetMainWindowHwnd(this.gui.Hwnd)
+        MessageManager.SetMainWindowHwnd(this.gui.Hwnd,this.configType)
+        
     }
     
     ; t_openfile_settings：alwaysOnTop-get
     ;  刷新配置值的方法
     RefreshSettings() {
         ; 重新读取所有相关配置
-        this.isTop := SettingsManager.GetBool("AlwaysOnTop")
+        ; 修改：使用configType作为section名称
+        this.isTop := SettingsManager.GetBool("AlwaysOnTop", this.configType)
+        this.sortByAlphabet := SettingsManager.GetBool("SortByAlphabet", this.configType)
+        this.enableExtension := SettingsManager.GetBool("EnableExtension", this.configType)
+        this.batchThreshold := SettingsManager.GetInt("BatchThreshold", this.configType)
+        this.showSuccessMsg := SettingsManager.GetBool("ShowSuccessMsg", this.configType)
         ; 可以在这里添加其他需要刷新的配置
     }
 
@@ -224,11 +230,11 @@ class GuiManager {
                 this.lastTopState := isCurrentlyTop
                 
                 ; 获取当前的配置状态
-                currentConfigValue := SettingsManager.GetBool("AlwaysOnTop")
+                currentConfigValue := SettingsManager.GetBool("AlwaysOnTop", this.configType)
                 
                 ; 如果当前实际状态与配置不一致，更新配置
                 if (isCurrentlyTop != currentConfigValue) {
-                    SettingsManager.SetValue("AlwaysOnTop", isCurrentlyTop ? "true" : "false")
+                    SettingsManager.SetValue("AlwaysOnTop", isCurrentlyTop ? "true" : "false", this.configType)
                     this.RefreshSettings()
                     
                     ; 显示提示（可选）
@@ -443,7 +449,7 @@ class GuiManager {
         editGui.Add("Text", "w400", "文件路径:")
         ctlPath := editGui.Add("Edit", "w400", defaultPath)
         btnBrowse := editGui.Add("Button", "w80", "浏览...")
-        btnBrowse.OnEvent("Click", (*) => GuiEventHandlers.HandleBrowseClick(ctlPath,editGui,this.isTop))
+        btnBrowse.OnEvent("Click", (*) => GuiEventHandlers.HandleBrowseClick(ctlPath,editGui,this))
         editGui.ctlPath := ctlPath 
         
         editGui.Add("Text", "w400", "Section名称:")
@@ -473,8 +479,9 @@ class GuiManager {
         }
 
         ; 添加拖放支持
-        editGui.OnEvent("DropFiles", (guiObj, ctrlObj, filesArray, x, y) => GuiEventHandlers.OnDropFilesCallback(guiObj, ctrlObj, filesArray, x, y))
-        
+        ; editGui.OnEvent("DropFiles", (guiObj, ctrlObj, filesArray, x, y) => GuiEventHandlers.OnDropFilesCallback(guiObj, ctrlObj, filesArray, x, y))
+        editGui.OnEvent("DropFiles", handleDropFiles)
+        handleDropFiles(guiObj, ctrlObj, filesArray, x, y) => GuiEventHandlers.OnDropFilesCallback(this, guiObj, ctrlObj, filesArray, x, y)
         
         ; 添加按钮
         btnSave := editGui.Add("Button", "w80", "保存")

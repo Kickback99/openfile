@@ -15,19 +15,18 @@ class SettingsManager {
     static SectionName := "General"
 
     ; 配置键的顺序（保持原有顺序）
-    static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg","Shortcuts","Link","AutoStartEnabled",this.CONFIG_VERSION_KEY]
+    static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg"]
 
     ; t_openfile_settings：default
+    ; !!! 修改：添加默认section
     static DefaultConfig := Map(
-        "AlwaysOnTop", "true",      ; 字符串
-        "SortByAlphabet", "false",  ; 字符串
-        "EnableExtension", "false", ; 字符串
-        "BatchThreshold", "5",      ; 字符串
-        "ShowSuccessMsg", "true",    ; 字符串
-        "Shortcuts", "#q",      ; 字符串
-        "Link",   "https://github.com/Kickback99/openfile", ; 字符串
-        "AutoStartEnabled", "false",
-        this.CONFIG_VERSION_KEY, this.CONFIG_VERSION
+        "Default", Map(  ; 默认section
+            "AlwaysOnTop", "true",      ; 字符串
+            "SortByAlphabet", "false",  ; 字符串
+            "EnableExtension", "false", ; 字符串
+            "BatchThreshold", "5",      ; 字符串
+            "ShowSuccessMsg", "true"    ; 字符串
+        )
     )
 
     ; 添加版本检查和重置方法
@@ -73,11 +72,26 @@ class SettingsManager {
             }
         }
     }
-    
-    ; 读取所有配置到Map中
-    static ReadAllConfig() {
-        ; 先创建默认配置
-        config := this.CreateDefaultConfig()
+
+    ; !!! 新增：获取指定section的默认配置
+    static GetDefaultForSection(sectionName) {
+        if (this.DefaultConfig.Has(sectionName)) {
+            return this.DefaultConfig[sectionName]
+        } else {
+            return this.DefaultConfig["Default"]
+        }
+    }
+
+    ; !!! 读取指定section的配置到Map中
+    static ReadSectionConfig(sectionName) {
+        ; 先获取默认配置
+        defaultConfig := this.GetDefaultForSection(sectionName)
+        config := Map()
+        
+        ; 复制默认配置
+        for key, value in defaultConfig {
+            config[key] := value
+        }
         
         try {
             settingsPath := this.GetConfigPath()
@@ -105,7 +119,7 @@ class SettingsManager {
             
             ; 解析内容
             lines := StrSplit(content, "`n", "`r")
-            inGeneralSection := false
+            inTargetSection := false
             
             for line in lines {
                 line := Trim(line)
@@ -117,17 +131,17 @@ class SettingsManager {
                 
                 ; 检查是否是段
                 if (SubStr(line, 1, 1) = "[") {
-                    ; 使用 SectionName 变量
-                    if (line = "[" . this.SectionName . "]") {
-                        inGeneralSection := true
+                    ; 检查是否是目标section
+                    if (line = "[" . sectionName . "]") {
+                        inTargetSection := true
                     } else {
-                        inGeneralSection := false
+                        inTargetSection := false
                     }
                     continue
                 }
                 
-                ; 如果在 [General] 段中，解析配置
-                if (inGeneralSection && InStr(line, "=")) {
+                ; 如果在目标段中，解析配置
+                if (inTargetSection && InStr(line, "=")) {
                     eqPos := InStr(line, "=")
                     if (eqPos > 0) {
                         key := Trim(SubStr(line, 1, eqPos - 1))
@@ -154,19 +168,117 @@ class SettingsManager {
         return config
     }
 
-    ; 重置所有设置为默认值
-    static ResetToDefault() {
-        return this.WriteConfig(this.CreateDefaultConfig())
+    ; !!! 写入指定section的配置
+    static WriteSectionConfig(sectionName, config) {
+        try {
+            settingsPath := this.GetConfigPath()
+            
+            ; 读取现有所有配置
+            allConfig := this.ReadAllConfig()
+            
+            ; 更新指定section的配置
+            allConfig[sectionName] := config
+            
+            ; 重新写入整个文件
+            return this.WriteAllConfig(allConfig)
+            
+        } catch as e {
+            ; MsgBox("写入配置时出错: " . e.Message)
+            return false
+        }
+    }
+    
+    ; +++ 读取整个配置文件的所有section ++++
+    static ReadAllConfig() {
+        allConfig := Map()
+        
+        try {
+            settingsPath := this.GetConfigPath()
+            
+            if (!FileExist(settingsPath)) {
+                ; 文件不存在，返回空的Map
+                return allConfig
+            }
+            
+            ; 读取文件内容
+            content := FileRead(settingsPath, "UTF-8")
+            if (content = "") {
+                content := FileRead(settingsPath, "CP0")
+            }
+            
+            ; 解析内容
+            lines := StrSplit(content, "`n", "`r")
+            currentSection := ""
+            
+            for line in lines {
+                line := Trim(line)
+                
+                ; 跳过注释和空行
+                if (line = "" || SubStr(line, 1, 1) = ";") {
+                    continue
+                }
+                
+                ; 检查是否是section
+                if (SubStr(line, 1, 1) = "[") {
+                    endPos := InStr(line, "]")
+                    if (endPos > 1) {
+                        currentSection := SubStr(line, 2, endPos - 2)
+                        if (!allConfig.Has(currentSection)) {
+                            allConfig[currentSection] := Map()
+                        }
+                    }
+                    continue
+                }
+                
+                ; 解析key=value
+                if (currentSection != "" && InStr(line, "=")) {
+                    eqPos := InStr(line, "=")
+                    key := Trim(SubStr(line, 1, eqPos - 1))
+                    value := Trim(SubStr(line, eqPos + 1))
+                    
+                    ; 移除行末注释
+                    if (InStr(value, ";")) {
+                        parts := StrSplit(value, ";")
+                        value := Trim(parts[1])
+                    }
+                    
+                    ; 存储配置
+                    allConfig[currentSection][key] := value
+                }
+            }
+            
+        } catch as e {
+            ; 出错时返回空的Map
+        }
+        
+        return allConfig
     }
 
-    ; 获取默认值（单个键）
-    static GetDefaultValue(key) {
-       return this.DefaultConfig.Get(key, "")
+    ; ++++ 重置指定section到默认值 ++++
+    static ResetSectionToDefault(sectionName) {
+        try {
+            ; 获取默认配置
+            defaultConfig := this.GetDefaultForSection(sectionName)
+            
+            ; 读取现有配置
+            config := this.ReadSectionConfig(sectionName)
+            
+            ; 用默认值替换所有配置项
+            for key, defaultValue in defaultConfig {
+                config[key] := defaultValue
+            }
+            
+            ; 写入配置
+            return this.WriteSectionConfig(sectionName, config)
+            
+        } catch {
+            return false
+        }
     }
     
     ; 读取单个配置值
-    static GetValue(key) {
-        config := this.ReadAllConfig()
+    static GetValue(key, sectionName := "Default") {
+        config := this.ReadSectionConfig(sectionName)
     
         ; 如果配置中有这个键，返回它的值
         if (config.Has(key) && config[key] != "") {
@@ -174,24 +286,26 @@ class SettingsManager {
         }
     
         ; 否则返回DefaultConfig中的默认值
-        return this.DefaultConfig.Get(key, "")
+        defaultConfig := this.GetDefaultForSection(sectionName)
+        return defaultConfig.Get(key, "")
     }
     
     ; 读取布尔值配置
-    static GetBool(key) {
-            value := this.GetValue(key)
-            value := StrLower(Trim(value))
+    static GetBool(key, sectionName := "Default") {
+        value := this.GetValue(key, sectionName)
+        value := StrLower(Trim(value))
     
         return (value = "true" || value = "1" || value = "yes" || value = "on")
     }
     
     ; 读取整数值配置
-    static GetInt(key) {
-        value := this.GetValue(key)
+    static GetInt(key, sectionName := "Default") {
+        value := this.GetValue(key, sectionName)
 
         ; 如果获取的值为空，尝试从DefaultConfig获取默认值
         if (value = "") {
-            value := this.DefaultConfig.Get(key, "0")
+            defaultConfig := this.GetDefaultForSection(sectionName)
+            value := defaultConfig.Get(key, "0")
         }
         
         try {
@@ -209,65 +323,108 @@ class SettingsManager {
     }
     
     ; 写入配置值
-    static SetValue(key, value) {
+    static SetValue(key, value, sectionName := "Default") {
         try {
-            settingsPath := this.GetConfigPath()
-            
-            ; 先读取现有配置
-            config := this.ReadAllConfig()
+            ; 先读取该section的现有配置
+            config := this.ReadSectionConfig(sectionName)
             
             ; 更新值
             config[key] := String(value)
             
-            ; 重新写入文件
-            return this.WriteConfig(config)
+            ; 重新写入该section
+            return this.WriteSectionConfig(sectionName, config)
             
         } catch {
             return false
         }
     }
-    
-    ; 写入所有配置到文件
-    static WriteConfig(config) {
+
+    ; !!! 重要：按照入口数组顺序写入配置文件
+    static WriteAllConfig(allConfig) {
+        global SupportedConfigTypes
         try {
             settingsPath := this.GetConfigPath()
             
-            ; 构建文件内容，使用 SectionName 变量
-            content := "[" . this.SectionName . "]`r`n"
+            ; 构建文件内容
+            content := ""
             
-            ; 按照指定顺序写入
-            for key in this.ConfigOrder {
-                if (config.Has(key)) {
-                    value := config[key]
-                    
-                    ; 由于现在所有值都是字符串，直接写入
-                    ; 但为了安全，确保是字符串
-                    if (Type(value) != "String") {
-                        value := String(value)
-                    }
-                    
-                    content .= key . "=" . value . "`r`n"
+            ; 1. 首先写入Default section
+            /* if (allConfig.Has("Default")) {
+                content .= this.FormatSection("Default", allConfig["Default"])
+            } */
+            
+            ; 2. 按照SupportedConfigTypes数组顺序写入其他section
+            for configType in SupportedConfigTypes {
+                if (allConfig.Has(configType)) {
+                    content .= this.FormatSection(configType, allConfig[configType])
                 }
             }
             
-            ; 确保目录存在
+            ; 3. 写入其他不在数组中的section（保持兼容性）
+            otherSections := []
+            for sectionName, config in allConfig {
+                if (sectionName != "Default" && !this.IsSupportedType(sectionName)) {
+                    otherSections.Push(sectionName)
+                }
+            }
+            
+            if (otherSections.Length > 0) {
+                Sort(otherSections)  ; 按字母排序
+                for sectionName in otherSections {
+                    content .= this.FormatSection(sectionName, allConfig[sectionName])
+                }
+            }
+
+            content := Trim(content, "`r`n") . "`r`n"  ; 移除末尾多余的空行
+            
+            ; 确保目录存在并写入文件
             SplitPath(settingsPath, , &configDir)
             if (!DirExist(configDir)) {
                 DirCreate(configDir)
             }
             
-            ; 写入文件
             file := FileOpen(settingsPath, "w", "UTF-8-RAW")
             file.Write(content)
             file.Close()
             
             return true
             
-        } catch as e {
-            ; MsgBox("写入配置时出错: " . e.Message)
+        } catch {
             return false
         }
     }
+    
+    ; 检查是否是支持的配置类型
+    static IsSupportedType(sectionName) {
+        global SupportedConfigTypes
+        for configType in SupportedConfigTypes {
+            if (configType = sectionName) {
+                return true
+            }
+        }
+        return false
+    }
+    
+    ; 格式化section内容
+    static FormatSection(sectionName, config) {
+        content := "[" . sectionName . "]`r`n"
+        
+        for key in this.ConfigOrder {
+            if (config.Has(key)) {
+                value := config[key]
+                
+                if (Type(value) != "String") {
+                    value := String(value)
+                }
+                
+                content .= key . "=" . value . "`r`n"
+            }
+        }
+        
+        content .= "`r`n"
+        return content
+    }
+
     
     ; 检查并修复配置文件
     static EnsureConfigFile() {
@@ -276,24 +433,7 @@ class SettingsManager {
             
             if (!FileExist(settingsPath)) {
                 ; 创建默认配置文件
-                 return this.ResetToDefault()
-            }
-            
-            ; 检查文件内容是否正常
-            content := ""
-            try {
-                content := FileRead(settingsPath, "UTF-8")
-            } catch {
-                try {
-                    content := FileRead(settingsPath, "CP0")
-                }
-            }
-            
-            ; 检查是否是乱码（常见的中文乱码特征）
-            if (this.IsCorruptedContent(content)) {
-                ; 乱码，重新创建
-                FileDelete(settingsPath)
-                return this.ResetToDefault()
+                return this.WriteAllConfig(this.DefaultConfig)
             }
             
             return true
@@ -301,6 +441,18 @@ class SettingsManager {
         } catch {
             return false
         }
+    }
+
+    ; !!! 获取指定section的所有配置键 ++++
+    static GetAllKeys(sectionName) {
+        config := this.ReadSectionConfig(sectionName)
+        keys := []
+        
+        for key, _ in config {
+            keys.Push(key)
+        }
+        
+        return keys
     }
     
     ; 创建默认配置文件
@@ -336,33 +488,21 @@ class SettingsManager {
         
         return false
     }
-    
-    ; 获取所有配置键
-    static GetAllKeys() {
-        config := this.ReadAllConfig()
-        keys := []
-        
-        for key, _ in config {
-            keys.Push(key)
-        }
-        
-        return keys
-    }
-    
-    ; 检查配置是否存在
-    static HasKey(key) {
-        config := this.ReadAllConfig()
+
+    ; ++++ 检查配置是否存在 ++++
+    static HasKey(key, sectionName) {
+        config := this.ReadSectionConfig(sectionName)
         return config.Has(key)
     }
     
     ; 删除配置项
-    static DeleteKey(key) {
+    static DeleteKey(key, sectionName) {
         try {
-            config := this.ReadAllConfig()
+            config := this.ReadSectionConfig(sectionName)
             
             if (config.Has(key)) {
                 config.Delete(key)
-                return this.WriteConfig(config)
+                return this.WriteSectionConfig(sectionName, config)
             }
             
             return true

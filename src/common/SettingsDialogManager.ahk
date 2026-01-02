@@ -21,7 +21,7 @@ class SettingsDialogManager {
         moreGui.Opt("+Owner" guiManager.gui.Hwnd)
 
         ; 根据配置决定是否置顶
-        if(SettingsManager.GetBool("AlwaysOnTop")){
+        if(SettingsManager.GetBool("AlwaysOnTop",guiManager.configType)){
             moreGui.Opt("+AlwaysOnTop")
         }
 
@@ -53,7 +53,7 @@ class SettingsDialogManager {
         buttonLayout := this.CreateButtonLayout()
 
         ; 创建设置按钮并获取按钮引用
-        btnRefs := this.CreateSettingButtonsWithLayout(moreGui, buttonLayout)
+        btnRefs := this.CreateSettingButtonsWithLayout(moreGui, guiManager, buttonLayout)
 
         this.BindSettingButtonEvents(btnRefs, guiManager, moreGui)
 
@@ -72,7 +72,7 @@ class SettingsDialogManager {
     }
 
     ; 根据布局创建设置按钮的方法
-    static CreateSettingButtonsWithLayout(moreGui, buttonLayout) {
+    static CreateSettingButtonsWithLayout(moreGui, guiManager, buttonLayout) {
         btnRefs := Map()
         dialogWidth := WindowConstants.MORE_GUI_WIDTH
         btnSpacing := WindowConstants.BUTTON_SPACING
@@ -102,7 +102,7 @@ class SettingsDialogManager {
             currentX := rowStartX
             for btnIndex, btnName in rowButtons {
                 btnWidth := WindowConstants.GetButtonWidth(btnName)
-                btnText := this.GetButtonTextInternal(btnName)
+                btnText := this.GetButtonTextInternal(btnName,guiManager)
                 
                 ; 确定按钮位置参数
                 positionParams := ""
@@ -368,18 +368,18 @@ class SettingsDialogManager {
         }
     }
 
-    static GetButtonTextInternal(btnName) {
+    static GetButtonTextInternal(btnName,guiManager) {
         switch btnName {
             case "AlwaysOnTop":
-                return this.GetAlwaysOnTopButtonText()
+                return this.GetAlwaysOnTopButtonText(guiManager)
             case "SortByAlphabet":
-                return this.GetSortAlphabetButtonText()
+                return this.GetSortAlphabetButtonText(guiManager)
             case "EnableExtension":
-                return this.GetShowExtensionButtonText()
+                return this.GetShowExtensionButtonText(guiManager)
             case "BatchThreshold":
-                return this.GetBatchThresholdButtonText()
+                return this.GetBatchThresholdButtonText(guiManager)
             case "ShowSuccessMsg":
-                return this.GetShowSuccessMsgButtonText()
+                return this.GetShowSuccessMsgButtonText(guiManager)
             case "ResetSettings":
                 return "重置"
             case "Shortcuts":
@@ -465,47 +465,47 @@ class SettingsDialogManager {
     }
 
     ; 获取置顶按钮文本
-    static GetAlwaysOnTopButtonText() {
-        isOnTop := SettingsManager.GetBool("AlwaysOnTop")
+    static GetAlwaysOnTopButtonText(guiManager) {
+        isOnTop := SettingsManager.GetBool("AlwaysOnTop",guiManager.configType)
         return "置顶: " . (isOnTop ? "✅" : "❌")
     }
     
     ; 获取字母排序按钮文本
-    static GetSortAlphabetButtonText() {
-        isSorted := SettingsManager.GetBool("SortByAlphabet")
+    static GetSortAlphabetButtonText(guiManager) {
+        isSorted := SettingsManager.GetBool("SortByAlphabet",guiManager.configType)
         return "字母排序: " . (isSorted ? "✅" : "❌")
     }
     
     ; 获取扩展名按钮文本
-    static GetShowExtensionButtonText() {
-        showExt := SettingsManager.GetBool("EnableExtension")
+    static GetShowExtensionButtonText(guiManager) {
+        showExt := SettingsManager.GetBool("EnableExtension",guiManager.configType)
         return "显示扩展名: " . (showExt ? "✅" : "❌")
     }
 
     ; 获取批量阈值按钮文本
-    static GetBatchThresholdButtonText() {
-        threshold := SettingsManager.GetInt("BatchThreshold")
+    static GetBatchThresholdButtonText(guiManager) {
+        threshold := SettingsManager.GetInt("BatchThreshold",guiManager.configType)
         return "批量阈值: " . threshold
     }
     
     ; 获取成功消息按钮文本
-    static GetShowSuccessMsgButtonText() {
-        showMsg := SettingsManager.GetBool("ShowSuccessMsg")
+    static GetShowSuccessMsgButtonText(guiManager) {
+        showMsg := SettingsManager.GetBool("ShowSuccessMsg",guiManager.configType)
         return "成功消息: " . (showMsg ? "✅" : "❌")
     }
     
     ; 处理设置切换
     static HandleSettingToggle(settingKey, buttonCtrl, guiManager,moreGui) {
         ; 获取当前值并切换
-        currentValue := SettingsManager.GetBool(settingKey)
+        currentValue := SettingsManager.GetBool(settingKey,guiManager.configType)
         newValue := !currentValue
         
         ; 更新配置文件
-        if (SettingsManager.SetValue(settingKey, newValue ? "true" : "false")) {
+        if (SettingsManager.SetValue(settingKey, newValue ? "true" : "false",guiManager.configType)) {
             ; 更新按钮文本
             switch settingKey {
                 case "AlwaysOnTop":
-                    buttonCtrl.Text := this.GetAlwaysOnTopButtonText()
+                    buttonCtrl.Text := this.GetAlwaysOnTopButtonText(guiManager)
                     ; 更新主窗口置顶状态
                     guiManager.isTop := newValue
                     if (newValue) {
@@ -515,17 +515,17 @@ class SettingsDialogManager {
                     }
                     
                 case "SortByAlphabet":
-                    buttonCtrl.Text := this.GetSortAlphabetButtonText()
+                    buttonCtrl.Text := this.GetSortAlphabetButtonText(guiManager)
                     ; 刷新列表以应用新的排序方式
                     SetTimer(() => guiManager.RefreshList(), -100)
                     
                 case "EnableExtension":
-                    buttonCtrl.Text := this.GetShowExtensionButtonText()
+                    buttonCtrl.Text := this.GetShowExtensionButtonText(guiManager)
                     ; 扩展名设置可能在显示时用到，需要时可以刷新
                     ; SetTimer(() => guiManager.RefreshList(), -100)
 
                 case "ShowSuccessMsg":
-                    buttonCtrl.Text := this.GetShowSuccessMsgButtonText()
+                    buttonCtrl.Text := this.GetShowSuccessMsgButtonText(guiManager)
                     ; 成功消息设置影响MessageManager，但不需要立即刷新界面
 
             }
@@ -555,7 +555,7 @@ class SettingsDialogManager {
         }
         
         ; 获取当前值
-        currentValue := SettingsManager.GetInt("BatchThreshold")
+        currentValue := SettingsManager.GetInt("BatchThreshold",guiManager.configType)
         
         ; 添加控件
         inputGui.SetFont("s9")  ; 先重置为默认字体
@@ -583,7 +583,7 @@ class SettingsDialogManager {
         
         ;  修正：定义单独的函数
         ; btnSave.OnEvent("Click", this.HandleBatchThresholdSave.Bind(this, ctlThreshold, btnBatchThreshold,inputGui,parentGui))
-        btnSave.OnEvent("Click", (*) => this.HandleBatchThresholdSave(ctlUpDown, btnBatchThreshold, inputGui, parentGui))
+        btnSave.OnEvent("Click", (*) => this.HandleBatchThresholdSave(ctlUpDown, btnBatchThreshold, inputGui, parentGui,guiManager))
         ; btnCancel.OnEvent("Click", (*) => inputGui.Destroy())
         ; 然后在其他关闭方式中调用同一个函数：
         btnCancel.OnEvent("Click", (*) => this.HandleInputGuiClose(inputGui, parentGui))
@@ -604,7 +604,7 @@ class SettingsDialogManager {
     }
     
     ; 处理批量阈值保存
-    static HandleBatchThresholdSave(ctlUpDown, btnBatchThreshold,inputGui,parentGui) {
+    static HandleBatchThresholdSave(ctlUpDown, btnBatchThreshold,inputGui,parentGui,guiManager) {
         ; 直接从 UpDown 控件获取值（确保在范围内）
         value := ctlUpDown.Value
         
@@ -615,9 +615,9 @@ class SettingsDialogManager {
         }
         
         ; 保存配置
-        if (SettingsManager.SetValue("BatchThreshold", value)) {
+        if (SettingsManager.SetValue("BatchThreshold", value,guiManager.configType)) {
             MessageManager.ShowSuccessDelayed("批量阈值已更新: " . value,,parentGui.Hwnd)
-            btnBatchThreshold.Text := this.GetBatchThresholdButtonText()
+            btnBatchThreshold.Text := this.GetBatchThresholdButtonText(guiManager)
             ;  统一恢复和关闭
             this.HandleInputGuiClose(inputGui, parentGui)
         } else {
@@ -656,16 +656,16 @@ class SettingsDialogManager {
         
         if (result = "Yes") {
             ; 使用 ResetToDefault 方法重置
-            if (SettingsManager.ResetToDefault()) {
+            if (SettingsManager.ResetSectionToDefault(guiManager.configType)) {
                 ; 直接调用现有的按钮文本函数更新所有按钮
-                btnAlwaysOnTop.Text := this.GetAlwaysOnTopButtonText()
-                btnSortAlphabet.Text := this.GetSortAlphabetButtonText()
-                btnShowExtension.Text := this.GetShowExtensionButtonText()
-                btnBatchThreshold.Text := this.GetBatchThresholdButtonText()
-                btnShowSuccessMsg.Text := this.GetShowSuccessMsgButtonText()
+                btnAlwaysOnTop.Text := this.GetAlwaysOnTopButtonText(guiManager)
+                btnSortAlphabet.Text := this.GetSortAlphabetButtonText(guiManager)
+                btnShowExtension.Text := this.GetShowExtensionButtonText(guiManager)
+                btnBatchThreshold.Text := this.GetBatchThresholdButtonText(guiManager)
+                btnShowSuccessMsg.Text := this.GetShowSuccessMsgButtonText(guiManager)
                 
                 ; 置顶状态会自动通过 GetBool 读取
-                newAlwaysOnTop := SettingsManager.GetBool("AlwaysOnTop")
+                newAlwaysOnTop := SettingsManager.GetBool("AlwaysOnTop",guiManager.configType)
                 guiManager.isTop := newAlwaysOnTop
                 guiManager.gui.Opt((newAlwaysOnTop ? "+" : "-") . "AlwaysOnTop")
                 
