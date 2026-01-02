@@ -83,13 +83,13 @@ class GuiEventHandlers {
     static HandleEditClick(guiManager) {
         selectedIndex := guiManager.listBox.Value
         if (selectedIndex <= 0) {
-            MessageManager.ShowError("请先选择一个要编辑的软件")
+            MessageManager.ShowError("请先选择一个要编辑的软件","提示")
             return
         }
         
         selectedText := guiManager.listBox.Text
         if (!guiManager.softwareMap.Has(selectedText)) {
-            MessageManager.ShowError("未找到选中的软件信息")
+            MessageManager.ShowError("未找到选中的软件信息","提示")
             return
         }
         
@@ -107,13 +107,13 @@ class GuiEventHandlers {
     static HandleDeleteClick(guiManager) {
         selectedIndex := guiManager.listBox.Value
         if (selectedIndex <= 0) {
-            MessageManager.ShowError("请先选择一个要删除的软件")
+            MessageManager.ShowError("请先选择一个要删除的软件","提示")
             return
         }
         
         selectedText := guiManager.listBox.Text
         if (!guiManager.softwareMap.Has(selectedText)) {
-            MessageManager.ShowError("未找到选中的软件信息")
+            MessageManager.ShowError("未找到选中的软件信息","提示")
             return
         }
         
@@ -251,6 +251,7 @@ class GuiEventHandlers {
         
         ; moreGui关闭时恢复主窗口
         moreGui.OnEvent("Close", this.HandleMoreGuiClose.Bind(this, guiManager, moreGui))
+        moreGui.OnEvent("Escape", this.HandleMoreGuiClose.Bind(this,guiManager,moreGui))
 
         ; 预定义按钮变量
         btnAlwaysOnTop := ""
@@ -392,19 +393,19 @@ class GuiEventHandlers {
             switch btnName {
                 case "AlwaysOnTop":
                     btnAlwaysOnTop := btn
-                    btnAlwaysOnTop.OnEvent("Click", (*) => this.HandleSettingToggle("AlwaysOnTop", btnAlwaysOnTop, guiManager))
+                    btnAlwaysOnTop.OnEvent("Click", (*) => this.HandleSettingToggle("AlwaysOnTop", btnAlwaysOnTop, guiManager,moreGui))
                 case "SortByAlphabet":
                     btnSortAlphabet := btn
-                    btnSortAlphabet.OnEvent("Click", (*) => this.HandleSettingToggle("SortByAlphabet", btnSortAlphabet, guiManager))
+                    btnSortAlphabet.OnEvent("Click", (*) => this.HandleSettingToggle("SortByAlphabet", btnSortAlphabet, guiManager,moreGui))
                 case "EnableExtension":
                     btnShowExtension := btn
-                    btnShowExtension.OnEvent("Click", (*) => this.HandleSettingToggle("EnableExtension", btnShowExtension, guiManager))
+                    btnShowExtension.OnEvent("Click", (*) => this.HandleSettingToggle("EnableExtension", btnShowExtension, guiManager,moreGui))
                 case "BatchThreshold":
                     btnBatchThreshold := btn
                     btnBatchThreshold.OnEvent("Click", (*) => this.HandleBatchThresholdClick(guiManager, btnBatchThreshold, moreGui))
                 case "ShowSuccessMsg":
                     btnShowSuccessMsg := btn
-                    btnShowSuccessMsg.OnEvent("Click", (*) => this.HandleSettingToggle("ShowSuccessMsg", btnShowSuccessMsg, guiManager))
+                    btnShowSuccessMsg.OnEvent("Click", (*) => this.HandleSettingToggle("ShowSuccessMsg", btnShowSuccessMsg, guiManager,moreGui))
                 case "ResetSettings":
                     btnResetSettings := btn
                     ; 事件绑定在循环外处理
@@ -426,7 +427,8 @@ class GuiEventHandlers {
                 btnShowExtension, 
                 btnBatchThreshold, 
                 btnShowSuccessMsg, 
-                guiManager
+                guiManager,
+                moreGui
             ))
         }
 
@@ -644,19 +646,19 @@ class GuiEventHandlers {
     ;>>>新增：绑定设置按钮事件的方法
     static BindSettingButtonEvents(btnRefs, guiManager, moreGui) {
         if (btnRefs.Has("AlwaysOnTop")) {
-            btnRefs["AlwaysOnTop"].OnEvent("Click", (*) => this.HandleSettingToggle("AlwaysOnTop", btnRefs["AlwaysOnTop"], guiManager))
+            btnRefs["AlwaysOnTop"].OnEvent("Click", (*) => this.HandleSettingToggle("AlwaysOnTop", btnRefs["AlwaysOnTop"], guiManager,moreGui))
         }
         if (btnRefs.Has("SortByAlphabet")) {
-            btnRefs["SortByAlphabet"].OnEvent("Click", (*) => this.HandleSettingToggle("SortByAlphabet", btnRefs["SortByAlphabet"], guiManager))
+            btnRefs["SortByAlphabet"].OnEvent("Click", (*) => this.HandleSettingToggle("SortByAlphabet", btnRefs["SortByAlphabet"], guiManager,moreGui))
         }
         if (btnRefs.Has("EnableExtension")) {
-            btnRefs["EnableExtension"].OnEvent("Click", (*) => this.HandleSettingToggle("EnableExtension", btnRefs["EnableExtension"], guiManager))
+            btnRefs["EnableExtension"].OnEvent("Click", (*) => this.HandleSettingToggle("EnableExtension", btnRefs["EnableExtension"], guiManager,moreGui))
         }
         if (btnRefs.Has("BatchThreshold")) {
             btnRefs["BatchThreshold"].OnEvent("Click", (*) => this.HandleBatchThresholdClick(guiManager, btnRefs["BatchThreshold"], moreGui))
         }
         if (btnRefs.Has("ShowSuccessMsg")) {
-            btnRefs["ShowSuccessMsg"].OnEvent("Click", (*) => this.HandleSettingToggle("ShowSuccessMsg", btnRefs["ShowSuccessMsg"], guiManager))
+            btnRefs["ShowSuccessMsg"].OnEvent("Click", (*) => this.HandleSettingToggle("ShowSuccessMsg", btnRefs["ShowSuccessMsg"], guiManager,moreGui))
         }
         if (btnRefs.Has("ResetSettings")) {
             btnRefs["ResetSettings"].OnEvent("Click", (*) => this.HandleResetSettings(
@@ -665,7 +667,8 @@ class GuiEventHandlers {
                 btnRefs.Get("EnableExtension", ""), 
                 btnRefs.Get("BatchThreshold", ""), 
                 btnRefs.Get("ShowSuccessMsg", ""), 
-                guiManager
+                guiManager,
+                moreGui
             ))
         }
     }
@@ -801,7 +804,7 @@ class GuiEventHandlers {
     }
     
     ;  新增：处理设置切换
-    static HandleSettingToggle(settingKey, buttonCtrl, guiManager) {
+    static HandleSettingToggle(settingKey, buttonCtrl, guiManager,moreGui) {
         ; 获取当前值并切换
         currentValue := SettingsManager.GetBool(settingKey)
         newValue := !currentValue
@@ -837,14 +840,14 @@ class GuiEventHandlers {
             }
             
             ; 显示成功提示
-            MessageManager.ShowSuccessDelayed("设置已更新: " . settingKey . " = " . (newValue ? "true" : "false"))
+            MessageManager.ShowSuccessDelayed("设置已更新: " . settingKey . " = " . (newValue ? "true" : "false"),,moreGui.Hwnd)
         } else {
-            MessageManager.ShowError("更新设置失败")
+            MessageManager.ShowError("更新设置失败",,,moreGui.Hwnd)
         }
     }
 
     ;  新增：处理批量阈值点击
-    static HandleBatchThresholdClick(guiManager, btnBatchThreshold,parentGui) {
+    static HandleBatchThresholdClick(guiManager,btnBatchThreshold,parentGui) {
         ; 创建输入对话框
         inputGui := Gui()
         inputGui.Title := "设置批量阈值"
@@ -904,13 +907,13 @@ class GuiEventHandlers {
         
         ;  检查是否为空
         if (rawValue = "") {
-            MessageManager.ShowError("批量阈值不能为空")
+            MessageManager.ShowError("批量阈值不能为空",,,parentGui.Hwnd)
             return  ; 不关闭窗口，让用户重新输入
         }
         
         ;  检查是否为有效数字
         if (!RegExMatch(rawValue, "^\d+$")) {
-            MessageManager.ShowError("请输入有效的数字")
+            MessageManager.ShowError("请输入有效的数字",,,parentGui.Hwnd)
             return
         }
         
@@ -918,24 +921,24 @@ class GuiEventHandlers {
         try {
             value := Integer(rawValue)
         } catch {
-            MessageManager.ShowError("请输入有效的数字")
+            MessageManager.ShowError("请输入有效的数字",,,parentGui.Hwnd)
             return
         }
         
         ; 验证范围
         if (value < 1 || value > 1000) {
-            MessageManager.ShowError("请输入1-1000之间的数字")
+            MessageManager.ShowError("请输入1-1000之间的数字",,,parentGui.Hwnd)
             return
         }
         
         ; 保存配置
         if (SettingsManager.SetValue("BatchThreshold", value)) {
-            MessageManager.ShowSuccessDelayed("批量阈值已更新: " . value)
+            MessageManager.ShowSuccessDelayed("批量阈值已更新: " . value,,parentGui.Hwnd)
             btnBatchThreshold.Text := this.GetBatchThresholdButtonText()
             ;  统一恢复和关闭
             this.HandleInputGuiClose(inputGui, parentGui)
         } else {
-            MessageManager.ShowError("更新失败")
+            MessageManager.ShowError("更新失败",,,parentGui.Hwnd)
         }
     }
     
@@ -965,6 +968,23 @@ class GuiEventHandlers {
         inputGui.Destroy()
     }
 
+    ;  新增：处理editGui关闭
+    static HandleEditGuiClose(guiManager, editGui) {
+        ; 恢复主窗口
+        guiManager.gui.Opt("-Disabled")
+
+        ; 销毁moreGui
+        editGui.Destroy()
+
+        ; 让搜索框进入焦点
+        /* if(guiManager.listBox.Value = 0){
+             guiManager.searchBox.Focus()
+             guiManager.userWasInSearchBox := true
+        } */
+        
+
+    }
+
     ;  新增：处理moreGui关闭
     static HandleMoreGuiClose(guiManager, moreGui, *) {
         ; 恢复主窗口
@@ -976,9 +996,9 @@ class GuiEventHandlers {
 
     ; 3. 最简化重置设置函数:
     ;  新增：处理重置设置到默认值
-    static HandleResetSettings(btnAlwaysOnTop, btnSortAlphabet, btnShowExtension, btnBatchThreshold, btnShowSuccessMsg, guiManager) {
+    static HandleResetSettings(btnAlwaysOnTop, btnSortAlphabet, btnShowExtension, btnBatchThreshold, btnShowSuccessMsg, guiManager,moreGui) {
         ; 简单确认
-        result := MessageManager.ShowConfirm("确定要重置所有设置到默认值吗？", "重置设置确认")
+        result := MessageManager.ShowConfirm("确定要重置所有设置到默认值吗？", "重置设置确认",,moreGui.Hwnd)
         
         if (result = "Yes") {
             ; 使用 ResetToDefault 方法重置
@@ -998,9 +1018,9 @@ class GuiEventHandlers {
                 ; 刷新列表
                 SetTimer(() => guiManager.RefreshList(), -100)
                 
-                MessageManager.ShowSuccessDelayed("所有设置已重置到默认值")
+                MessageManager.ShowSuccessDelayed("所有设置已重置到默认值",,moreGui.Hwnd)
             } else {
-                MessageManager.ShowError("重置设置失败")
+                MessageManager.ShowError("重置设置失败",,,moreGui.Hwnd)
             }
         }
     }
@@ -1012,7 +1032,7 @@ class GuiEventHandlers {
     static HandleOpenSoftware(guiManager) {
         selectedIndex := guiManager.listBox.Value
         if (selectedIndex <= 0) {
-            MessageManager.ShowError("请先选择一个软件")
+            MessageManager.ShowError("请先选择一个软件","提示")
             return
         }
 
@@ -1448,7 +1468,8 @@ class GuiEventHandlers {
         
         if (!isBatchMode) {
             ; 非批量模式，关闭编辑窗口
-            editGui.Destroy()
+            ; editGui.Destroy()
+            this.HandleEditGuiClose(guiManager,editGui)
             
             ; >>> 刷新列表并根据模式选择相应的项
             if (guiManager.editMode = "edit") {
@@ -1473,7 +1494,7 @@ class GuiEventHandlers {
 
     ; ==================== 拖拽事件处理 ====================
 
-    ;!!! 新增：处理拖放文件到编辑对话框的事件
+    ; 新增：处理拖放文件到编辑对话框的事件
     ; 拖放文件回调
     static OnDropFilesCallback(guiObj, ctrlObj, filesArray, x, y) {
         try {
