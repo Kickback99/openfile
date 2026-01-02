@@ -138,10 +138,16 @@ class GuiManager {
         this.listBox.OnEvent("Focus", (*) => GuiEventHandlers.HandleListBoxFocus(this))
         ; this.listBox.OnEvent("LoseFocus", this.HandleListBoxLoseFocus.Bind(this))
 
-        this.gui.OnEvent("Escape", (*) => this.gui.Destroy())  ; ESC关闭窗口
+        ; !!! 修改：使用CloseGui方法关闭窗口
+        this.gui.OnEvent("Escape", (*) => this.CloseGui())  ; ESC关闭窗口
+        this.gui.OnEvent("Close", (*) => this.CloseGui())   ; 窗口关闭按钮
 
         ; 显示GUI
         this.gui.Show("w550")
+
+        ; !!! 监听窗口位置/状态变化消息（用于检测置顶状态变化）
+        ; 注意：必须在GUI显示后设置监听，否则窗口句柄可能无效
+        OnMessage(0x47, ObjBindMethod(this, "OnWindowPosChanged"))  ; WM_WINDOWPOSCHANGED
 
         ; 使用一次性定时器启用搜索框Tabstop
         ; SetTimer(ObjBindMethod(this, "EnableSearchBoxTab"), -50)
@@ -157,6 +163,57 @@ class GuiManager {
         ; 重新读取所有相关配置
         this.isTop := SettingsManager.GetBool("AlwaysOnTop")
         ; 可以在这里添加其他需要刷新的配置
+    }
+
+    ; !!! 新增：窗口位置/状态变化事件处理
+    OnWindowPosChanged(wParam, lParam, msg, hwnd) {
+        ; 检查是否主窗口的消息
+        if (!this.gui || hwnd != this.gui.Hwnd) {
+            return
+        }
+        
+        ; 检查窗口是否被置顶
+        try {
+            ; !!! 使用DetectHiddenWindows确保能检测到窗口
+            DetectHiddenWindows true
+            ExStyle := WinGetExStyle("ahk_id " hwnd)  ; !!! 使用WinGetExStyle
+            isCurrentlyTop := (ExStyle & 0x8)  ; 0x8 = WS_EX_TOPMOST
+            DetectHiddenWindows false
+        } catch as e {
+            ; 如果窗口已销毁，忽略错误
+            return
+        }
+        
+        ; 获取当前的配置状态
+        currentConfigValue := SettingsManager.GetBool("AlwaysOnTop")
+        
+        ; !!! 调试信息，可以注释掉
+        ; MessageManager.ShowInfo("当前窗口置顶状态: " isCurrentlyTop "，配置值: " currentConfigValue)
+        
+        ; 如果当前实际状态与配置不一致，更新配置
+        if (isCurrentlyTop != currentConfigValue) {
+            ; 更新配置
+            SettingsManager.SetValue("AlwaysOnTop", isCurrentlyTop ? "true" : "false")
+            
+            ; 刷新本地的配置缓存
+            this.RefreshSettings()
+            
+            ; !!! 可选：如果需要可以显示提示
+            if (WindowConstants.DEBUG_MODE) {
+                ; 使用ToolTip而不是MsgBox，避免阻塞消息处理
+                ToolTip("窗口置顶状态已更新: " (isCurrentlyTop ? "已置顶" : "取消置顶"), 1000)
+            }
+        }
+    }
+
+    ; !!! 新增：统一关闭函数
+    CloseGui() {
+        ; 销毁GUI
+        if (this.gui) {
+            OnMessage(0x47, this.gui, 0)  ; 取消监听
+            this.gui.Destroy()
+            this.gui := ""
+        }
     }
 
     /* EnableSearchBoxTab() {
