@@ -254,11 +254,23 @@ class GuiManager {
         ; 创建编辑对话框
         editGui := Gui()
         editGui.Title := (this.editMode = "create" ? "创建新软件" : "编辑软件")
-        ;!!! 修正：在 GUI 层面启用文件拖放
+        ; 修正：在 GUI 层面启用文件拖放
         editGui.Opt("+E0x10")  ; +E0x10 允许拖放文件到窗口
+
+        ; 总是设置 Owner 关系
+        editGui.Opt("+Owner" this.gui.Hwnd)
+
         ; t_softmanager_settings：alwaysOnTop
         if(this.isTop){
             editGui.Opt("+AlwaysOnTop")
+        }
+
+        ; 关键：禁用主窗口（灰色不可操作）
+        this.gui.Opt("+Disabled")
+
+        ; 移除最小化按钮
+        try {
+        WinSetStyle("-0x00020000", editGui.Hwnd)
         }
         
         ; 存储必要属性到GUI对象
@@ -309,7 +321,7 @@ class GuiManager {
             ctlName.OnEvent("Change", (*) => GuiEventHandlers.HandleNameChangeForEditGui(editGui))
         }
 
-        ;!!! 添加拖放支持
+        ; 添加拖放支持
         editGui.OnEvent("DropFiles", (guiObj, ctrlObj, filesArray, x, y) => GuiEventHandlers.OnDropFilesCallback(guiObj, ctrlObj, filesArray, x, y))
         
         
@@ -327,7 +339,10 @@ class GuiManager {
             this.editMode = "create" ? editGui.chkBatchAdd : false ; 编辑模式不传递复选框
         ))
         
-        btnCancel.OnEvent("Click", (*) => editGui.Destroy())
+        ; 销毁事件
+        btnCancel.OnEvent("Click", (*) => GuiEventHandlers.HandleEditGuiClose(this,editGui))
+        editGui.OnEvent("close",(*) => GuiEventHandlers.HandleEditGuiClose(this,editGui))
+        editGui.OnEvent("Escape", (*) => GuiEventHandlers.HandleEditGuiClose(this, editGui))
         
         ; 计算EditGui高度
         editHeight := (this.editMode = "create" ? WindowConstants.EDIT_GUI_HEIGHT_CREATE : WindowConstants.EDIT_GUI_HEIGHT_EDIT)
