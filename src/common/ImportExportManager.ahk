@@ -774,8 +774,8 @@ class ImportExportManager {
             Sleep(100)
             
             ; 获取设置
-            enableExtension := SettingsManager.GetBool("EnableExtension")
-            batchThreshold := SettingsManager.GetInt("BatchThreshold")
+            enableExtension := SettingsManager.GetBool("EnableExtension",guiManager.configType)
+            batchThreshold := SettingsManager.GetInt("BatchThreshold",guiManager.configType)
             
             if (fileDialog.Length >= batchThreshold) {
                 ; 批量创建

@@ -22,8 +22,9 @@ class MessageManager {
     
     ; t_openfile_settings：showSuccessMsg-get-multi
     ; 设置主窗口句柄（在GuiManager初始化时调用）
-    static SetMainWindowHwnd(hwnd) {
+    static SetMainWindowHwnd(hwnd,configType) {
         this.MainWindowHwnd := hwnd
+        this.configType := configType
     }
     
     ; 智能获取所有者窗口句柄
@@ -31,7 +32,7 @@ class MessageManager {
 
         ;检查AlwaysOnTop配置
         ; t_openfile_settings：alwaysOnTop-get
-        if (!SettingsManager.GetBool("AlwaysOnTop")) {
+        if (!SettingsManager.GetBool("AlwaysOnTop",this.configType)) {
             return 0  ; AlwaysOnTop为false，不使用Owner
         }
 

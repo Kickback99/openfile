@@ -231,8 +231,8 @@ class GuiEventHandlers {
         if (selectedFiles.Length > 0) {
             ; t_openfile_settings：enableExtension-get
             ; t_openfile_settings：batchThreshold-get
-            enableExtension := SettingsManager.GetBool("EnableExtension")
-            batchThreshold := SettingsManager.GetInt("BatchThreshold")
+            enableExtension := SettingsManager.GetBool("EnableExtension",guiManager.configType)
+            batchThreshold := SettingsManager.GetInt("BatchThreshold",guiManager.configType)
             
             if (selectedFiles.Length >= batchThreshold) {
                 ; 批量创建
@@ -1050,7 +1050,7 @@ class GuiEventHandlers {
 
     ; 处理拖放文件到编辑对话框的事件
     ; 拖放文件回调
-    static OnDropFilesCallback(guiObj, ctrlObj, filesArray, x, y) {
+    static OnDropFilesCallback(guiManager,guiObj, ctrlObj, filesArray, x, y) {
         try {
             if (filesArray.Length > 0) {
                 filePath := filesArray[1]
@@ -1072,7 +1072,7 @@ class GuiEventHandlers {
                 }
 
                 ; 使用统一的方法更新文件路径和名称
-                GuiEventHandlers.UpdateFilePathAndName(guiObj, filePath,true,isNameControl, isPathControl, targetControl)
+                GuiEventHandlers.UpdateFilePathAndName(guiManager,guiObj, filePath,true,isNameControl, isPathControl, targetControl)
             }
         } catch {
             ; 静默处理
@@ -1082,7 +1082,7 @@ class GuiEventHandlers {
     ; ==================== 文件路径更新处理 ====================
     
     ; 统一的文件路径更新方法
-    static UpdateFilePathAndName(editGui, filePath,fromDrag := false,isNameControl := false, isPathControl := false, targetControl := 0) {
+    static UpdateFilePathAndName(guiManager,editGui, filePath,fromDrag := false,isNameControl := false, isPathControl := false, targetControl := 0) {
         try {
             if (!editGui || !filePath) {
                 return
@@ -1095,7 +1095,7 @@ class GuiEventHandlers {
             
             ; 更新文件名
             if (editGui.ctlName) {
-                enableExtension := SettingsManager.GetBool("EnableExtension")
+                enableExtension := SettingsManager.GetBool("EnableExtension",guiManager.configType)
                 SplitPath(filePath, &fileName, &fileDir, &fileExt, &fileNameNoExt)
                 
                 displayName := enableExtension ? fileName : fileNameNoExt
@@ -1139,12 +1139,12 @@ class GuiEventHandlers {
     ; ==================== 浏览文件按钮事件处理 ====================
     
     ; 浏览文件按钮点击事件处理
-    static HandleBrowseClick(pathControl,editGui,isTop) {
+    static HandleBrowseClick(pathControl,editGui,guiManager) {
         ; 使用PathUtils工具类
-        selectedFile := PathUtils.BrowseForExecutable(pathControl.Value,editGui,isTop)
+        selectedFile := PathUtils.BrowseForExecutable(pathControl.Value,editGui,guiManager.isTop)
         if (selectedFile != "" && editGui) {
             ; 使用统一的方法更新文件路径和名称
-            GuiEventHandlers.UpdateFilePathAndName(editGui, selectedFile,false)
+            GuiEventHandlers.UpdateFilePathAndName(guiManager,editGui, selectedFile,false)
         } else if (selectedFile != "") {
             ; 如果没有提供 editGui，只更新路径
             pathControl.Value := selectedFile

@@ -84,7 +84,8 @@ class ConfigManager {
         configData := Map()
         
         ; 读取排序配置
-        sortByAlphabet := SettingsManager.GetBool("SortByAlphabet")
+        ; !!! 修改：使用当前configType作为section读取排序配置
+        sortByAlphabet := SettingsManager.GetBool("SortByAlphabet", this.configType)
         
         if (sortByAlphabet) {
             ; v1模式：使用传统方式
@@ -282,7 +283,7 @@ class ConfigManager {
     ; t_openfile_settings：sortByAlphabet-get
     GetFileList() {
         ; 检查是否启用了字母排序
-        if (SettingsManager.GetBool("SortByAlphabet")) {
+        if (SettingsManager.GetBool("SortByAlphabet", this.configType)) {
             ; v1模式：使用拼音库进行智能排序
             return this.GetFileListSortedByPinyin()
         } else {
