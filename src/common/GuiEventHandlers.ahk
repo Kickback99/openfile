@@ -1470,14 +1470,103 @@ class GuiEventHandlers {
             this.RefreshAndSelect(guiManager,name)
         }
     }
+
+    ; ==================== 拖拽事件处理 ====================
+
+    ;!!! 新增：处理拖放文件到编辑对话框的事件
+    ; 拖放文件回调
+    static OnDropFilesCallback(guiObj, ctrlObj, filesArray, x, y) {
+        try {
+            if (filesArray.Length > 0) {
+                filePath := filesArray[1]
+
+                ; 判断拖拽到哪个控件
+                local targetControl := ctrlObj
+                local isNameControl := false
+                local isPathControl := false
+                
+                if (targetControl && guiObj) {
+                    ; 检查是否是名称控件
+                    if (guiObj.ctlName && targetControl.Hwnd == guiObj.ctlName.Hwnd) {
+                        isNameControl := true
+                    }
+                    ; 检查是否是路径控件
+                    else if (guiObj.ctlPath && targetControl.Hwnd == guiObj.ctlPath.Hwnd) {
+                        isPathControl := true
+                    }
+                }
+
+                ; 使用统一的方法更新文件路径和名称
+                GuiEventHandlers.UpdateFilePathAndName(guiObj, filePath,true,isNameControl, isPathControl, targetControl)
+            }
+        } catch {
+            ; 静默处理
+        }
+    }
+
+    ; ==================== 文件路径更新处理 ====================
+    
+    ; 统一的文件路径更新方法
+    static UpdateFilePathAndName(editGui, filePath,fromDrag := false,isNameControl := false, isPathControl := false, targetControl := 0) {
+        try {
+            if (!editGui || !filePath) {
+                return
+            }
+            
+            ; 更新路径控件
+            if (editGui.ctlPath) {
+                editGui.ctlPath.Value := filePath
+            }
+            
+            ; 更新文件名
+            if (editGui.ctlName) {
+                enableExtension := SettingsManager.GetBool("EnableExtension")
+                SplitPath(filePath, &fileName, &fileDir, &fileExt, &fileNameNoExt)
+                
+                displayName := enableExtension ? fileName : fileNameNoExt
+                editGui.ctlName.Value := displayName
+                
+                if (editGui.ctlSection) {
+                    editGui.ctlSection.Value := displayName
+                }
+            }
+
+            ; 如果是拖拽操作，处理焦点和光标位置
+            if (fromDrag) {
+                ; 根据拖拽的目标控件设置焦点
+                if (isNameControl && editGui.ctlName.Hwnd) {
+                    editGui.ctlName.Focus()
+                    ; 设置光标在末尾而不选中文本
+                    SendMessage(0x00B1, -1, -1, editGui.ctlName) ; EM_SETSEL 消息，-1 表示末尾
+                }
+                else if (isPathControl && editGui.ctlPath.Hwnd) {
+                    editGui.ctlPath.Focus()
+                    ; 设置光标在末尾而不选中文本
+                    SendMessage(0x00B1, -1, -1, editGui.ctlPath) ; EM_SETSEL 消息，-1 表示末尾
+                }
+                ; 如果拖拽到窗口但没指定控件，默认焦点到名称控件
+                else if (!isNameControl && !isPathControl && editGui.ctlName.Hwnd) {
+                    editGui.ctlName.Focus()
+                    SendMessage(0x00B1, -1, -1, editGui.ctlName) ; EM_SETSEL 消息，-1 表示末尾
+                }
+            }
+
+        } catch Error as e {
+            ; 静默处理错误
+        }
+    }
     
     ; ==================== 浏览文件按钮事件处理 ====================
     
     ; 浏览文件按钮点击事件处理
-    static HandleBrowseClick(pathControl,ownerGui,isTop) {
+    static HandleBrowseClick(pathControl,editGui,isTop) {
         ; >>> 使用PathUtils工具类
-        selectedFile := PathUtils.BrowseForExecutable(pathControl.Value,ownerGui,isTop)
-        if (selectedFile != "") {
+        selectedFile := PathUtils.BrowseForExecutable(pathControl.Value,editGui,isTop)
+        if (selectedFile != "" && editGui) {
+            ; 使用统一的方法更新文件路径和名称
+            GuiEventHandlers.UpdateFilePathAndName(editGui, selectedFile,false)
+        } else if (selectedFile != "") {
+            ; 如果没有提供 editGui，只更新路径
             pathControl.Value := selectedFile
         }
     }
