@@ -210,19 +210,19 @@ class GuiEventHandlers {
         PathUtils.SmartLocate("", guiManager.rootPath)
     }
     
-    ; ==================== 更多按钮事件处理 ====================
+    ; ==================== 设置按钮事件处理 ====================
     
-    ; 更多按钮点击事件处理
+    ; 设置按钮点击事件处理
     ; t_softmanager_settings：get&set
-    static HandleMoreClick(guiManager) {
+    static HandleSettingClick(guiManager) {
         ; 检查最小宽度
         if (WindowConstants.MORE_GUI_WIDTH < 100) {
             MessageManager.ShowWarning("对话框宽度太小，无法正确显示所有按钮。`n请增加 MORE_GUI_WIDTH 的值。", "布局错误")
             return  ; 直接返回，不创建对话框
         }
-        ; 创建更多对话框
+        ; 创建设置对话框
         moreGui := Gui()
-        moreGui.Title := "更多操作 - " guiManager.configType
+        moreGui.Title := "设置操作 - " guiManager.configType
         
         ; 总是设置 Owner 关系
         moreGui.Opt("+Owner" guiManager.gui.Hwnd)
@@ -244,10 +244,10 @@ class GuiEventHandlers {
         moreGui.SetFont("s9", "JetBrains Mono")
 
         ; 设置边距，减少顶部间距
-        moreGui.MarginY := 5
+        moreGui.MarginY := 12
         
         ; 添加说明
-        moreGui.Add("Text", "w" WindowConstants.MORE_GUI_WIDTH " Center cGray", "管理" guiManager.configType ".ini 配置文件")
+        ; moreGui.Add("Text", "w" WindowConstants.MORE_GUI_WIDTH " Center cGray", "管理" guiManager.configType ".ini 配置文件")
         
         ; moreGui关闭时恢复主窗口
         moreGui.OnEvent("Close", this.HandleMoreGuiClose.Bind(this, guiManager, moreGui))

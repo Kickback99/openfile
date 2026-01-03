@@ -654,7 +654,7 @@ class ImportExportManager {
     HandleLoad(moreGui,guiManager) {
         ; 如果传入了 moreGui，才需要关闭对话框
         if(moreGui != ""){
-            ; 关闭更多对话框
+            ; 关闭设置对话框
             GuiEventHandlers.HandleMoreGuiClose(guiManager,moreGui)
         }
 

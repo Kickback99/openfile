@@ -114,13 +114,11 @@ class GuiManager {
         
         ; 创建按钮 - 调整顺序和位置
         btnCreate := this.gui.Add("Button",  "x" startX " y+5 w80", "创建")
-        ; btnOpen := this.gui.Add("Button", "x+10 w80", "打开")
         btnEdit := this.gui.Add("Button", "x+10 w80", "编辑")
         btnDelete := this.gui.Add("Button", "x+10 w80", "删除")
         btnRefresh := this.gui.Add("Button", "x+10 w80", "刷新")
-        ; btnClose := this.gui.Add("Button", "x+10 w80", "关闭")
-        btnLocate := this.gui.Add("Button", "x+10 w80", "定位")  ; 新增定位按钮
-        btnMore := this.gui.Add("Button", "x+10 w80", "更多")  ; 新增更多按钮
+        btnLocate := this.gui.Add("Button", "x+10 w80", "定位")
+        btnMore := this.gui.Add("Button", "x+10 w80", "设置")
         ; 新增回车打开事件
         this.gui.Add("Button",  "x+10 w0 Hidden Default", "打开").OnEvent('Click', (*) => GuiEventHandlers.HandleOpenSoftware(this))
         ; 绑定事件
@@ -129,7 +127,7 @@ class GuiManager {
         btnDelete.OnEvent("Click", (*) => GuiEventHandlers.HandleDeleteClick(this))
         btnRefresh.OnEvent("Click", (*) => GuiEventHandlers.HandleRefreshClick(this))
         btnLocate.OnEvent("Click", (*) => GuiEventHandlers.HandleLocateClick(this))
-        btnMore.OnEvent("Click", (*) => GuiEventHandlers.HandleMoreClick(this))
+        btnMore.OnEvent("Click", (*) => GuiEventHandlers.HandleSettingClick(this))
         
         ; 双击ListBox事件 - 打开软件
         this.listBox.OnEvent("DoubleClick", (*) => GuiEventHandlers.HandleOpenSoftware(this))
@@ -232,14 +230,15 @@ class GuiManager {
     }
 
     /* EnableSearchBoxTab() {
-    ; 启用搜索框的Tabstop
-    ; this.searchBox.Opt("+Tabstop")
-    
-    ; 确保ListBox有选中项（再次确认）
-    if (this.allSoftwareList.Length > 0 && this.listBox.Value = 0) {
-        this.listBox.Value := 1
-    }
-} */
+        ; 启用搜索框的Tabstop
+        ; this.searchBox.Opt("+Tabstop")
+        
+        ; 确保ListBox有选中项（再次确认）
+        if (this.allSoftwareList.Length > 0 && this.listBox.Value = 0) {
+            this.listBox.Value := 1
+        }
+    } */
+
     ; 检查是否是提示信息 - 标记
     IsFirstItemPrompt() {
         return this.showingPrompt
