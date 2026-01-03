@@ -105,7 +105,7 @@ class ConfigManager {
         configData := Map()
         
         ; 读取排序配置
-        ; !!! 修改：使用当前configType作为section读取排序配置
+        ; 修改：使用当前configType作为section读取排序配置
         sortByAlphabet := SettingsManager.GetBool("SortByAlphabet", this.configType)
         
         if (sortByAlphabet) {

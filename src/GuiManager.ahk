@@ -362,20 +362,27 @@ class GuiManager {
         
         ; 添加"移动到..."子菜单
         this.moveMenu := Menu()
+
+        ;!!! 新增：创建"复制到"子菜单  
+        this.copyMenu := Menu()  ; 新增复制菜单
         
         ; 获取所有可用的配置类型（排除当前类型）
         this.targetConfigs := ConfigManager.GetAllConfigTypes(this.configType)
        
         ; 只有在有可移动目标时才添加"移动到..."菜单
         if (this.targetConfigs.Length > 0) {
-            ; 创建"移动到..."子菜单
-            this.moveMenu := Menu()
             
             ; 为每个目标配置创建子菜单项
             for index, configType in this.targetConfigs {
-                ; >>> 修正：使用闭包捕获循环变量
-                this.moveMenu.Add(configType, ((config) => (*) => this.HandleMenuMove(config))(configType))
+                ; 创建一个闭包来捕获当前configType
+                ;!!! 修改：使用闭包确保参数正确传递
+                this.moveMenu.Add(configType, ((currentType) => (*) => GuiEventHandlers.HandleMoveTo(this, currentType))(configType))
+            
+                ;!!! 新增：复制菜单项
+                this.copyMenu.Add(configType, ((currentType) => (*) => GuiEventHandlers.HandleCopyTo(this, currentType))(configType))
             }
+            ;!!! 新增：添加复制菜单项
+            this.contextMenu.Add("复制到", this.copyMenu)
             this.contextMenu.Add("移动到...", this.moveMenu)
         }
 
@@ -396,12 +403,6 @@ class GuiManager {
         
         ; 显示菜单
         this.contextMenu.Show()
-    }
-    
-    ; >>> 新增：处理菜单移动
-    HandleMenuMove(targetConfigType) {
-        ; 直接调用GuiEventHandlers的移动方法
-        GuiEventHandlers.HandleMoveTo(this, targetConfigType)
     }
 
     ; ==================== 核心功能方法 ====================
