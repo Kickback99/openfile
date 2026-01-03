@@ -232,7 +232,7 @@ RegisterMainShortcut() {
 ; 显示管理器函数
 ShowGuiManager(configType) {
 
-    ; !!! 新增：每次打开管理器时也清理一次配置（可选，但更安全）
+    ; 管理器加载时清理一次配置
     SettingsManager.EnsureConfigFile()
 
    ; 检查是否已有同名的且是gui类型的窗口
