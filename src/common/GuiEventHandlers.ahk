@@ -23,47 +23,30 @@ class GuiEventHandlers {
             return
         }
         
-        ; >>> 修改：使用当前目录下的temp目录
-        ; 获取脚本所在目录（common目录的父目录）
-        tempDir := this.EnsureTempDirectory()
-        if (tempDir = false) {
-            return  ; 目录创建失败，直接返回
-        }
+        ; 执行移动操作
+        this.ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, true)  ; true表示移动操作
+    }
+
+    ;!!! 新增：复制功能（复用移动逻辑但保留原项）
+    static HandleCopyTo(guiManager, targetConfigType) {
+        ; 获取选中的软件
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
-        ; 创建临时TXT文件
-        tempTxtPath := tempDir . "\" A_TickCount "_move.txt"
-        if (!this.CreateMoveTxtFile(guiManager, selectedTexts, tempTxtPath)) {
-            MessageManager.ShowError("创建移动文件失败")
+        ; 检查是否有选中项
+        if (selectedTexts.Length = 0) {
+            MessageManager.ShowError("请先选择要复制的软件")
             return
         }
         
-        ; 追加到目标配置
-        if (this.AppendToConfig(targetConfigType, tempTxtPath)) {
-            ; 复用删除逻辑删除原项
-            if (selectedTexts.Length = 1) {
-                this.HandleSingleDelete(guiManager, selectedTexts[1], true)  ; true表示是移动操作
-            } else {
-                this.HandleMultipleDelete(guiManager, selectedTexts, true)  ; true表示是移动操作
-            }
-            
-            ; 显示成功消息
-            if (moveCount = 1) {
-                this.ShowToolTip(guiManager, "移动成功！", 1500)
-            } else {
-                this.ShowToolTip(guiManager, "成功移动 " moveCount " 个软件！", 1500)
-            }
-        } else {
-            MessageManager.ShowError("移动到目标配置失败")
+        ; 确认复制
+        copyCount := selectedTexts.Length
+        response := MessageManager.ShowConfirm("确定要将选中的 " copyCount " 个软件复制到 '" targetConfigType "' 吗？", "确认复制", "YesNo")
+        if (response != "Yes") {
+            return
         }
         
-        ; >>> 修改：清理临时文件但不删除目录（保留temp目录）
-        try {
-            FileDelete(tempTxtPath)
-        } catch as e {
-            ; 忽略错误，只是临时文件清理失败不影响主要功能
-            ; MsgBox("清理临时文件失败: " e.Message)  ; 可以注释掉，不显示错误
-            MessageManager.ShowError("清理临时文件失败: " e.Message)
-        }
+        ; 执行复制操作
+        this.ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, false)  ; false表示复制操作
     }
     
     ; >>> 修改：创建移动用的TXT文件（支持temp目录）
@@ -160,6 +143,55 @@ class GuiEventHandlers {
         } catch as e {
             MessageManager.ShowError("追加到目标配置失败: " e.Message)
             return false
+        }
+    }
+
+    ;!!! 新增：统一的复制/移动执行方法
+    static ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, isMove) {
+        ; 获取脚本所在目录（common目录的父目录）
+        tempDir := this.EnsureTempDirectory()
+        if (tempDir = false) {
+            return  ; 目录创建失败，直接返回
+        }
+        
+        ; 创建临时TXT文件
+        tempTxtPath := tempDir . "\" A_TickCount (isMove ? "_move" : "_copy") ".txt"
+        if (!this.CreateMoveTxtFile(guiManager, selectedTexts, tempTxtPath)) {
+            MessageManager.ShowError("创建" . (isMove ? "移动" : "复制") . "文件失败")
+            return
+        }
+        
+        ; 追加到目标配置
+        if (this.AppendToConfig(targetConfigType, tempTxtPath)) {
+            ;!!! 如果是移动操作才删除原项
+            if (isMove) {
+                ; 复用删除逻辑删除原项
+                if (selectedTexts.Length = 1) {
+                    this.HandleSingleDelete(guiManager, selectedTexts[1], true)  ; true表示是移动操作
+                } else {
+                    this.HandleMultipleDelete(guiManager, selectedTexts, true)  ; true表示是移动操作
+                }
+            }
+            
+            ; 显示成功消息
+            itemCount := selectedTexts.Length
+            actionText := isMove ? "移动" : "复制"
+            if (itemCount = 1) {
+                this.ShowToolTip(guiManager, actionText . "成功！", 1500)
+            } else {
+                this.ShowToolTip(guiManager, "成功" . actionText . " " itemCount " 个软件！", 1500)
+            }
+        } else {
+            MessageManager.ShowError(actionText . "到目标配置失败")
+        }
+        
+        ; 清理临时文件但不删除目录（保留temp目录）
+        try {
+            FileDelete(tempTxtPath)
+        } catch as e {
+            ; 忽略错误，只是临时文件清理失败不影响主要功能
+            ; MsgBox("清理临时文件失败: " e.Message)  ; 可以注释掉，不显示错误
+            MessageManager.ShowError("清理临时文件失败: " e.Message)
         }
     }
 
