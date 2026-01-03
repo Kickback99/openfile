@@ -363,7 +363,7 @@ class GuiManager {
         ; 添加"移动到..."子菜单
         this.moveMenu := Menu()
 
-        ;!!! 新增：创建"复制到"子菜单  
+        ; 新增：创建"复制到"子菜单  
         this.copyMenu := Menu()  ; 新增复制菜单
         
         ; 获取所有可用的配置类型（排除当前类型）
@@ -375,13 +375,13 @@ class GuiManager {
             ; 为每个目标配置创建子菜单项
             for index, configType in this.targetConfigs {
                 ; 创建一个闭包来捕获当前configType
-                ;!!! 修改：使用闭包确保参数正确传递
+                ; 修改：使用闭包确保参数正确传递
                 this.moveMenu.Add(configType, ((currentType) => (*) => GuiEventHandlers.HandleMoveTo(this, currentType))(configType))
             
-                ;!!! 新增：复制菜单项
+                ; 新增：复制菜单项
                 this.copyMenu.Add(configType, ((currentType) => (*) => GuiEventHandlers.HandleCopyTo(this, currentType))(configType))
             }
-            ;!!! 新增：添加复制菜单项
+            ; 新增：添加复制菜单项
             this.contextMenu.Add("复制到", this.copyMenu)
             this.contextMenu.Add("移动到...", this.moveMenu)
         }

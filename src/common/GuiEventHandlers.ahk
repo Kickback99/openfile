@@ -5,6 +5,28 @@
 class GuiEventHandlers {
 
     ; ==================== 主窗口右键事件处理 ====================
+    ; 新增：复制功能（复用移动逻辑但保留原项）
+    static HandleCopyTo(guiManager, targetConfigType) {
+        ; 获取选中的软件
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
+        
+        ; 检查是否有选中项
+        if (selectedTexts.Length = 0) {
+            MessageManager.ShowError("请先选择要复制的软件")
+            return
+        }
+        
+        ; 确认复制
+        copyCount := selectedTexts.Length
+        response := MessageManager.ShowConfirm("确定要将选中的 " copyCount " 个软件复制到 '" targetConfigType "' 吗？", "确认复制", "YesNo")
+        if (response != "Yes") {
+            return
+        }
+        
+        ; 执行复制操作
+        this.ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, false)  ; false表示复制操作
+    }
+
     ; >>> 新增：处理移动到目标配置
     static HandleMoveTo(guiManager, targetConfigType) {
         ; 获取选中的软件
@@ -25,28 +47,6 @@ class GuiEventHandlers {
         
         ; 执行移动操作
         this.ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, true)  ; true表示移动操作
-    }
-
-    ;!!! 新增：复制功能（复用移动逻辑但保留原项）
-    static HandleCopyTo(guiManager, targetConfigType) {
-        ; 获取选中的软件
-        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
-        
-        ; 检查是否有选中项
-        if (selectedTexts.Length = 0) {
-            MessageManager.ShowError("请先选择要复制的软件")
-            return
-        }
-        
-        ; 确认复制
-        copyCount := selectedTexts.Length
-        response := MessageManager.ShowConfirm("确定要将选中的 " copyCount " 个软件复制到 '" targetConfigType "' 吗？", "确认复制", "YesNo")
-        if (response != "Yes") {
-            return
-        }
-        
-        ; 执行复制操作
-        this.ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, false)  ; false表示复制操作
     }
     
     ; >>> 修改：创建移动用的TXT文件（支持temp目录）
@@ -146,7 +146,7 @@ class GuiEventHandlers {
         }
     }
 
-    ;!!! 新增：统一的复制/移动执行方法
+    ; 新增：统一的复制/移动执行方法
     static ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, isMove) {
         ; 获取脚本所在目录（common目录的父目录）
         tempDir := this.EnsureTempDirectory()
@@ -163,7 +163,7 @@ class GuiEventHandlers {
         
         ; 追加到目标配置
         if (this.AppendToConfig(targetConfigType, tempTxtPath)) {
-            ;!!! 如果是移动操作才删除原项
+            ; 如果是移动操作才删除原项
             if (isMove) {
                 ; 复用删除逻辑删除原项
                 if (selectedTexts.Length = 1) {
@@ -185,7 +185,7 @@ class GuiEventHandlers {
             MessageManager.ShowError(actionText . "到目标配置失败")
         }
 
-        ; !!! 新增：延迟删除整个temp文件夹（使用一次性定时器）
+        ; 延迟删除整个temp文件夹（使用一次性定时器）
         SetTimer(() => this.DeleteTempDirectory(tempDir), -500)  ; 0.5秒后删除
     }
 
@@ -208,7 +208,7 @@ class GuiEventHandlers {
         return tempDir
     }
 
-    ; !!! 新增：删除temp目录及其所有内容
+    ; 删除temp目录及其所有内容
     static DeleteTempDirectory(tempDir) {
         try {
             ; 先检查目录是否存在
