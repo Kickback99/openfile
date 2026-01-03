@@ -14,7 +14,7 @@ class SettingsManager {
     static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg"]
 
     ; t_openfile_settings：default
-    ; !!! 修改：添加默认section
+    ; 修改：添加默认section
     static DefaultConfig := Map(
         "Default", Map(  ; 默认section
             "AlwaysOnTop", "true",      ; 字符串
@@ -27,7 +27,7 @@ class SettingsManager {
 
     ; ==================== 默认配置 ====================
 
-    ; !!! 新增：获取指定section的默认配置
+    ; 新增：获取指定section的默认配置
     static GetDefaultForSection(sectionName) {
         if (this.DefaultConfig.Has(sectionName)) {
             return this.DefaultConfig[sectionName]
@@ -38,7 +38,7 @@ class SettingsManager {
 
     ; ==================== 配置读写 ====================
 
-    ; !!! 读取指定section的配置到Map中
+    ; 读取指定section的配置到Map中
     static ReadSectionConfig(sectionName) {
         ; 先获取默认配置
         defaultConfig := this.GetDefaultForSection(sectionName)
@@ -123,7 +123,7 @@ class SettingsManager {
         return config
     }
 
-    ; !!! 写入指定section的配置
+    ; 写入指定section的配置
     static WriteSectionConfig(sectionName, config) {
         try {
             settingsPath := this.ConfigPath
@@ -298,7 +298,7 @@ class SettingsManager {
 
     ; ==================== 写入与格式化 ====================
 
-    ; !!! 重要：按照入口数组顺序写入配置文件
+    ; 重要：按照入口数组顺序写入配置文件
     static WriteAllConfig(allConfig) {
         global SupportedConfigTypes
         try {
@@ -405,7 +405,7 @@ class SettingsManager {
 
     ; ==================== 配置键查询 ====================
 
-    ; !!! 获取指定section的所有配置键 ++++
+    ; 获取指定section的所有配置键 ++++
     static GetAllKeys(sectionName) {
         config := this.ReadSectionConfig(sectionName)
         keys := []
