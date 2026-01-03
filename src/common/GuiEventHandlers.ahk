@@ -133,7 +133,7 @@ class GuiEventHandlers {
     ; >>> 修改：处理批量删除（同时处理单选和多选的数据类型）
     static HandleMultipleDelete(guiManager, selectedTexts) {
         ; 确认删除
-        response := MsgBox("确定要删除选中的 " selectedTexts.Length " 个软件吗？", "确认删除", "YesNo")
+        response := MessageManager.ShowError("确定要删除选中的 " selectedTexts.Length " 个软件吗？", "确认删除", "YesNo")
         if (response != "Yes") {
             return
         }
@@ -153,7 +153,11 @@ class GuiEventHandlers {
         ; >>> 边界情况：如果要删除所有项目
         if (sectionsToDelete.Length >= totalItems) {
             ; 确认是否删除所有项目
-            confirmResponse := MsgBox("确定要删除所有软件吗？这将清空整个列表。", "确认删除所有", 0x24)
+            ; confirmResponse := MsgBox("确定要删除所有软件吗？这将清空整个列表。", "确认删除所有", 0x24)
+            confirmResponse := MessageManager.ShowConfirm(
+                "确定要删除所有软件吗？这将清空整个列表。", 
+                "确认删除所有"
+            )
             if (confirmResponse != "Yes") {
                 return
             }
@@ -292,7 +296,7 @@ class GuiEventHandlers {
         if (totalItems == 1) {
             ; 从INI文件中删除
             if (!this.DeleteFromIniFile(guiManager, software["section"])) {
-                MsgBox("删除失败，无法更新配置文件")
+                MessageManager.ShowError("删除失败，无法更新配置文件")
                 return
             }
             
@@ -308,7 +312,7 @@ class GuiEventHandlers {
         
         ; 从INI文件中删除
         if (!this.DeleteFromIniFile(guiManager, software["section"])) {
-            MsgBox("删除失败，无法更新配置文件")
+            MessageManager.ShowError("删除失败，无法更新配置文件")
             return
         }
         
@@ -1348,9 +1352,9 @@ class GuiEventHandlers {
         ; 如果有失败的情况，显示错误信息
         if (failedCount > 0) {
             if (failedCount == 1) {
-                MsgBox("有 1 个软件打开失败，请检查路径是否正确")
+                MessageManager.ShowError("有 1 个软件打开失败，请检查路径是否正确")
             } else {
-                MsgBox("有 " failedCount " 个软件打开失败，请检查路径是否正确")
+                MessageManager.ShowError("有 " failedCount " 个软件打开失败，请检查路径是否正确")
             }
         }
     }
@@ -1362,7 +1366,7 @@ class GuiEventHandlers {
         
         ; 检查是否有选中项
         if (selectedTexts.Length = 0) {
-            MsgBox("请先选择一个软件")
+            MessageManager.ShowError("请先选择一个软件")
             return
         }
 
