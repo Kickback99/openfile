@@ -63,7 +63,7 @@ class GuiManager {
     ShowSoftwareList() {
         ; 创建GUI
         this.gui := Gui()
-        this.gui.Title := (this.configType)
+        this.gui.Title := (this.configType . "-manager")
 
         ; ++++ 添加AlwaysOnTop选项确保窗口置顶 ++++
         ; t_softmanager_settings：alwaysOnTop
