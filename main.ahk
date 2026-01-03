@@ -8,7 +8,7 @@
 ShowManager(configType) {
 
    ; 检查是否已有同名的且是gui类型的窗口
-    windowTitle := configType
+    windowTitle := configType . "-manager"
     hwnd := WinExist(windowTitle " ahk_class AutoHotkeyGUI")
     
     if (hwnd) {
@@ -19,27 +19,17 @@ ShowManager(configType) {
         if (WinGetMinMax(hwnd) = -1) {  ; -1 表示最小化
             WinRestore(windowTitle)
         }
-        
-        ; 确保窗口在最前面
-        ; WinSetAlwaysOnTop(1, windowTitle)
 
         ; t_softmanager_settings：alwaysOnTop-get
-        ;  修改：不再直接设置置顶，而是根据配置设置
         isTop := SettingsManager.GetBool("AlwaysOnTop")
+
         if(isTop){
             try{
-                ; WinSetAlwaysOnTop(1, windowTitle) ; 置顶
-                ; 使用gui的Opt方法而不是WinSet
-                guiManager.gui.Opt("+AlwaysOnTop")
-            }catch {
-
+                GuiManager.gui.Opt("+AlwaysOnTop") ; 置顶 
             }
-        } else {
+        }else{
             try{
-                ; WinSetAlwaysOnTop(0, windowTitle) ; 取消置顶
-                guiManager.gui.Opt("-AlwaysOnTop")
-            }catch {
-
+                GuiManager.gui.Opt("-AlwaysOnTop") ; 取消置顶
             }
         }
         
@@ -57,5 +47,5 @@ ShowManager(configType) {
 }
 
 #q::{
-    ShowManager('software')
+    ShowManager('soft')
 }
