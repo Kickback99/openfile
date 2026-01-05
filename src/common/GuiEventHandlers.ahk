@@ -1885,9 +1885,9 @@ class GuiEventHandlers {
                 displayName := enableExtension ? fileName : fileNameNoExt
                 editGui.ctlName.Value := displayName
                 
-                if (editGui.ctlSection) {
+                /* if (editGui.ctlSection) {
                     editGui.ctlSection.Value := displayName
-                }
+                } */
             }
 
             ; 如果是拖拽操作，处理焦点和光标位置
@@ -1908,6 +1908,11 @@ class GuiEventHandlers {
                     editGui.ctlName.Focus()
                     SendMessage(0x00B1, -1, -1, editGui.ctlName) ; EM_SETSEL 消息，-1 表示末尾
                 }
+            }
+
+            ; !!! 新增：手动调用HandleNameChangeForEditGui来处理section逻辑
+            if (editGui.ctlName) {
+                GuiEventHandlers.HandleNameChangeForEditGui(editGui)
             }
 
         } catch Error as e {
@@ -1934,7 +1939,40 @@ class GuiEventHandlers {
     
     ; 编辑对话框名称变化事件处理
     static HandleNameChangeForEditGui(editGui, *) {
-        editGui.ctlSection.Value := editGui.ctlName.Value
+        nameValue := editGui.ctlName.Value
+        pathValue := editGui.ctlPath.Value
+        
+        ; 检查路径是否为空
+        if (pathValue = "") {
+            ; 如果路径为空，直接使用名称作为section
+            editGui.ctlSection.Value := nameValue
+            return
+        }
+        
+        ; 从路径中提取文件名（包含扩展名）
+        pathFileName := ""
+        try {
+            ; 获取路径的文件名部分
+            SplitPath(pathValue, &pathFileName)
+        } catch {
+            pathFileName := ""
+        }
+        
+        ; !!! 关键逻辑：比较名称和路径文件名
+        if (pathFileName != "" && nameValue = pathFileName) {
+            ; 情况1：名称与路径文件名完全相同（包含扩展名）
+            ; 去除扩展名作为section
+            if (InStr(nameValue, ".")) {
+                dotPos := InStr(nameValue, ".", , -1)
+                if (dotPos > 1) {
+                    editGui.ctlSection.Value := SubStr(nameValue, 1, dotPos - 1)
+                    return
+                }
+            }
+        }
+        
+        ; 其他情况：直接使用名称作为section
+        editGui.ctlSection.Value := nameValue
     }
 
 
