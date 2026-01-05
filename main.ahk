@@ -66,7 +66,10 @@ if(WindowConstants.DEBUG_MODE){
 }
 
 ; 入口文件顶部定义支持的配置类型数组
-global SupportedConfigTypes := ["openfile", "ai", "dev"]
+global SupportedConfigTypes := ["openfile","ai","dev"]
+
+; !!! 新增：启动时清理配置
+; SettingsManager.EnsureConfigFile()
 
 ; 初始化托盘菜单
 InitTrayMenu() {
@@ -228,6 +231,9 @@ RegisterMainShortcut() {
 
 ; 显示管理器函数
 ShowGuiManager(configType) {
+
+    ; !!! 新增：每次打开管理器时也清理一次配置（可选，但更安全）
+    SettingsManager.EnsureConfigFile()
 
    ; 检查是否已有同名的且是gui类型的窗口
     windowTitle := configType
