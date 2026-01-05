@@ -386,6 +386,35 @@ class SettingsManager {
                 ; 创建默认配置文件
                 return this.WriteAllConfig(this.DefaultConfig)
             }
+
+            ; :!!! 新增：读取现有配置文件，清理无效的配置段
+            allConfig := this.ReadAllConfig()
+            shouldWrite := false
+            
+            ; 检查每个配置段是否在支持的配置类型中
+            sectionsToRemove := []
+            for sectionName, _ in allConfig {
+                ; 跳过注释和空行
+                if (sectionName = "" || InStr(sectionName, ";")) {
+                    continue
+                }
+                
+                ; 如果不是支持的配置类型且不是注释段，标记为需要删除
+                if (!this.IsSupportedType(sectionName) && !InStr(sectionName, ";")) {
+                    sectionsToRemove.Push(sectionName)
+                }
+            }
+            
+            ; 删除无效的配置段
+            for sectionName in sectionsToRemove {
+                allConfig.Delete(sectionName)
+                shouldWrite := true
+            }
+            
+            ; 如果删除了配置段，重新写入配置文件
+            if (shouldWrite) {
+                return this.WriteAllConfig(allConfig)
+            }
             
             return true
             

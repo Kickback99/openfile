@@ -184,15 +184,9 @@ class GuiEventHandlers {
         } else {
             MessageManager.ShowError(actionText . "到目标配置失败")
         }
-        
-        ; 清理临时文件但不删除目录（保留temp目录）
-        try {
-            FileDelete(tempTxtPath)
-        } catch as e {
-            ; 忽略错误，只是临时文件清理失败不影响主要功能
-            ; MsgBox("清理临时文件失败: " e.Message)  ; 可以注释掉，不显示错误
-            MessageManager.ShowError("清理临时文件失败: " e.Message)
-        }
+
+        ; !!! 新增：延迟删除整个temp文件夹（使用一次性定时器）
+        SetTimer(() => this.DeleteTempDirectory(tempDir), -500)  ; 0.5秒后删除
     }
 
     ; >>> 新增：确保temp目录存在的辅助方法
@@ -212,6 +206,30 @@ class GuiEventHandlers {
         }
         
         return tempDir
+    }
+
+    ; !!! 新增：删除temp目录及其所有内容
+    static DeleteTempDirectory(tempDir) {
+        try {
+            ; 先检查目录是否存在
+            if (!DirExist(tempDir)) {
+                return true
+            }
+            
+            ; 删除目录及其所有内容
+            DirDelete(tempDir, true)
+            
+            ; 验证是否删除成功
+            if (DirExist(tempDir)) {
+                ; 删除失败，可能是文件被占用，不显示错误避免干扰用户
+                return false
+            }
+            
+            return true
+        } catch as e {
+            ; 静默失败，不显示错误信息
+            return false
+        }
     }
 
     ; ==================== 主窗口按钮事件处理 ====================

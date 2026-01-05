@@ -96,7 +96,7 @@ class MessageManager {
             result := MsgBox(message, title, finalOptions)
         } else if (this.IsSuccessMessage(message)) {
             ; 成功消息受配置控制（默认使用信息图标）
-            if (SettingsManager.GetBool("ShowSuccessMsg")) {
+            if (SettingsManager.GetBool("ShowSuccessMsg",this.configType)) {
                 if (icon = 0) {
                     finalOptions := this.BuildOptions(options, this.ICON_ASTERISK)
                     if (actualOwner != 0) {
@@ -110,7 +110,7 @@ class MessageManager {
             }
         } else {
             ; 其他消息按信息消息处理（默认使用信息图标）
-            if (SettingsManager.GetBool("ShowSuccessMsg")) {
+            if (SettingsManager.GetBool("ShowSuccessMsg",this.configType)) {
                 if (icon = 0) {
                     finalOptions := this.BuildOptions(options, this.ICON_ASTERISK)
                     if (actualOwner != 0) {
@@ -129,7 +129,7 @@ class MessageManager {
     ; 显示成功消息（智能选择所有者窗口-受配置控制）
     static ShowSuccess(message, title := "", options := "OK", ownerHwnd := 0) {
         ; 检查是否显示成功消息
-        if (!SettingsManager.GetBool("ShowSuccessMsg")) {
+        if (!SettingsManager.GetBool("ShowSuccessMsg",this.configType)) {
             return "OK"  ; 配置为false，不显示成功消息
         }
         
@@ -163,7 +163,7 @@ class MessageManager {
     
     ; 延迟显示成功消息（智能选择所有者窗口-受配置控制）
     static ShowSuccessDelayed(message, delay := 100, ownerHwnd := 0) {
-        if (SettingsManager.GetBool("ShowSuccessMsg")) {
+        if (SettingsManager.GetBool("ShowSuccessMsg",this.configType)) {
             SetTimer(() => this.ShowMessageBoxInternal(message, , "OK", this.ICON_ASTERISK, ownerHwnd), -delay)
         }
     }
