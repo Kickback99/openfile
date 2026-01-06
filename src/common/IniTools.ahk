@@ -15,6 +15,43 @@ class IniTools {
         return result
     }
 
+    ; 删除INI文件中的注释（以;开头的行）
+    static RemoveCommentsFromIniFile(filePath) {
+        try {
+            if (!FileExist(filePath)) {
+                return false
+            }
+            
+            ; 读取文件内容
+            content := FileRead(filePath)
+            if (content = "") {
+                return true
+            }
+            
+            ; 分割为行
+            lines := StrSplit(content, "`n", "`r")
+            
+            ; 构建新内容（不含注释行）
+            newContent := ""
+            for line in lines {
+                trimmedLine := Trim(line)
+                ; 跳过以分号开头的注释行
+                if (SubStr(trimmedLine, 1, 1) != ";") {
+                    newContent .= line "`n"
+                }
+            }
+            
+            ; 写入文件
+            FileDelete(filePath)
+            FileAppend(newContent, filePath, "UTF-8")
+            
+            return true
+        } catch as e {
+            ; 静默失败，返回false
+            return false
+        }
+    }
+
     ; 静态方法：格式化INI文件内容
     static FormatIniContent(iniContent) {
         ; 如果内容为空，直接返回
@@ -55,6 +92,10 @@ class IniTools {
     
     ; 静态方法：格式化并保存INI文件
     static FormatAndSaveIniFile(configPath) {
+
+        ; 格式化之前先删除注释
+        this.RemoveCommentsFromIniFile(configPath)
+
         try {
             ; 读取当前INI文件内容
             content := FileRead(configPath)
