@@ -8,6 +8,7 @@
 #Include "./common/WindowConstants.ahk"
 #Include "./common/ListBoxHelper.ahk"
 #Include "./common/SettingsDialogManager.ahk"
+#Include "./common/ContextMenuManager.ahk"
 
 ; ============================================================
 ; GuiManager.ahk
@@ -404,10 +405,10 @@ class GuiManager {
             for index, configType in this.targetConfigs {
                 ; 创建一个闭包来捕获当前configType
                 ; 修改：使用闭包确保参数正确传递
-                this.moveMenu.Add(configType, ((currentType) => (*) => GuiEventHandlers.HandleMoveTo(this, currentType))(configType))
+                this.moveMenu.Add(configType, ((currentType) => (*) => ContextMenuManager.HandleMoveTo(this, currentType))(configType))
 
                 ; 新增：复制菜单项
-                this.copyMenu.Add(configType, ((currentType) => (*) => GuiEventHandlers.HandleCopyTo(this, currentType))(configType))
+                this.copyMenu.Add(configType, ((currentType) => (*) => ContextMenuManager.HandleCopyTo(this, currentType))(configType))
             }
             ; 新增：添加复制菜单项
             this.contextMenu.Add("复制到", this.copyMenu)
