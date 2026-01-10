@@ -17,7 +17,7 @@ class ImportExportManager {
         ; moreGui.Destroy()
 
         if(guiManager.showingPrompt){
-            MessageManager.ShowError("请先创建软件","提示")
+            MessageManager.ShowError("请先创建文件","提示")
             return
         }
 

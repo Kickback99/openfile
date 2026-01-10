@@ -19,7 +19,7 @@ class ConfigManager {
 
         ; 自动构建配置文件路径：configs\{configType}.ini
         if (configType = "") {
-            configType := "software"  ; 默认使用software
+            configType := "soft"  ; 默认使用soft
         }
 
         this.configPath := configsDir "\" configType ".ini"
@@ -30,7 +30,7 @@ class ConfigManager {
         /* if (!FileExist(this.configPath)) {
             MsgBox("❌ 配置文件不存在：`n" this.configPath)
             this.data := Map()
-            this.softwareList := []
+            this.fileList := []
             return
         } */
 
@@ -42,7 +42,7 @@ class ConfigManager {
         
         ; 加载配置
         this.data := this.LoadConfig()
-        this.softwareList := this.GetSoftwareList()
+        this.fileList := this.GetFileList()
     }
 
     ; 确保配置目录存在
@@ -65,11 +65,11 @@ class ConfigManager {
                 basicContent := "[Root]`r`n" 
                     . "name=root`r`n" 
                     . "path=C:\Users\Kickback\Desktop\tools\" this.configType "`r`n`r`n" 
-                    . "; 在此处添加你的软件配置`r`n" 
+                    . "; 在此处添加你的文件配置`r`n" 
                     . "; 示例：`r`n" 
-                    . "; [SoftwareName]`r`n" 
-                    . "; name=软件显示名称`r`n" 
-                    . "; path=C:\Path\To\Software.exe`r`n"
+                    . "; [FileName]`r`n" 
+                    . "; name=文件显示名称`r`n" 
+                    . "; path=C:\path\to\file.exe`r`n"
                 
                 FileAppend(basicContent, this.configPath,"UTF-8")
             } catch as e {
@@ -87,7 +87,7 @@ class ConfigManager {
         sortByAlphabet := SettingsManager.GetBool("SortByAlphabet")
         
         if (sortByAlphabet) {
-            ; v1模式：使用传统方式（但我们会重写GetSoftwareList方法）
+            ; v1模式：使用传统方式（但我们会重写GetFileList方法）
             return this.LoadConfigBasic()
         } else {
             ; v2模式：使用顺序记录方式
@@ -176,18 +176,18 @@ class ConfigManager {
         return configData
     }
     
-    ; V1模式：获取软件列表并按拼音智能排序
-    GetSoftwareListSortedByPinyin() {
-        softwareList := []
+    ; V1模式：获取文件列表并按拼音智能排序
+    GetFileListSortedByPinyin() {
+        fileList := []
         
-        ; >>> 收集所有软件
+        ; >>> 收集所有文件
         for section, sectionData in this.data {
             if (section = "Root") {
                 continue
             }
             
             if (sectionData.Has("name") && sectionData.Has("path")) {
-                softwareList.Push(Map(
+                fileList.Push(Map(
                     "name", sectionData["name"],
                     "path", sectionData["path"],
                     "section", section
@@ -195,12 +195,12 @@ class ConfigManager {
             }
         }
         
-        ; >>> 如果软件数量大于1才需要排序
-        if (softwareList.Length > 1) {
-            softwareList := this.SimpleBubbleSort(softwareList)
+        ; >>> 如果文件数量大于1才需要排序
+        if (fileList.Length > 1) {
+            fileList := this.SimpleBubbleSort(fileList)
         }
         
-        return softwareList
+        return fileList
     }
     
     ; >>> 简化版冒泡排序
@@ -251,9 +251,9 @@ class ConfigManager {
         return StrCompare(lower1, lower2, "Locale")
     }
 
-    ; V2模式：按文件顺序获取软件列表
-    GetSoftwareListByFileOrder() {
-        softwareList := []
+    ; V2模式：按文件顺序获取文件列表
+    GetFileListByFileOrder() {
+        fileList := []
         
         ; 按照文件中的顺序遍历sections
         if (this.data.Has("_sectionsInOrder")) {
@@ -266,34 +266,34 @@ class ConfigManager {
                 
                 sectionData := this.data[section]
                 if (sectionData.Has("name") && sectionData.Has("path")) {
-                    softwareInfo := Map()
-                    softwareInfo["name"] := sectionData["name"]
-                    softwareInfo["path"] := sectionData["path"]
-                    softwareInfo["section"] := section
-                    softwareList.Push(softwareInfo)
+                    fileInfo := Map()
+                    fileInfo["name"] := sectionData["name"]
+                    fileInfo["path"] := sectionData["path"]
+                    fileInfo["section"] := section
+                    fileList.Push(fileInfo)
                 }
             }
         }
         
-        return softwareList
+        return fileList
     }
     
-    ; 获取所有软件列表（根据配置选择排序方式）
+    ; 获取所有文件列表（根据配置选择排序方式）
     ; t_softmanager_settings：sortByAlphabet-get
-    GetSoftwareList() {
+    GetFileList() {
         ; 检查是否启用了字母排序
         if (SettingsManager.GetBool("SortByAlphabet")) {
             ; v1模式：使用拼音库进行智能排序
-            return this.GetSoftwareListSortedByPinyin()
+            return this.GetFileListSortedByPinyin()
         } else {
             ; v2模式：按文件顺序
-            return this.GetSoftwareListByFileOrder()
+            return this.GetFileListByFileOrder()
         }
     }
     
-    ; 获取软件列表（供外部调用）
-    GetSoftwareListArray() {
-        return this.softwareList
+    ; 获取文件列表（供外部调用）
+    GetFileListArray() {
+        return this.fileList
     }
     
     ; 获取配置类型

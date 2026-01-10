@@ -87,26 +87,26 @@ class GuiEventHandlers {
         
         ; 检查是否有选中项
         if (selectedTexts.Length = 0) {
-            MessageManager.ShowError("请先选择要编辑的软件","提示")
+            MessageManager.ShowError("请先选择要编辑的文件","提示")
             return
         }
 
         ; 取第一个选中项（如果是多选，按钮会被禁用，所以这里应该是单选）
         selectedText := selectedTexts[1]
         
-        if (!guiManager.softwareMap.Has(selectedText)) {
-            MessageManager.ShowError("未找到选中的软件信息","提示")
+        if (!guiManager.fileMap.Has(selectedText)) {
+            MessageManager.ShowError("未找到选中的文件信息","提示")
             return
         }
         
-        software := guiManager.softwareMap[selectedText]
+        file := guiManager.fileMap[selectedText]
         guiManager.editMode := "edit"
-        guiManager.currentEditSection := software["section"]
+        guiManager.currentEditSection := file["section"]
 
-        ; >>> 保存要编辑的软件名称，用于编辑后重新选中
-        guiManager.softwareToSelectAfterEdit := software["name"]
+        ; >>> 保存要编辑的文件名称，用于编辑后重新选中
+        guiManager.fileToSelectAfterEdit := file["name"]
         
-        guiManager.ShowEditDialogGui(software["name"], software["path"])
+        guiManager.ShowEditDialogGui(file["name"], file["path"])
     }
 
     ; 处理editGui关闭
@@ -132,7 +132,7 @@ class GuiEventHandlers {
         
         ; 检查是否有选中项
         if (selectedTexts.Length = 0) {
-            MessageManager.ShowError("请先选择要删除的软件","提示")
+            MessageManager.ShowError("请先选择要删除的文件","提示")
             return
         }
         
@@ -149,7 +149,7 @@ class GuiEventHandlers {
     ; >>> 修改：处理批量删除（同时处理单选和多选的数据类型）
     static HandleMultipleDelete(guiManager, selectedTexts) {
         ; 确认删除
-        response := MessageManager.ShowError("确定要删除选中的 " selectedTexts.Length " 个软件吗？", "确认删除", "YesNo")
+        response := MessageManager.ShowError("确定要删除选中的 " selectedTexts.Length " 个文件吗？", "确认删除", "YesNo")
         if (response != "Yes") {
             return
         }
@@ -157,28 +157,28 @@ class GuiEventHandlers {
         ; 获取要删除的section列表
         sectionsToDelete := []
         for text in selectedTexts {
-            if (guiManager.softwareMap.Has(text)) {
-                software := guiManager.softwareMap[text]
-                sectionsToDelete.Push(software["section"])
+            if (guiManager.fileMap.Has(text)) {
+                file := guiManager.fileMap[text]
+                sectionsToDelete.Push(file["section"])
             }
         }
         
         ; >>> 在删除前获取关键信息
-        totalItems := guiManager.allSoftwareList.Length  ; 删除前的总项目数
+        totalItems := guiManager.allFileList.Length  ; 删除前的总项目数
         
         ; >>> 边界情况：如果要删除所有项目
         if (sectionsToDelete.Length >= totalItems) {
             ; 确认是否删除所有项目
-            ; confirmResponse := MsgBox("确定要删除所有软件吗？这将清空整个列表。", "确认删除所有", 0x24)
+            ; confirmResponse := MsgBox("确定要删除所有文件吗？这将清空整个列表。", "确认删除所有", 0x24)
             confirmResponse := MessageManager.ShowConfirm(
-                "确定要删除所有软件吗？这将清空整个列表。", 
+                "确定要删除所有文件吗？这将清空整个列表。", 
                 "确认删除所有"
             )
             if (confirmResponse != "Yes") {
                 return
             }
             
-            ; 逐个删除选中的软件
+            ; 逐个删除选中的文件
             deletedCount := 0
             for section in sectionsToDelete {
                 if (IniTools.DeleteFromIniFile(guiManager, section)) {
@@ -191,7 +191,7 @@ class GuiEventHandlers {
             
             ; 显示删除成功消息
             if (deletedCount > 0) {
-                this.ShowToolTip(guiManager, "已清空所有软件！", 1500)
+                this.ShowToolTip(guiManager, "已清空所有文件！", 1500)
             }
             
             return  ; 不需要尝试选择任何项
@@ -231,13 +231,13 @@ class GuiEventHandlers {
                 ; 如果上述方法失败，尝试备选方案
                 try {
                     ; 尝试选择第一个选中项的位置（如果可行）
-                    if (sortedIndices[1] <= guiManager.allSoftwareList.Length) {
+                    if (sortedIndices[1] <= guiManager.allFileList.Length) {
                         guiManager.listBox.Value := sortedIndices[1]
                         nextItemText := ListBoxHelper.GetListBoxText(guiManager.listBox)
                     }
                 } catch {
                     ; 如果还失败，尝试第一个有效项
-                    for i in guiManager.allSoftwareList {
+                    for i in guiManager.allFileList {
                         try {
                             guiManager.listBox.Value := A_Index
                             nextItemText := ListBoxHelper.GetListBoxText(guiManager.listBox)
@@ -250,7 +250,7 @@ class GuiEventHandlers {
             }
         }
         
-        ; 逐个删除选中的软件
+        ; 逐个删除选中的文件
         deletedCount := 0
         for section in sectionsToDelete {
             if (IniTools.DeleteFromIniFile(guiManager, section)) {
@@ -262,7 +262,7 @@ class GuiEventHandlers {
         guiManager.RefreshList()
         
         ; 智能选择删除后的项（添加边界检查）
-        if (nextItemText != "" && guiManager.allSoftwareList.Length > 0) {
+        if (nextItemText != "" && guiManager.allFileList.Length > 0) {
             ; 使用新的选择方法，正确处理多选和单选
             this.SelectItemInListBox(guiManager, nextItemText)
         }
@@ -272,22 +272,22 @@ class GuiEventHandlers {
             if (deletedCount = 1) {
                 this.ShowToolTip(guiManager, "删除成功！", 1500)
             } else {
-                this.ShowToolTip(guiManager, "成功删除 " deletedCount " 个软件！", 1500)
+                this.ShowToolTip(guiManager, "成功删除 " deletedCount " 个文件！", 1500)
             }
         }
     }
     
     ; >>> 修改：处理单个删除
     static HandleSingleDelete(guiManager, selectedText) {
-        if (!guiManager.softwareMap.Has(selectedText)) {
-            MessageManager.ShowError("未找到选中的软件信息","提示")
+        if (!guiManager.fileMap.Has(selectedText)) {
+            MessageManager.ShowError("未找到选中的文件信息","提示")
             return
         }
         
-        software := guiManager.softwareMap[selectedText]
+        file := guiManager.fileMap[selectedText]
         
         ; 确认删除
-        response := MessageManager.ShowConfirm("确定要删除 '" software["name"] "' 吗？", "确认删除")
+        response := MessageManager.ShowConfirm("确定要删除 '" file["name"] "' 吗？", "确认删除")
         if (response != "Yes") {
             return
         }
@@ -303,7 +303,7 @@ class GuiEventHandlers {
         }
         
         ; >>> 先获取总项目数
-        totalItems := guiManager.allSoftwareList.Length
+        totalItems := guiManager.allFileList.Length
         if (totalItems == 0) {
             return
         }
@@ -311,7 +311,7 @@ class GuiEventHandlers {
         ; >>> 边界情况：如果只有一个项目
         if (totalItems == 1) {
             ; 从INI文件中删除
-            if (!IniTools.DeleteFromIniFile(guiManager, software["section"])) {
+            if (!IniTools.DeleteFromIniFile(guiManager, file["section"])) {
                 MessageManager.ShowError("删除失败，无法更新配置文件")
                 return
             }
@@ -327,7 +327,7 @@ class GuiEventHandlers {
         isLastItem := (selectedIndex == totalItems)
         
         ; 从INI文件中删除
-        if (!IniTools.DeleteFromIniFile(guiManager, software["section"])) {
+        if (!IniTools.DeleteFromIniFile(guiManager, file["section"])) {
             MessageManager.ShowError("删除失败，无法更新配置文件")
             return
         }
@@ -336,7 +336,7 @@ class GuiEventHandlers {
         guiManager.RefreshList()
 
         ; >>> 删除后尝试选中合适的项（添加边界检查）
-        if (guiManager.allSoftwareList.Length > 0) {  ; 确保删除后还有项目
+        if (guiManager.allFileList.Length > 0) {  ; 确保删除后还有项目
             if (isLastItem) {
                 ; 删除的是最后一个项目，选择上一个（倒数第二个）
                 try {
@@ -359,8 +359,8 @@ class GuiEventHandlers {
                     ; 如果超出范围，选择最后一个
                     try {
                         ; 获取删除后的总项目数
-                        if (guiManager.allSoftwareList.Length > 0) {
-                            guiManager.listBox.Value := guiManager.allSoftwareList.Length
+                        if (guiManager.allFileList.Length > 0) {
+                            guiManager.listBox.Value := guiManager.allFileList.Length
                         }
                     } catch {
                         ; 如果还失败，就什么都不做
@@ -479,7 +479,7 @@ class GuiEventHandlers {
         
         ; 检查是否有选中项
         if (selectedTexts.Length = 0) {
-            ; 没有选择软件，智能定位
+            ; 没有选择文件，智能定位
             PathUtils.SmartLocate("", guiManager.rootPath)
             return
         }
@@ -487,12 +487,12 @@ class GuiEventHandlers {
         ; 取第一个选中项（如果是多选，按钮会被禁用，所以这里应该是单选）
         selectedText := selectedTexts[1]
         
-        if (!guiManager.softwareMap.Has(selectedText)) {
+        if (!guiManager.fileMap.Has(selectedText)) {
             return
         }
         
-        software := guiManager.softwareMap[selectedText]
-        PathUtils.LocateFile(software["path"])
+        file := guiManager.fileMap[selectedText]
+        PathUtils.LocateFile(file["path"])
     }
     
     ; ==================== 设置按钮事件处理 ====================
@@ -503,39 +503,39 @@ class GuiEventHandlers {
     }
 
     
-    ; ==================== 打开软件事件处理 ====================
+    ; ==================== 打开文件事件处理 ====================
     
-    ; 打开软件事件处理（支持多选，保持原有选中状态）
-    static HandleOpenSoftware(guiManager) {
-        ; 获取所有选中的软件
+    ; 打开文件事件处理（支持多选，保持原有选中状态）
+    static HandleOpenFile(guiManager) {
+        ; 获取所有选中的文件
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
         ; 检查是否有选中项
         if (selectedTexts.Length = 0) {
-            MessageManager.ShowError("请先选择软件","提示")
+            MessageManager.ShowError("请先选择文件","提示")
             return
         }
         
         ; 判断是单选还是多选
         if (selectedTexts.Length == 1) {
             ; 单选情况：使用原有的单选逻辑
-            this.HandleOpenSoftwareSingle(guiManager)
+            this.HandleOpenFileSingle(guiManager)
             return
         }
         
-        ; 多选情况：打开所有选中软件，保持原有选中状态
+        ; 多选情况：打开所有选中文件，保持原有选中状态
         openedCount := 0
         failedCount := 0
         
-        ; 逐个打开选中的软件
+        ; 逐个打开选中的文件
         for text in selectedTexts {
-            if (!guiManager.softwareMap.Has(text)) {
+            if (!guiManager.fileMap.Has(text)) {
                 failedCount++
                 continue
             }
             
-            software := guiManager.softwareMap[text]
-            path := software["path"]
+            file := guiManager.fileMap[text]
+            path := file["path"]
             
             ; >>> 使用PathUtils工具类
             result := PathUtils.RunProgram(path)
@@ -549,9 +549,9 @@ class GuiEventHandlers {
         ; 显示打开结果
         if (openedCount > 0) {
             if (openedCount == 1) {
-                this.ShowToolTip(guiManager, "已打开 1 个软件", 1500)
+                this.ShowToolTip(guiManager, "已打开 1 个文件", 1500)
             } else {
-                this.ShowToolTip(guiManager, "已打开 " openedCount " 个软件", 1500)
+                this.ShowToolTip(guiManager, "已打开 " openedCount " 个文件", 1500)
             }
         }
         
@@ -560,21 +560,21 @@ class GuiEventHandlers {
         ; 如果有失败的情况，显示错误信息
         if (failedCount > 0) {
             if (failedCount == 1) {
-                MessageManager.ShowError("有 1 个软件打开失败，请检查路径是否正确")
+                MessageManager.ShowError("有 1 个文件打开失败，请检查路径是否正确")
             } else {
-                MessageManager.ShowError("有 " failedCount " 个软件打开失败，请检查路径是否正确")
+                MessageManager.ShowError("有 " failedCount " 个文件打开失败，请检查路径是否正确")
             }
         }
     }
     
     ; 处理单选打开（保持原有逻辑）
-    static HandleOpenSoftwareSingle(guiManager) {
+    static HandleOpenFileSingle(guiManager) {
         ; 获取选中的文本
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
         ; 检查是否有选中项
         if (selectedTexts.Length = 0) {
-            MessageManager.ShowError("请先选择一个软件")
+            MessageManager.ShowError("请先选择一个文件")
             return
         }
 
@@ -588,12 +588,12 @@ class GuiEventHandlers {
         ; 取第一个选中项
         selectedText := selectedTexts[1]
         
-        if (!guiManager.softwareMap.Has(selectedText)) {
+        if (!guiManager.fileMap.Has(selectedText)) {
             return
         }
         
-        software := guiManager.softwareMap[selectedText]
-        path := software["path"]
+        file := guiManager.fileMap[selectedText]
+        path := file["path"]
         
         ; >>> 使用PathUtils工具类
         result := PathUtils.RunProgram(path)
@@ -603,13 +603,13 @@ class GuiEventHandlers {
         }
         
         ; 显示打开成功提示
-        this.ShowToolTip(guiManager, "已打开 " software["name"], 1500)
+        this.ShowToolTip(guiManager, "已打开 " file["name"], 1500)
         
-        ; ==================== 打开软件后的业务 ====================
+        ; ==================== 打开文件后的业务 ====================
         if (guiManager.searchBox.Value != "") {
             ; >>> 情况1：搜索框有值，清空并设置焦点
             guiManager.searchBox.Value := ""
-            guiManager.ShowAllSoftware()
+            guiManager.ShowAllFile()
             guiManager.listBox.Value := 0
             try {
                 guiManager.searchBox.Focus()
@@ -624,7 +624,7 @@ class GuiEventHandlers {
             }
         } else {
             ; >>> 情况2：搜索框没值，保持选中刚才打开的项
-            this.SelectItemByText(guiManager, software["name"])
+            this.SelectItemByText(guiManager, file["name"])
         }
     }
     ; ==================== 搜索框事件处理 ====================
@@ -662,9 +662,9 @@ class GuiEventHandlers {
         }
     }
 
-    ; ==================== 保存软件事件处理 ====================
+    ; ==================== 保存文件事件处理 ====================
     
-    ; 保存软件按钮点击事件处理
+    ; 保存文件按钮点击事件处理
     static HandleSaveClick(editGui, guiManager, name, path, section, chkBatchAdd := "") {
         ; >>> 保存旧的选择信息
         oldSelectedText := ""
@@ -675,12 +675,12 @@ class GuiEventHandlers {
 
         ; 输入验证
         if (name = "") {
-            MessageManager.ShowError("软件名称不能为空", "提示", ,editGui.Hwnd)
+            MessageManager.ShowError("文件名称不能为空", "提示", ,editGui.Hwnd)
             return
         }
         
         if (path = "") {
-             MessageManager.ShowError("软件路径不能为空", "提示", ,editGui.Hwnd)
+             MessageManager.ShowError("文件路径不能为空", "提示", ,editGui.Hwnd)
             return
         }
         
@@ -692,7 +692,7 @@ class GuiEventHandlers {
         ; >>> 使用统一的名称和路径校验
         if (!IniTools.IsValidName(name, 0, true)) {
             MessageManager.ShowError(
-                "软件名称包含非法字符！`n`n"
+                "文件名称包含非法字符！`n`n"
                 . "名称不能包含：\ / : * ? " . Chr(34) . " < > |`n"
                 . "且不能以点开头或结尾", "提示", , editGui.Hwnd
             )
@@ -701,7 +701,7 @@ class GuiEventHandlers {
 
         if (!IniTools.IsValidPath(path, 0, true)) {
             MessageManager.ShowError(
-                "软件路径格式不正确！`n`n"
+                "文件路径格式不正确！`n`n"
                 . "路径必须包含：`n"
                 . "1. 盘符（如C:）`n"
                 . "2. 路径分隔符（\或/）`n"
@@ -727,22 +727,22 @@ class GuiEventHandlers {
             
             ; 检查新的section名称是否已存在（排除自身）
             if (section != guiManager.currentEditSection) {
-                for displayName, software in guiManager.softwareMap {
+                for displayName, file in guiManager.fileMap {
                     ; 跳过自己（当前正在编辑的section）
-                    if (software["section"] = guiManager.currentEditSection) {
+                    if (file["section"] = guiManager.currentEditSection) {
                         continue
                     }
 
                     ; 如果尝试编辑为Root，不允许
-                    if (StrLower(section) = "root" && StrLower(software["section"]) = "root") {
+                    if (StrLower(section) = "root" && StrLower(file["section"]) = "root") {
                         MessageManager.ShowError(
                             "Root section已存在，请使用其他名称", "提示", , editGui.Hwnd
                         )
                         return
                     }
                     
-                    ; 检查其他软件是否有相同的section
-                    if (software["section"] = section) {
+                    ; 检查其他文件是否有相同的section
+                    if (file["section"] = section) {
                         MessageManager.ShowError(
                            "Section名称已存在，请使用其他名称", "提示", , editGui.Hwnd 
                         )
@@ -751,17 +751,17 @@ class GuiEventHandlers {
                 }
             }
             
-            ; 检查新的软件名称是否已存在（排除自身）
-            for displayName, software in guiManager.softwareMap {
-                ; 跳过自己（当前正在编辑的软件）
-                if (software["section"] = guiManager.currentEditSection) {
+            ; 检查新的文件名称是否已存在（排除自身）
+            for displayName, file in guiManager.fileMap {
+                ; 跳过自己（当前正在编辑的文件）
+                if (file["section"] = guiManager.currentEditSection) {
                     continue
                 }
                 
-                ; 检查其他软件是否有相同的名称
-                if (software["name"] = name) {
+                ; 检查其他文件是否有相同的名称
+                if (file["name"] = name) {
                     MessageManager.ShowError(
-                        "软件名称已存在，请使用其他名称", "提示", , editGui.Hwnd
+                        "文件名称已存在，请使用其他名称", "提示", , editGui.Hwnd
                     )
                     return
                 }
@@ -773,8 +773,8 @@ class GuiEventHandlers {
             ; >>> 修改：创建模式允许Root，但要检查唯一性
             if (StrLower(section) = "root") {
                 ; 检查Root是否已存在
-                for displayName, software in guiManager.softwareMap {
-                    if (StrLower(software["section"]) = "root") {
+                for displayName, file in guiManager.fileMap {
+                    if (StrLower(file["section"]) = "root") {
                         ; Root已存在，覆盖是允许的
                         ; 这里不阻止，因为用户可能想要覆盖现有的Root
                         ; 只需要在更新INI时特殊处理
@@ -783,19 +783,19 @@ class GuiEventHandlers {
                 }
             } else {
                 ; 非Root项的正常检查
-                ; 检查软件名称是否已存在
-                for displayName, software in guiManager.softwareMap {
-                    if (software["name"] = name) {
+                ; 检查文件名称是否已存在
+                for displayName, file in guiManager.fileMap {
+                    if (file["name"] = name) {
                         MessageManager.ShowError(
-                            "软件名称已存在，请使用其他名称", "提示", , editGui.Hwnd
+                            "文件名称已存在，请使用其他名称", "提示", , editGui.Hwnd
                         )
                         return
                     }
                 }
                 
                 ; 检查section是否已存在
-                for displayName, software in guiManager.softwareMap {
-                    if (software["section"] = section) {
+                for displayName, file in guiManager.fileMap {
+                    if (file["section"] = section) {
                         MessageManager.ShowError(
                             "Section名称已存在，请使用其他名称", "提示", , editGui.Hwnd
                         )
@@ -1006,17 +1006,17 @@ class GuiEventHandlers {
         ; 重新加载配置
         configMgr := ConfigManager(guiManager.configType)
         guiManager.configManager := configMgr
-        guiManager.softwareList := configMgr.GetSoftwareListArray()
+        guiManager.fileList := configMgr.GetFileListArray()
         guiManager.rootPath := configMgr.GetRootPath()
         
         ; 重新填充原始列表
-        guiManager.allSoftwareList := guiManager.softwareList
+        guiManager.allFileList := guiManager.fileList
         
         ; 根据当前搜索文本重新过滤
         if (HasProp(guiManager, "searchBox") && guiManager.searchBox.Value != "") {
             guiManager.HandleSearchChange()
         } else {
-            guiManager.ShowAllSoftware()
+            guiManager.ShowAllFile()
         }
         
         ; 如果有指定要选择的项，尝试选中它
@@ -1038,7 +1038,7 @@ class GuiEventHandlers {
         found := false
         
         ; 遍历ListBox中的所有项
-        for index in guiManager.allSoftwareList {
+        for index in guiManager.allFileList {
             try {
                 ; 选中当前项
                 guiManager.listBox.Value := A_Index

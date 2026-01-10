@@ -27,8 +27,8 @@ class GuiManager {
         ;  使用刷新方法来初始化配置
         this.RefreshSettings()
         
-        ; 获取软件列表
-        this.softwareList := configManager.GetSoftwareListArray()
+        ; 获取文件列表
+        this.fileList := configManager.GetFileListArray()
 
         ; 获取Root路径
         this.rootPath := configManager.GetRootPath()
@@ -39,10 +39,10 @@ class GuiManager {
         ; 初始化其他属性
         this.gui := ""
         this.listBox := ""
-        this.softwareMap := Map()
+        this.fileMap := Map()
         ; 添加搜索相关属性
         this.searchBox := ""
-        this.allSoftwareList := []  ; 保存所有软件的原始列表
+        this.allFileList := []  ; 保存所有文件的原始列表
         
         ; 当前编辑的模式：create 或 edit
         this.editMode := ""
@@ -66,8 +66,8 @@ class GuiManager {
 
     }
     
-    ; 显示软件列表GUI
-    ShowSoftwareList() {
+    ; 显示文件列表GUI
+    ShowFileList() {
         ; 创建GUI
         this.gui := Gui()
         this.gui.Title := (this.configType . "-manager")
@@ -108,8 +108,8 @@ class GuiManager {
         ; >>> 新增：监听ListBox选择变化，更新按钮状态
         this.listBox.OnEvent("Change", (*) => this.UpdateButtonStates())
         
-        ; 添加软件到ListBox
-        this.PopulateSoftwareList()
+        ; 添加文件到ListBox
+        this.PopulateFileList()
         
         ; 添加按钮区域
         this.gui.Add("Text", "w500", "双击列表项或点击按钮操作")
@@ -130,7 +130,7 @@ class GuiManager {
         btnLocate := this.gui.Add("Button", "x+10 w80", "定位")
         btnMore := this.gui.Add("Button", "x+10 w80", "设置")
         ; 新增回车打开事件
-        this.gui.Add("Button",  "x+10 w0 Hidden Default", "打开").OnEvent('Click', (*) => GuiEventHandlers.HandleOpenSoftware(this))
+        this.gui.Add("Button",  "x+10 w0 Hidden Default", "打开").OnEvent('Click', (*) => GuiEventHandlers.HandleOpenFile(this))
 
         ; >>> 保存按钮引用
         this.buttons["create"] := btnCreate
@@ -148,8 +148,8 @@ class GuiManager {
         btnLocate.OnEvent("Click", (*) => GuiEventHandlers.HandleLocateClick(this))
         btnMore.OnEvent("Click", (*) => GuiEventHandlers.HandleSettingClick(this))
         
-        ; 双击ListBox事件 - 打开软件
-        this.listBox.OnEvent("DoubleClick", (*) => GuiEventHandlers.HandleOpenSoftware(this))
+        ; 双击ListBox事件 - 打开文件
+        this.listBox.OnEvent("DoubleClick", (*) => GuiEventHandlers.HandleOpenFile(this))
 
         ; 为ListBox添加Tab键事件
         this.listBox.OnEvent("Focus", (*) => GuiEventHandlers.HandleListBoxFocus(this))
@@ -256,7 +256,7 @@ class GuiManager {
         ; this.searchBox.Opt("+Tabstop")
         
         ; 确保ListBox有选中项（再次确认）
-        if (this.allSoftwareList.Length > 0 && this.listBox.Value = 0) {
+        if (this.allFileList.Length > 0 && this.listBox.Value = 0) {
             this.listBox.Value := 1
         }
     } */
@@ -284,37 +284,37 @@ class GuiManager {
     }
     
     
-    ; 修改PopulateSoftwareList方法
-    PopulateSoftwareList() {
-        ; 保存原始软件列表
-        this.allSoftwareList := this.softwareList
+    ; 修改PopulateFileList方法
+    PopulateFileList() {
+        ; 保存原始文件列表
+        this.allFileList := this.fileList
         
-        ; 显示所有软件
-        this.ShowAllSoftware()
+        ; 显示所有文件
+        this.ShowAllFile()
     }
 
-    ; 显示所有软件
-    ShowAllSoftware() {
+    ; 显示所有文件
+    ShowAllFile() {
         ; 清空现有项
         this.listBox.Delete()
         
         ; 创建存储名称-路径映射的Map
-        this.softwareMap := Map()
+        this.fileMap := Map()
 
-    ; 检查是否有软件
-    if (this.allSoftwareList.Length = 0) {
+    ; 检查是否有文件
+    if (this.allFileList.Length = 0) {
         ; 列表为空，显示提示信息
-        this.listBox.Add([">>> 列表为空，点击'创建'按钮添加软件 <<<"])
+        this.listBox.Add([">>> 列表为空，点击'创建'按钮添加文件 <<<"])
         this.showingPrompt := true  ; 设置标记
         this.listEmptyPrompt := true  ; 设置列表为空标记
         return
     }
         
-        ; 添加软件到ListBox
-        for software in this.allSoftwareList {
-            name := software["name"]
-            path := software["path"]
-            section := software["section"]
+        ; 添加文件到ListBox
+        for file in this.allFileList {
+            name := file["name"]
+            path := file["path"]
+            section := file["section"]
             
             displayName := name
             
@@ -322,7 +322,7 @@ class GuiManager {
             this.listBox.Add([displayName])
             
             ; 存储到映射Map
-            this.softwareMap[displayName] := Map(
+            this.fileMap[displayName] := Map(
                 "name", name,
                 "path", path,
                 "section", section,
@@ -346,7 +346,7 @@ class GuiManager {
     ShowEditDialogGui(defaultName, defaultPath) {
         ; 创建编辑对话框
         editGui := Gui()
-        editGui.Title := (this.editMode = "create" ? "创建新软件" : "编辑软件")
+        editGui.Title := (this.editMode = "create" ? "创建新文件" : "编辑文件")
         ; 修正：在 GUI 层面启用文件拖放
         editGui.Opt("+E0x10")  ; +E0x10 允许拖放文件到窗口
 
@@ -378,11 +378,11 @@ class GuiManager {
         }
         
         ; 添加输入控件
-        editGui.Add("Text", "w400", "软件名称:")
+        editGui.Add("Text", "w400", "文件名称:")
         ctlName := editGui.Add("Edit", "w400", defaultName)
         editGui.ctlName := ctlName
         
-        editGui.Add("Text", "w400", "软件路径:")
+        editGui.Add("Text", "w400", "文件路径:")
         ctlPath := editGui.Add("Edit", "w400", defaultPath)
         btnBrowse := editGui.Add("Button", "w80", "浏览...")
         btnBrowse.OnEvent("Click", (*) => GuiEventHandlers.HandleBrowseClick(ctlPath,editGui,this.isTop))
@@ -394,7 +394,7 @@ class GuiManager {
         
         ; 根据模式设置Section初始值
         if (this.editMode = "create") {
-            ; 创建模式：使用软件名称作为section
+            ; 创建模式：使用文件名称作为section
             ctlSection.Value := defaultName
             
             ; 绑定名称变化事件（自动更新Section）
@@ -496,17 +496,17 @@ class GuiManager {
         ; 重新加载配置
         configMgr := ConfigManager(this.configType)
         this.configManager := configMgr
-        this.softwareList := configMgr.GetSoftwareListArray()
+        this.fileList := configMgr.GetFileListArray()
         this.rootPath := configMgr.GetRootPath()
         
         ; 重新填充原始列表
-        this.allSoftwareList := this.softwareList
+        this.allFileList := this.fileList
         
         ; 根据当前搜索文本重新过滤
         if (HasProp(this, "searchBox") && this.searchBox.Value != "") {
             this.HandleSearchChange()
         } else {
-            this.ShowAllSoftware()
+            this.ShowAllFile()
         }
 
         ; >>> 检查是否显示提示信息（列表为空）
@@ -533,9 +533,9 @@ class GuiManager {
         }
 
         ; >>> 尝试恢复之前的所有选中项（多选）
-        if (oldSelectedTexts.Length > 0 && this.allSoftwareList.Length > 0) {
+        if (oldSelectedTexts.Length > 0 && this.allFileList.Length > 0) {
             this.RestoreSelectedItems(oldSelectedTexts, oldSelectedIndices)
-        } else if (this.allSoftwareList.Length > 0) {
+        } else if (this.allFileList.Length > 0) {
             ; 如果没有之前的选中项但列表不为空，选择第一项
             try {
                 this.listBox.Value := 1
@@ -653,11 +653,11 @@ class GuiManager {
         ; 如果搜索文本为空
         if (searchText = "") {
             
-            ; !!! 直接调用 ShowAllSoftware 方法
-            this.ShowAllSoftware()
+            ; !!! 直接调用 ShowAllFile 方法
+            this.ShowAllFile()
 
             ; 搜索框为空时，如果用户在搜索框中，清除选中项
-            ; 否则，如果有实际软件，选中第一项
+            ; 否则，如果有实际文件，选中第一项
             if (this.userWasInSearchBox) {
                 this.listBox.Value := 0
             } else if (!this.IsFirstItemPrompt()) {
@@ -674,16 +674,16 @@ class GuiManager {
         
         ; 清空现有项
         this.listBox.Delete()
-        this.softwareMap := Map()
+        this.fileMap := Map()
         
         ; 记录找到的项目数量
         foundCount := 0
         
-        ; 过滤并添加匹配的软件到ListBox
-        for software in this.allSoftwareList {
-            name := software["name"]
-            path := software["path"]
-            section := software["section"]
+        ; 过滤并添加匹配的文件到ListBox
+        for file in this.allFileList {
+            name := file["name"]
+            path := file["path"]
+            section := file["section"]
             
             ; 使用GuiTools进行匹配
             directMatch := InStr(StrLower(name), searchTextLower)
@@ -694,7 +694,7 @@ class GuiManager {
             ; 如果直接匹配或拼音匹配成功
             if (directMatch || pinyinScore > 0) {
                 this.listBox.Add([name])
-                this.softwareMap[name] := Map(
+                this.fileMap[name] := Map(
                     "name", name,
                     "path", path,
                     "section", section,
