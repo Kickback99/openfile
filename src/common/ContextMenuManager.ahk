@@ -6,18 +6,18 @@ class ContextMenuManager {
     ; ==================== 主窗口右键事件处理 ====================
     ; 新增：复制功能（复用移动逻辑但保留原项）
     static HandleCopyTo(guiManager, targetConfigType) {
-        ; 获取选中的软件
+        ; 获取选中的文件
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
         ; 检查是否有选中项
         if (selectedTexts.Length = 0) {
-            MessageManager.ShowError("请先选择要复制的软件")
+            MessageManager.ShowError("请先选择要复制的文件")
             return
         }
         
         ; 确认复制
         copyCount := selectedTexts.Length
-        response := MessageManager.ShowConfirm("确定要将选中的 " copyCount " 个软件复制到 '" targetConfigType "' 吗？", "确认复制", "YesNo")
+        response := MessageManager.ShowConfirm("确定要将选中的 " copyCount " 个文件复制到 '" targetConfigType "' 吗？", "确认复制", "YesNo")
         if (response != "Yes") {
             return
         }
@@ -28,18 +28,18 @@ class ContextMenuManager {
 
     ; >>> 新增：处理移动到目标配置
     static HandleMoveTo(guiManager, targetConfigType) {
-        ; 获取选中的软件
+        ; 获取选中的文件
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
         ; 检查是否有选中项
         if (selectedTexts.Length = 0) {
-            MessageManager.ShowError("请先选择要移动的软件")
+            MessageManager.ShowError("请先选择要移动的文件")
             return
         }
         
         ; 确认移动
         moveCount := selectedTexts.Length
-        response := MessageManager.ShowConfirm("确定要将选中的 " moveCount " 个软件移动到 '" targetConfigType "' 吗？", "确认移动", "YesNo")
+        response := MessageManager.ShowConfirm("确定要将选中的 " moveCount " 个文件移动到 '" targetConfigType "' 吗？", "确认移动", "YesNo")
         if (response != "Yes") {
             return
         }
@@ -54,10 +54,10 @@ class ContextMenuManager {
         
         ; 构建TXT内容
         for text in selectedTexts {
-            if (guiManager.softwareMap.Has(text)) {
-                software := guiManager.softwareMap[text]
-                content .= software["name"] "`r`n"
-                content .= software["path"] "`r`n"
+            if (guiManager.fileMap.Has(text)) {
+                file := guiManager.fileMap[text]
+                content .= file["name"] "`r`n"
+                content .= file["path"] "`r`n"
             }
         }
         
@@ -178,7 +178,7 @@ class ContextMenuManager {
             if (itemCount = 1) {
                 GuiEventHandlers.ShowToolTip(guiManager, actionText . "成功！", 1500)
             } else {
-                GuiEventHandlers.ShowToolTip(guiManager, "成功" . actionText . " " itemCount " 个软件！", 1500)
+                GuiEventHandlers.ShowToolTip(guiManager, "成功" . actionText . " " itemCount " 个文件！", 1500)
             }
         } else {
             MessageManager.ShowError(actionText . "到目标配置失败")
