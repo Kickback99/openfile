@@ -15,6 +15,194 @@ class IniTools {
         return result
     }
 
+    ; ==================== 更新INI文件 ====================
+
+    static UpdateIniFileWithRoot(guiManager, name, path, section, editMode) {
+        try {
+            ; 读取现有INI内容
+            iniContent := ""
+            if (FileExist(guiManager.configPath)) {
+                iniContent := FileRead(guiManager.configPath)
+            }
+            
+            ; 检查是否是Root section
+            isRootSection := (StrLower(section) = "root")
+            
+            if (isRootSection) {
+                ; >>> 处理Root section
+                ; 检查是否已有Root section（不区分大小写）
+                hasExistingRoot := false
+                existingRootSectionName := ""
+                
+                ; 解析现有内容，查找Root section（不区分大小写）
+                currentSection := ""
+                Loop Parse, iniContent, "`n", "`r" {
+                    line := Trim(A_LoopField)
+                    
+                    if (SubStr(line, 1, 1) = "[") {
+                        currentSection := SubStr(line, 2, InStr(line, "]") - 2)
+                        if (StrLower(currentSection) = "root") {
+                            hasExistingRoot := true
+                            existingRootSectionName := currentSection  ; 保留原始大小写
+                            break
+                        }
+                    }
+                }
+                
+                ; 构建Root section内容
+                rootContent := ""
+                if (editMode = "create" || editMode = "edit") {
+                    ; >>> 使用用户输入的大小写
+                    rootContent := "[" section . "]`r`n"
+                    ; >>> name使用与section相同的大小写
+                    rootContent .= "name=" section . "`r`n"
+                    rootContent .= "path=" path . "`r`n"
+                }
+                
+                if (hasExistingRoot) {
+                    ; 已有Root，替换它
+                    ; 构建正则表达式匹配Root section（不区分大小写）
+                    ; 使用原始的大小写来匹配
+                    rootPattern := "\[" existingRootSectionName "\][\s\S]*?(?=\n\[|$)"
+                    if (RegExMatch(iniContent, rootPattern, &match)) {
+                        iniContent := StrReplace(iniContent, match[0], rootContent)
+                    } else {
+                        ; 如果正则匹配失败，在文件顶部添加
+                        iniContent := rootContent . "`r`n" . iniContent
+                    }
+                } else {
+                    ; 没有Root，添加到文件顶部
+                    iniContent := rootContent . (iniContent != "" ? "`r`n" : "") . iniContent
+                }
+                
+            } else {
+                ; >>> 处理普通section
+                ; >>> 检查section是否已存在（区分大小写）
+                sectionExists := false
+                existingSectionName := ""
+                currentSection := ""
+                Loop Parse, iniContent, "`n", "`r" {
+                    line := Trim(A_LoopField)
+                    
+                    if (SubStr(line, 1, 1) = "[") {
+                        currentSection := SubStr(line, 2, InStr(line, "]") - 2)
+                        if (currentSection = section) {
+                            sectionExists := true
+                            existingSectionName := currentSection
+                            break
+                        }
+                    }
+                }
+                
+                if (editMode = "create") {
+                    if (sectionExists) {
+                        ; section已存在，编辑模式处理
+                        oldSectionPattern := "\[" existingSectionName "\][\s\S]*?(?=\n\[|$)"
+                        if (RegExMatch(iniContent, oldSectionPattern, &match)) {
+                            ; 构建新的section内容
+                            newSectionContent := "[" section . "]`r`n"
+                            newSectionContent .= "name=" name . "`r`n"
+                            newSectionContent .= "path=" path . "`r`n"
+                            
+                            iniContent := StrReplace(iniContent, match[0], newSectionContent)
+                        } else {
+                            ; 如果没找到，追加到文件末尾
+                            iniContent := RTrim(iniContent, "`r`n")
+                            if (iniContent != "") {
+                                iniContent .= "`r`n`r`n"
+                            }
+                            
+                            iniContent .= "[" section . "]`r`n"
+                            iniContent .= "name=" name . "`r`n"
+                            iniContent .= "path=" path . "`r`n"
+                        }
+                    } else {
+                        ; 创建模式：追加到文件末尾
+                        ; 确保末尾有空行
+                        iniContent := RTrim(iniContent, "`r`n")
+                        if (iniContent != "") {
+                            iniContent .= "`r`n`r`n"
+                        }
+                        
+                        iniContent .= "[" section . "]`r`n"
+                        iniContent .= "name=" name . "`r`n"
+                        iniContent .= "path=" path . "`r`n"
+                    }
+                    
+                } else if (editMode = "edit") {
+                    ; 编辑模式：替换现有section
+                    ; 查找并替换原来的section
+                    oldSectionPattern := "\[" guiManager.currentEditSection "\][\s\S]*?(?=\n\[|$)"
+                    if (RegExMatch(iniContent, oldSectionPattern, &match)) {
+                        ; 构建新的section内容
+                        newSectionContent := "[" section . "]`r`n"
+                        newSectionContent .= "name=" name . "`r`n"
+                        newSectionContent .= "path=" path . "`r`n"
+                        
+                        iniContent := StrReplace(iniContent, match[0], newSectionContent)
+                    } else {
+                        ; 如果没找到，当作创建处理
+                        iniContent := RTrim(iniContent, "`r`n")
+                        if (iniContent != "") {
+                            iniContent .= "`r`n`r`n"
+                        }
+                        
+                        iniContent .= "[" section . "]`r`n"
+                        iniContent .= "name=" name . "`r`n"
+                        iniContent .= "path=" path . "`r`n"
+                    }
+                }
+            }
+            
+            ; 清理多余的空行
+            iniContent := RegExReplace(iniContent, "(`r`n){3,}", "`r`n`r`n")
+            iniContent := RTrim(iniContent, "`r`n")
+            
+            ; 写入文件
+            FileDelete(guiManager.configPath)
+            FileAppend(iniContent, guiManager.configPath, "UTF-8")
+            
+            ; 格式化文件
+            this.FormatAndSaveIniFile(guiManager.configPath)
+            
+            return true
+        } catch as e{
+            MessageManager.ShowError("保存配置文件时出错：`n" e.Message)
+            return false
+        }
+    }
+    
+    ; 从INI文件中删除section
+    static DeleteFromIniFile(guiManager, sectionName) {
+        try {
+            ; 读取整个INI文件
+            content := FileRead(guiManager.configPath)
+            
+            ; 构建正则表达式匹配要删除的section
+            pattern := "\[" sectionName "\][\s\S]*?(?=\n\[|$)"
+            if (RegExMatch(content, pattern, &match)) {
+                ; 删除该section
+                content := StrReplace(content, match[0] "`r`n", "")
+                content := StrReplace(content, match[0], "")
+                
+                ; 写回文件
+                FileDelete(guiManager.configPath)
+                FileAppend(content, guiManager.configPath, "UTF-8")
+
+                ; 格式化文件
+                this.FormatAndSaveIniFile(guiManager.configPath)
+                
+                return true
+            } else {
+                MessageManager.ShowError("在配置文件中未找到对应的section")
+                return false
+            }
+        } catch as e {
+            MessageManager.ShowError("删除配置文件时出错：`n" e.Message)
+            return false
+        }
+    }
+
     ; 删除INI文件中的注释（以;开头的行）
     static RemoveCommentsFromIniFile(filePath) {
         try {
