@@ -98,7 +98,7 @@ class PathUtils {
     ; 静态方法：浏览选择文件
     ; t_openfile_settings：alwaysOnTop
     static BrowseForExecutable(currentPath := "",ownerGui := "",isTop := "") {
-        ; ++++ 关键：如果有父窗口，临时启用OwnDialogs ++++
+        ; 如果有父窗口，临时启用OwnDialogs
         if (IsObject(ownerGui) && isTop) {
             ownerGui.Opt("+OwnDialogs")
         }else {
@@ -111,7 +111,7 @@ class PathUtils {
             return "" ; 返回空字符串表示选择无效
         }
         
-        ; >>> 无论用户选择还是取消，都恢复Owner关系
+        ; 无论用户选择还是取消，都恢复Owner关系
         if (IsObject(ownerGui) && isTop) {
             ownerGui.Opt("-OwnDialogs")
         }

@@ -4,7 +4,7 @@
 ; 中文拼音处理工具类
 ; ==============================
 class PinyinHelper {
-    ; 辅助函数：检查字符串是否包含中文
+    ; 检查字符串是否包含中文
     static HasChinese(str) {
         ; 简单的中文Unicode范围检查
         Loop Parse, str {
@@ -17,7 +17,7 @@ class PinyinHelper {
         return false
     }
 
-    ; >>> 新增：判断输入是否像拼音
+    ; 判断输入是否像拼音
     static LooksLikePinyin(str) {
         ; 简单判断：如果只包含字母，看起来像拼音
         if (RegExMatch(str, "^[a-z]+$")) {
@@ -32,7 +32,7 @@ class PinyinHelper {
         return false
     }
 
-       ; 获取拼音匹配分数
+    ; 获取拼音匹配分数
     static GetPinyinMatchScore(chineseName, searchText) {
         try {
             ; 获取拼音全拼，去掉竖线分隔符，转小写
