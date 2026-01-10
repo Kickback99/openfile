@@ -68,7 +68,7 @@ class ImportExportManager {
         try {
             ; 读取INI文件（自动处理编码）
             content := FileRead(this.configPath)
-            txtContent := this.IniToTxtWithRoot(content)
+            txtContent := this.IniToTxt(content)
 
             ; >>> 修改点：先删除文件，再写入，确保覆盖而不是追加
             if (FileExist(filePath)) {
@@ -83,12 +83,11 @@ class ImportExportManager {
         }
     }
     
-    ; INI转TXT格式 支持Root导出的INI转TXT函数
-    IniToTxtWithRoot(iniContent) {
+    ; INI转TXT格式 排除Root节导出
+    IniToTxt(iniContent) {
         ; 存储条目的数组
         allItems := []
         currentSection := ""
-        rootItem := Map()
         
         ; 解析INI内容
         Loop Parse, iniContent, "`n", "`r" {
@@ -124,18 +123,13 @@ class ImportExportManager {
                     currentPath := value
                     
                     ; 当获取到path时，保存条目
-                    if (currentSection != "" && currentName != "" && currentPath != "") {
+                    ;!!! 排除Root节（不区分大小写）
+                    if (currentSection != "" && currentName != "" && currentPath != ""  && StrLower(currentSection) != "root") {
                         item := Map()
                         item["section"] := currentSection
                         item["name"] := currentName
                         item["path"] := currentPath
-                        
-                        ; 如果是Root section，单独存储
-                        if (currentSection = "Root" || StrLower(currentSection) = "root") {
-                            rootItem := item
-                        } else {
-                            allItems.Push(item)
-                        }
+                        allItems.Push(item)
                     }
                 }
             }
@@ -144,19 +138,7 @@ class ImportExportManager {
         ; 构建TXT内容
         txtLines := []
         
-        ; >>> 首先添加Root（如果有）
-        if (rootItem.Count > 0) {
-            ; 验证Root数据
-            tempTxtForRoot := rootItem["name"] "`r`n" rootItem["path"]
-            if (IniTools.ValidateTxtContent(tempTxtForRoot, true,true)) {
-                ; 导出时使用name字段
-                txtLines.Push(rootItem["name"])
-                txtLines.Push(rootItem["path"])
-                txtLines.Push("")  ; 空行分隔
-            }
-        }
-        
-        ; 添加其他条目
+        ;!!! 只导出非Root节的条目
         for item in allItems {
             ; 验证条目数据
             tempTxtForItem := item["name"] "`r`n" item["path"]
