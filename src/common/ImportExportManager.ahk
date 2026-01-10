@@ -21,7 +21,7 @@ class ImportExportManager {
             return
         }
 
-        GuiEventHandlers.HandleMoreGuiClose(guiManager,moreGui)
+        SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
         ; >>> 保存当前选择的文本
         selectedText := guiManager.listBox.Text
@@ -149,7 +149,7 @@ class ImportExportManager {
             ; 验证Root数据
             tempTxtForRoot := rootItem["name"] "`r`n" rootItem["path"]
             if (IniTools.ValidateTxtContent(tempTxtForRoot, true,true)) {
-                ; !!! 修改：导出时使用name字段
+                ; 导出时使用name字段
                 txtLines.Push(rootItem["name"])
                 txtLines.Push(rootItem["path"])
                 txtLines.Push("")  ; 空行分隔
@@ -161,7 +161,7 @@ class ImportExportManager {
             ; 验证条目数据
             tempTxtForItem := item["name"] "`r`n" item["path"]
             if (IniTools.ValidateTxtContent(tempTxtForItem, true,true)) {
-                ; !!! 修改：导出时使用name字段
+                ; 导出时使用name字段
                 txtLines.Push(item["name"])
                 txtLines.Push(item["path"])
                 txtLines.Push("")  ; 空行分隔
@@ -182,7 +182,7 @@ class ImportExportManager {
     ; 导入配置（主方法）
     ImportConfig(moreGui,guiManager) {
         ; moreGui.Destroy()
-        GuiEventHandlers.HandleMoreGuiClose(guiManager,moreGui)
+        SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
         ; >>> 保存当前选择的文本
         selectedText := guiManager.listBox.Text
@@ -263,7 +263,7 @@ class ImportExportManager {
                             rootItem := item
                         } else {
                             ; >>> 普通条目：section和name使用相同的值
-                            ; !!! 关键修改：section使用去除扩展名的名称
+                            ; section使用去除扩展名的名称
                             sectionName := itemName
                             ; 检查是否有扩展名
                             if (InStr(sectionName, ".")) {
@@ -354,7 +354,7 @@ class ImportExportManager {
     ; 追加配置（主方法）
     AppendConfig(moreGui,guiManager) {
         ; moreGui.Destroy()
-        GuiEventHandlers.HandleMoreGuiClose(guiManager,moreGui)
+        SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
         ; >>> 保存当前选择的文本
         selectedText := guiManager.listBox.Text
@@ -463,7 +463,7 @@ class ImportExportManager {
                         rootItem := item
                     } else {
                         ; >>> 普通条目：section和name使用相同的值
-                        ; !!! 关键修改：section使用去除扩展名的名称
+                        ; section使用去除扩展名的名称
                         sectionName := itemName
                         ; 检查是否有扩展名
                         if (InStr(sectionName, ".")) {
@@ -677,7 +677,7 @@ class ImportExportManager {
         ; 如果传入了 moreGui，才需要关闭对话框
         if(moreGui != ""){
             ; 关闭设置对话框
-            GuiEventHandlers.HandleMoreGuiClose(guiManager,moreGui)
+            SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
         }
 
         ; ++++ 关键：临时启用OwnDialogs ++++
