@@ -40,7 +40,7 @@ class FileProcessor {
             }
             
             ; 调用保存逻辑（使用GuiEventHandlers的方法）
-            success := GuiEventHandlers.UpdateIniFileWithRoot(guiManager, displayName, filePath, sectionName, "create")
+            success := IniTools.UpdateIniFileWithRoot(guiManager, displayName, filePath, sectionName, "create")
             
             if (success) {
                 ; 格式化文件
