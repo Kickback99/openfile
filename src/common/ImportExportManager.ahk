@@ -117,9 +117,9 @@ class ImportExportManager {
                 if (key = "name") {
                     currentName := value
                     ; >>> 重要：如果name与section不一致，使用section名
-                    if (currentSection != "" && currentName != currentSection) {
+                    /* if (currentSection != "" && currentName != currentSection) {
                         currentName := currentSection
-                    }
+                    } */
                 } else if (key = "path") {
                     currentPath := value
                     
@@ -149,8 +149,8 @@ class ImportExportManager {
             ; 验证Root数据
             tempTxtForRoot := rootItem["name"] "`r`n" rootItem["path"]
             if (IniTools.ValidateTxtContent(tempTxtForRoot, true,true)) {
-                ; >>> 使用section名（保持原始大小写）
-                txtLines.Push(rootItem["section"])
+                ; !!! 修改：导出时使用name字段
+                txtLines.Push(rootItem["name"])
                 txtLines.Push(rootItem["path"])
                 txtLines.Push("")  ; 空行分隔
             }
@@ -161,8 +161,8 @@ class ImportExportManager {
             ; 验证条目数据
             tempTxtForItem := item["name"] "`r`n" item["path"]
             if (IniTools.ValidateTxtContent(tempTxtForItem, true,true)) {
-                ; >>> 使用section名（保持原始大小写）
-                txtLines.Push(item["section"])
+                ; !!! 修改：导出时使用name字段
+                txtLines.Push(item["name"])
                 txtLines.Push(item["path"])
                 txtLines.Push("")  ; 空行分隔
             }
@@ -263,8 +263,19 @@ class ImportExportManager {
                             rootItem := item
                         } else {
                             ; >>> 普通条目：section和name使用相同的值
-                            item["section"] := itemName
-                            item["name"] := itemName  ; name与section保持一致
+                            ; !!! 关键修改：section使用去除扩展名的名称
+                            sectionName := itemName
+                            ; 检查是否有扩展名
+                            if (InStr(sectionName, ".")) {
+                                ; 去除最后一个扩展名
+                                dotPos := InStr(sectionName, ".", , -1)
+                                if (dotPos > 1) {
+                                    sectionName := SubStr(sectionName, 1, dotPos - 1)
+                                }
+                            }
+                            
+                            item["section"] := sectionName
+                            item["name"] := itemName    ; name保持TXT中的原样（有扩展名）
                             item["path"] := itemPath
                             allItems.Push(item)
                         }
@@ -452,8 +463,19 @@ class ImportExportManager {
                         rootItem := item
                     } else {
                         ; >>> 普通条目：section和name使用相同的值
-                        item["section"] := itemName
-                        item["name"] := itemName  ; name与section保持一致
+                        ; !!! 关键修改：section使用去除扩展名的名称
+                        sectionName := itemName
+                        ; 检查是否有扩展名
+                        if (InStr(sectionName, ".")) {
+                            ; 去除最后一个扩展名
+                            dotPos := InStr(sectionName, ".", , -1)
+                            if (dotPos > 1) {
+                                sectionName := SubStr(sectionName, 1, dotPos - 1)
+                            }
+                        }
+                        
+                        item["section"] := sectionName
+                        item["name"] := itemName    ; name保持TXT中的原样（有扩展名）
                         item["path"] := itemPath
                         sections.Push(item)
                     }
