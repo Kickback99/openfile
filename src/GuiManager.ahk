@@ -8,6 +8,7 @@
 #Include "./common/WindowConstants.ahk"
 #Include "./common/WindowPositionUtils.ahk"
 #Include "./common/ListBoxHelper.ahk"
+#Include "./common/SettingsDialogManager.ahk"
 ; ==============================
 ; GuiManager.ahk
 ; GUI管理类（支持增删改查）
