@@ -674,14 +674,191 @@ class SettingsDialogManager {
     }
 
     ; 新增：处理快捷键按钮点击
-    static HandleShortcutsClick(guiManager, moreGui) {
-        ; 简单消息框提示
-        MessageManager.ShowInfo("快捷键", "提示", "OK 0x40", moreGui.Hwnd)
+    static HandleShortcutsClick(guiManager, parentGui) {
+        ; 创建设置快捷键的GUI
+        hotkeyGui := Gui()
+        hotkeyGui.Opt("+Owner" parentGui.Hwnd) ; 设置为模态窗口
+        if (guiManager.isTop) {
+            hotkeyGui.Opt("+AlwaysOnTop")
+        }
+        ;  关键：禁用主窗口（灰色不可操作）
+        parentGui.Opt("+Disabled")
+
+        ; 设置字体
+        hotkeyGui.SetFont('s9', 'Microsoft YaHei UI')
+        hotkeyGui.Title := "设置快捷键"
+        
+        ; 获取当前快捷键
+        currentHotkey := SettingsManager.GetValue("Shortcuts")
+
+        ; 将 Windows 键符号转换为可读文本
+        readableHotkey := this.ConvertHotkeyToReadable(currentHotkey)
+        
+        ; 添加文本控件并存储引用
+        hotkeyGui.AddText("w" WindowConstants.HOTKEY_GUI_WIDTH, "主热键：")
+        hotkeyTextCtrl := hotkeyGui.AddText("wp y+2 cGray vCurrentHotkeyText", "当前快捷键: " readableHotkey)
+
+        ; 添加热键控件
+        hotkeyInput := hotkeyGui.AddHotkey("wp vHotkeyInput", currentHotkey)
+
+        ; 存储控件引用到GUI对象中，方便后续访问
+        hotkeyGui.hotkeyTextCtrl := hotkeyTextCtrl
+        ; hotkeyGui.hotkeyInput := hotkeyInput
+        
+        ; 添加保存和取消按钮
+        btnRow := hotkeyGui.Add("Button", "w80 xm y+10", "保存")
+        btnRow.OnEvent("Click", (*) => this.SaveHotkey(hotkeyInput, hotkeyGui, parentGui))
+        
+        btnReset  := hotkeyGui.Add("Button", "w80 x+10 yp", "重置")
+        btnReset.OnEvent("Click", (*) => this.ResetHotkey(hotkeyInput,hotkeyGui,parentGui))
+        hotkeyGui.OnEvent("Close",(*) => this.handleCloseHotKeyGui(hotkeyGui,parentGui))
+        hotkeyGui.OnEvent("Escape",(*) => this.handleCloseHotKeyGui(hotkeyGui,parentGui))
+        
+        ; 显示窗口
+        WindowPositionUtils.CenterChildWindowWithConstants(
+            parentGui.Hwnd,                           ; 父窗口句柄
+            hotkeyGui,                                ; 子窗口对象
+            WindowConstants.HOTKEY_GUI_WIDTH,         ; 对话框宽度
+            WindowConstants.HOTKEY_GUI_HEIGHT,        ; 对话框高度
+            WindowConstants.HOTKEY_GUI_ADJUST_LEFT,   ; 水平微调
+            WindowConstants.HOTKEY_GUI_ADJUST_TOP     ; 垂直微调
+        )
+    }
+
+    ; 工具函数：将热键转换为可读格式
+    static ConvertHotkeyToReadable(hotkey) {
+        if (!hotkey || hotkey = "") {
+            return "未设置"
+        }
+        
+        readable := hotkey
+        readable := StrReplace(readable, "#", "Win-")
+        readable := StrReplace(readable, "^", "Ctrl-")
+        readable := StrReplace(readable, "!", "Alt-")
+        readable := StrReplace(readable, "+", "Shift-")
+        return readable
+    }
+
+    ; 重置快捷键到默认值 (Win+Q)
+    static ResetHotkey(hotkeyInput, hotkeyGui,parentGui) {
+        ; 设置默认快捷键为 Win+Q
+        defaultHotkey := "#q"
+
+        try{
+            Hotkey(hotkeyInput.value,"off")
+        }catch as e {
+
+        }
+        
+        ; 更新热键输入框的值
+        hotkeyInput.Value := defaultHotkey
+        
+        ; 更新显示文本
+        readableHotkey := this.ConvertHotkeyToReadable(defaultHotkey)
+        hotkeyGui.hotkeyTextCtrl.Value := "当前快捷键: " readableHotkey
+            
+        MessageManager.ShowInfo("快捷键已重置为: " readableHotkey, "成功", "OK 0x40", hotkeyGui.Hwnd)
+
+
+        SettingsManager.SetValue("Shortcuts", defaultHotkey)
+        RegisterMainShortcut()  ; 调用main.ahk中的全局函数
+    }
+
+    
+    ;!!! 新增：保存热键设置
+    static SaveHotkey(hotkeyInput, hotkeyGui, parentGui) {
+        newHotkey := hotkeyInput.Value
+        
+        ; 验证热键
+        if (newHotkey = "") {
+            newHotkey := "#q"
+            hotkeyInput.Value := newHotkey  ; 更新输入框显示
+            ; MessageManager.ShowError("快捷键不能为空！", "错误", "OK 0x10", hotkeyGui.Hwnd)
+            ; return
+        }
+
+        ;!!! 新增：获取并禁用旧热键
+        oldHotkey := SettingsManager.GetValue("Shortcuts")
+        if (oldHotkey != "") {
+            try {
+                ; 禁用旧热键
+                Hotkey(oldHotkey,"Off")
+            } 
+        }
+        
+        ; 检查是否与系统快捷键冲突（简单检查）
+        if (this.CheckHotkeyConflict(newHotkey)) {
+            if (!MessageManager.ShowConfirm("该快捷键可能与系统快捷键冲突，是否继续？", "警告", ,hotkeyGui.Hwnd)) {
+                return
+            }
+        }
+        
+        ; 保存到配置文件
+        if (SettingsManager.SetValue("Shortcuts", newHotkey)) {
+            ;!!! 修正：直接调用全局函数重新注册热键
+            try {
+                ; 更新显示文本
+                readableHotkey := this.ConvertHotkeyToReadable(newHotkey)
+                hotkeyGui.hotkeyTextCtrl.Value := "当前快捷键: " readableHotkey
+
+                RegisterMainShortcut()  ; 调用main.ahk中的全局函数
+                MessageManager.ShowInfo("快捷键已更新为: " readableHotkey, "成功", "OK 0x40", hotkeyGui.Hwnd)
+            } catch as e {
+                ; 如果注册失败，恢复原来的热键
+                oldHotkey := SettingsManager.GetValue("Shortcuts")
+                SettingsManager.SetValue("Shortcuts", oldHotkey)
+
+                ; 恢复显示文本
+                oldReadable := this.ConvertHotkeyToReadable(oldHotkey)
+                hotkeyGui.hotkeyTextCtrl.Value := "当前快捷键: " oldReadable
+                MessageManager.ShowError("注册热键失败，已恢复原设置`n错误信息: " e.Message, "错误", "OK 0x10", hotkeyGui.Hwnd)
+            }
+        } else {
+            MessageManager.ShowError("保存快捷键失败！", "错误", "OK 0x10", hotkeyGui.Hwnd)
+        }
+    }
+    
+    ;!!! 新增：检查热键冲突
+    static CheckHotkeyConflict(hotkey) {
+        ; 检查常见系统快捷键
+        systemHotkeys := [
+            "^!Delete",  ; Ctrl+Alt+Del
+            "!F4",       ; Alt+F4
+            "#",         ; Win
+            "#l",        ; Win+L
+            "#e",        ; Win+E
+            "#r",        ; Win+R
+            "#d",        ; Win+D
+            "#m",        ; Win+M
+            "#Tab",      ; Win+Tab
+            "Ctrl+Escape" ; Ctrl+Esc
+        ]
+        
+        hotkey := StrLower(hotkey)
+        
+        for sysHotkey in systemHotkeys {
+            if (StrLower(sysHotkey) = hotkey) {
+                return true
+            }
+        }
+        
+        return false
+    }
+
+    static handleCloseHotKeyGui(hotKey, parentGui){
+        ; 恢复父窗口
+        parentGui.Opt("-Disabled")
+
+        ; 关闭热键窗口
+        hotKey.Destroy()
     }
 
     ; 新增：处理联系按钮点击
     static HandleContactClick(guiManager, moreGui) {
-        ; 简单消息框提示
-        MessageManager.ShowInfo("联系", "提示", "OK 0x40", moreGui.Hwnd)
+        contactUrl := SettingsManager.GetValue("Link")
+        if (!contactUrl || contactUrl = "") {
+            contactUrl := SettingsManager.DefaultConfig.Get("Link")
+        }
+        Run(contactUrl)
     }
 }

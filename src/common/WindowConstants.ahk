@@ -129,6 +129,20 @@ class WindowConstants {
     static BATCH_THRESHOLD_HEIGHT := 150
     static BATCH_THRESHOLD_ADJUST_LEFT := 60
     static BATCH_THRESHOLD_ADJUST_TOP := 20
+
+    ; ==================== HotkeyGui 窗口常量 ====================
+    
+    ; HotkeyGui 宽度
+    static HOTKEY_GUI_WIDTH := 200
+    
+    ; HotkeyGui 高度
+    static HOTKEY_GUI_HEIGHT := 155
+    
+    ; HotkeyGui 水平微调量（向左偏移）
+    static HOTKEY_GUI_ADJUST_LEFT := 55
+    
+    ; HotkeyGui 垂直微调量（向上偏移）
+    static HOTKEY_GUI_ADJUST_TOP := 0
     
 
     ; ==================== 经验高度常量 ====================
