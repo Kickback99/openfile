@@ -13,11 +13,11 @@ ShowManager(configType) {
     
     if (hwnd) {
         ; 如果窗口存在，激活它
-        WinActivate(windowTitle)
+        WinActivate(hwnd)
         
         ; 如果窗口是最小化状态，恢复它
         if (WinGetMinMax(hwnd) = -1) {  ; -1 表示最小化
-            WinRestore(windowTitle)
+            WinRestore(hwnd)
         }
 
         ; t_softmanager_settings：alwaysOnTop-get
