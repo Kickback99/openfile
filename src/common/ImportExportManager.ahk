@@ -23,10 +23,10 @@ class ImportExportManager {
 
         SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
-        ; >>> 保存当前选择的文本
+        ; 保存当前选择的文本
         selectedText := guiManager.listBox.Text
         
-        ; ++++ 关键：临时启用OwnDialogs ++++
+        ; 临时启用OwnDialogs
         if(guiManager.isTop){
             guiManager.gui.Opt("+OwnDialogs")
         }
@@ -48,7 +48,7 @@ class ImportExportManager {
             exportPath .= ".txt"
         }
 
-        ; >>> 使用统一的文件名校验
+        ; 使用统一的文件名校验
         /* if (!IniTools.ValidateFileName(exportPath, this.configType)) {
             return false
         } */
@@ -70,7 +70,7 @@ class ImportExportManager {
             content := FileRead(this.configPath)
             txtContent := this.IniToTxt(content)
 
-            ; >>> 修改点：先删除文件，再写入，确保覆盖而不是追加
+            ; 修改点：先删除文件，再写入，确保覆盖而不是追加
             if (FileExist(filePath)) {
                 FileDelete(filePath)
             }
@@ -101,7 +101,7 @@ class ImportExportManager {
             ; 解析section
             if (SubStr(line, 1, 1) = "[") {
                 currentSection := SubStr(line, 2, InStr(line, "]") - 2)
-                ; >>> 重置当前条目的name和path
+                ; 重置当前条目的name和path
                 currentName := ""
                 currentPath := ""
                 continue
@@ -115,7 +115,7 @@ class ImportExportManager {
                 
                 if (key = "name") {
                     currentName := value
-                    ; >>> 重要：如果name与section不一致，使用section名
+                    ; 重要：如果name与section不一致，使用section名
                     /* if (currentSection != "" && currentName != currentSection) {
                         currentName := currentSection
                     } */
@@ -123,7 +123,7 @@ class ImportExportManager {
                     currentPath := value
                     
                     ; 当获取到path时，保存条目
-                    ;!!! 排除Root节（不区分大小写）
+                    ; 排除Root节（不区分大小写）
                     if (currentSection != "" && currentName != "" && currentPath != ""  && StrLower(currentSection) != "root") {
                         item := Map()
                         item["section"] := currentSection
@@ -138,7 +138,7 @@ class ImportExportManager {
         ; 构建TXT内容
         txtLines := []
         
-        ;!!! 只导出非Root节的条目
+        ; 只导出非Root节的条目
         for item in allItems {
             ; 验证条目数据
             tempTxtForItem := item["name"] "`r`n" item["path"]
@@ -166,10 +166,10 @@ class ImportExportManager {
         ; moreGui.Destroy()
         SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
-        ; >>> 保存当前选择的文本
+        ; 保存当前选择的文本
         selectedText := guiManager.listBox.Text
         
-        ; ++++ 关键：临时启用OwnDialogs ++++
+        ; 临时启用OwnDialogs
         if(guiManager.isTop){
             guiManager.gui.Opt("+OwnDialogs")
         }
@@ -182,7 +182,7 @@ class ImportExportManager {
             return false
         }
 
-        ; >>> 使用统一的文件名校验
+        ; 使用统一的文件名校验
         /* if (!IniTools.ValidateFileName(importPath, this.configType)) {
             return false
         } */
@@ -236,7 +236,7 @@ class ImportExportManager {
                     if (IniTools.ValidateTxtContent(tempTxtForItem, true,true)) {
                         item := Map()
                         
-                        ; >>> 如果是Root（不区分大小写）
+                        ; 如果是Root（不区分大小写）
                         if (StrLower(itemName) = "root") {
                             ; 保持原始大小写
                             item["section"] := itemName
@@ -244,7 +244,7 @@ class ImportExportManager {
                             item["path"] := itemPath
                             rootItem := item
                         } else {
-                            ; >>> 普通条目：section和name使用相同的值
+                            ; 普通条目：section和name使用相同的值
                             ; section使用去除扩展名的名称
                             sectionName := itemName
                             ; 检查是否有扩展名
@@ -268,11 +268,11 @@ class ImportExportManager {
             ; 构建INI内容
             iniLines := []
             
-            ; >>> 添加Root section（如果有）
+            ; 添加Root section（如果有）
             if (rootItem.Count > 0) {
-                ; >>> section名使用Root的原始大小写
+                ; section名使用Root的原始大小写
                 iniLines.Push("[" rootItem["section"] "]")
-                ; >>> name值与section名保持一致
+                ; name值与section名保持一致
                 iniLines.Push("name=" rootItem["name"])
                 iniLines.Push("path=" rootItem["path"])
                 
@@ -284,9 +284,9 @@ class ImportExportManager {
             
             ; 添加其他section
             for i, item in allItems {
-                ; >>> section名使用原始大小写
+                ; section名使用原始大小写
                 iniLines.Push("[" item["section"] "]")
-                ; >>> name值与section名保持一致
+                ; name值与section名保持一致
                 iniLines.Push("name=" item["name"])
                 iniLines.Push("path=" item["path"])
                 
@@ -316,7 +316,7 @@ class ImportExportManager {
         }
     }
 
-    ; >>> 修改Range函数，添加步长参数
+    ; 修改Range函数，添加步长参数
     static Range(start, end, step := 1) {
         arr := []
         if (step > 0) {
@@ -338,7 +338,7 @@ class ImportExportManager {
         ; moreGui.Destroy()
         SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
-        ; >>> 保存当前选择的文本
+        ; 保存当前选择的文本
         selectedText := guiManager.listBox.Text
         
         if (!FileExist(this.configPath)) {
@@ -346,7 +346,7 @@ class ImportExportManager {
             return false
         }
 
-        ; ++++ 关键：临时启用OwnDialogs ++++
+        ; 临时启用OwnDialogs
         if(guiManager.isTop){
             guiManager.gui.Opt("+OwnDialogs")
         }
@@ -359,7 +359,7 @@ class ImportExportManager {
             return false
         }
 
-        ; >>> 使用统一的文件名校验
+        ; 使用统一的文件名校验
         /* if (!IniTools.ValidateFileName(appendPath, this.configType)) {
             return false
         } */
@@ -382,7 +382,7 @@ class ImportExportManager {
             ; 读取要追加的TXT内容
             appendContent := FileRead(filePath, "UTF-8")
             
-            ; >>> 使用ValidateTxtContent验证追加内容
+            ; 使用ValidateTxtContent验证追加内容
             if (!IniTools.ValidateTxtContent(appendContent,false,false)) {
                 return false
             }
@@ -436,7 +436,7 @@ class ImportExportManager {
                 if (IniTools.ValidateTxtContent(tempTxtForItem, true,true)) {
                     item := Map()
                     
-                    ; >>> 如果是Root（不区分大小写）
+                    ; 如果是Root（不区分大小写）
                     if (StrLower(itemName) = "root") {
                         ; 保持原始大小写
                         item["section"] := itemName
@@ -444,7 +444,7 @@ class ImportExportManager {
                         item["path"] := itemPath
                         rootItem := item
                     } else {
-                        ; >>> 普通条目：section和name使用相同的值
+                        ; 普通条目：section和name使用相同的值
                         ; section使用去除扩展名的名称
                         sectionName := itemName
                         ; 检查是否有扩展名
@@ -472,7 +472,7 @@ class ImportExportManager {
     }
     
     ; 合并INI内容，支持Root覆盖
-    ; >>> 修改点2: 重构MergeIniContentWithRoot函数，支持不区分大小写的匹配
+    ; 修改点2: 重构MergeIniContentWithRoot函数，支持不区分大小写的匹配
     static MergeIniContentWithRoot(oldContent, newData) {
         newRoot := newData["root"]
         newSections := newData["sections"]
@@ -486,7 +486,7 @@ class ImportExportManager {
         currentLineNumber := 0
         sectionStartLine := 0
         
-        ; >>> 第一次遍历：建立不区分大小写的section映射
+        ; 第一次遍历：建立不区分大小写的section映射
         Loop Parse, oldContent, "`n", "`r" {
             currentLineNumber++
             line := Trim(A_LoopField)
@@ -498,7 +498,7 @@ class ImportExportManager {
                 }
                 
                 currentSection := SubStr(line, 2, InStr(line, "]") - 2)
-                ; >>> 以小写为key存储，值为原始大小写
+                ; 以小写为key存储，值为原始大小写
                 oldSections[StrLower(currentSection)] := currentSection
                 sectionStartLine := currentLineNumber
             }
@@ -509,7 +509,7 @@ class ImportExportManager {
             oldSectionLines[currentSection] := Map("start", sectionStartLine, "end", currentLineNumber)
         }
         
-        ; >>> 处理Root：如果有新的Root，就替换或添加
+        ; 处理Root：如果有新的Root，就替换或添加
         if (newRoot.Count > 0) {
             ; 如果旧内容中有Root（不区分大小写），先移除
             rootKey := StrLower("Root")
@@ -544,12 +544,12 @@ class ImportExportManager {
             }
         }
         
-        ; >>> 处理普通section：不区分首字母大小写的匹配
+        ; 处理普通section：不区分首字母大小写的匹配
         for i, newSection in newSections {
             sectionName := newSection["section"]
             sectionNameLower := StrLower(sectionName)
             
-            ; >>> 查找是否存在匹配的section（不区分大小写）
+            ; 查找是否存在匹配的section（不区分大小写）
             existingSectionName := ""
             
             ; 直接查找匹配的section
@@ -558,7 +558,7 @@ class ImportExportManager {
             }
             
             if (existingSectionName != "") {
-                ; >>> 替换现有section
+                ; 替换现有section
                 oldContent := ImportExportManager.ReplaceSection(oldContent, existingSectionName, newSection)
             } else {
                 ; 追加新的section
@@ -574,7 +574,7 @@ class ImportExportManager {
         return oldContent . "`r`n"
     }
 
-    ; >>> 新增辅助函数：按行号移除section
+    ; 新增辅助函数：按行号移除section
     static RemoveSectionByLines(content, startLine, endLine) {
         lines := StrSplit(content, "`n", "`r")
         newLines := []
@@ -593,7 +593,7 @@ class ImportExportManager {
         return result
     }
 
-    ; >>> 修改ReplaceSection函数，支持不区分大小写的section名称
+    ; 修改ReplaceSection函数，支持不区分大小写的section名称
     static ReplaceSection(content, existingSectionName, newSectionData) {
         ; 构建正则表达式，匹配原始大小写的section
         escapedSectionName := RegExReplace(existingSectionName, "[.*+?^${}()|[\]\\]", "\$0")
@@ -638,7 +638,7 @@ class ImportExportManager {
         return content
     }
     
-    ; >>> 新增：处理用户取消选择的通用逻辑
+    ; 新增：处理用户取消选择的通用逻辑
     static HandleUserCancel(guiManager, selectedText) {
         ; 恢复Owner关系
         guiManager.gui.Opt("-OwnDialogs")
@@ -662,7 +662,7 @@ class ImportExportManager {
             SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
         }
 
-        ; ++++ 关键：临时启用OwnDialogs ++++
+        ; 临时启用OwnDialogs
         if(guiManager.isTop){
             guiManager.gui.Opt("+OwnDialogs")
         }
