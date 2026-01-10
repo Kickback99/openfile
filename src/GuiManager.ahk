@@ -65,7 +65,7 @@ class GuiManager {
         ; 标记是否为多选状态
         this._isMultiSelect := false
 
-        ; >>> 新增：右键菜单相关属性
+        ; 新增：右键菜单相关属性
         this.contextMenu := ""
         this.moveMenu := ""
         this.targetConfigs := []  ; 存储可移动的目标配置
@@ -117,10 +117,10 @@ class GuiManager {
         ; 添加文件到ListBox
         this.PopulateFileList()
 
-        ; >>> 新增：创建右键菜单
+        ; 新增：创建右键菜单
         this.CreateContextMenu()
         
-        ; >>> 新增：绑定ListBox右键事件
+        ; 新增：绑定ListBox右键事件
         this.listBox.OnEvent("ContextMenu", (*) => this.ShowContextMenu())
         
         ; 添加按钮区域
@@ -356,7 +356,7 @@ class GuiManager {
 
     ; ==================== 右键菜单功能方法 ====================
 
-    ; >>> 新增：创建上下文菜单
+    ; 创建上下文菜单
     CreateContextMenu() {
         ; 创建主菜单
         this.contextMenu := Menu()
@@ -389,7 +389,7 @@ class GuiManager {
 
     }
     
-    ; >>> 新增：显示上下文菜单
+    ; 显示上下文菜单
     ShowContextMenu() {
         ; 检查是否有选中项，如果没有，不显示菜单
         selectedTexts := ListBoxHelper.GetSelectedTexts(this.listBox)

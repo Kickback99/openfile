@@ -4,7 +4,8 @@
 ; ==============================
 class ContextMenuManager {
     ; ==================== 主窗口右键事件处理 ====================
-    ; 新增：复制功能（复用移动逻辑但保留原项）
+    
+    ; 复制功能（复用移动逻辑但保留原项）
     static HandleCopyTo(guiManager, targetConfigType) {
         ; 获取选中的文件
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
@@ -26,7 +27,7 @@ class ContextMenuManager {
         this.ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, false)  ; false表示复制操作
     }
 
-    ; >>> 新增：处理移动到目标配置
+    ; 处理移动到目标配置
     static HandleMoveTo(guiManager, targetConfigType) {
         ; 获取选中的文件
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
@@ -48,7 +49,7 @@ class ContextMenuManager {
         this.ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, true)  ; true表示移动操作
     }
     
-    ; >>> 修改：创建移动用的TXT文件（支持temp目录）
+    ; 创建移动用的TXT文件（支持temp目录）
     static CreateMoveTxtFile(guiManager, selectedTexts, outputPath) {
         content := ""
         
@@ -68,7 +69,7 @@ class ContextMenuManager {
         
         ; 写入临时文件
         try {
-            ; >>> 确保文件不存在
+            ; 确保文件不存在
             if (FileExist(outputPath)) {
                 FileDelete(outputPath)
             }
@@ -90,7 +91,7 @@ class ContextMenuManager {
         }
     }
     
-    ; >>> 修改：追加到目标配置（复用ImportExportManager）
+    ; 追加到目标配置（复用ImportExportManager）
     static AppendToConfig(targetConfigType, txtFilePath) {
         try {
             ; 检查文件是否存在
@@ -112,7 +113,7 @@ class ContextMenuManager {
             ; 创建ImportExportManager实例并调用追加方法
             importExportMgr := ImportExportManager(targetConfigType, configPath)
             
-            ; >>> 复用ImportExportManager的追加逻辑
+            ; 复用ImportExportManager的追加逻辑
             ; 读取现有INI内容
             oldContent := FileRead(configPath)
             
@@ -188,7 +189,7 @@ class ContextMenuManager {
         SetTimer(() => this.DeleteTempDirectory(tempDir), -500)  ; 0.5秒后删除
     }
 
-    ; >>> 新增：确保temp目录存在的辅助方法
+    ; 确保temp目录存在的辅助方法
     static EnsureTempDirectory() {
         scriptDir := A_ScriptDir
         tempDir := scriptDir . "\temp"

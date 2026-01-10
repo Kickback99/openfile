@@ -188,7 +188,7 @@ class SettingsManager {
         }
     }
     
-    ; +++ 读取整个配置文件的所有section ++++
+    ; 读取整个配置文件的所有section
     static ReadAllConfig() {
         allConfig := Map()
         
@@ -254,7 +254,7 @@ class SettingsManager {
         return allConfig
     }
 
-    ; ++++ 重置指定section到默认值 ++++
+    ; 重置指定section到默认值
     static ResetSectionToDefault(sectionName) {
         try {
             ; 获取默认配置
@@ -341,7 +341,7 @@ class SettingsManager {
 
     ; 重要：按照入口数组顺序写入配置文件
     static WriteAllConfig(allConfig) {
-        global SupportedConfigTypes
+        global ConfigTypes
         try {
             settingsPath := this.GetConfigPath()
             
@@ -353,8 +353,8 @@ class SettingsManager {
                 content .= this.FormatSection("Default", allConfig["Default"])
             } */
             
-            ; 2. 按照SupportedConfigTypes数组顺序写入其他section
-            for configType in SupportedConfigTypes {
+            ; 2. 按照ConfigTypes数组顺序写入其他section
+            for configType in ConfigTypes {
                 if (allConfig.Has(configType)) {
                     content .= this.FormatSection(configType, allConfig[configType])
                 }
@@ -396,8 +396,8 @@ class SettingsManager {
     
     ; 检查是否是支持的配置类型
     static IsSupportedType(sectionName) {
-        global SupportedConfigTypes
-        for configType in SupportedConfigTypes {
+        global ConfigTypes
+        for configType in ConfigTypes {
             if (configType = sectionName) {
                 return true
             }
@@ -436,7 +436,7 @@ class SettingsManager {
                 return this.WriteAllConfig(this.DefaultConfig)
             }
 
-            ; :!!! 新增：读取现有配置文件，清理无效的配置段
+            ; 读取现有配置文件，清理无效的配置段
             allConfig := this.ReadAllConfig()
             shouldWrite := false
             
@@ -472,7 +472,7 @@ class SettingsManager {
         }
     }
 
-    ; 获取指定section的所有配置键 ++++
+    ; 获取指定section的所有配置键
     static GetAllKeys(sectionName) {
         config := this.ReadSectionConfig(sectionName)
         keys := []
@@ -518,7 +518,7 @@ class SettingsManager {
         return false
     }
 
-    ; ++++ 检查配置是否存在 ++++
+    ; 检查配置是否存在
     static HasKey(key, sectionName) {
         config := this.ReadSectionConfig(sectionName)
         return config.Has(key)
