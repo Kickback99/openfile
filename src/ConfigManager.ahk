@@ -315,7 +315,7 @@ class ConfigManager {
         return ""
     }
 
-    ; >>> 新增：获取所有可用的配置类型（排除当前类型）
+    ; 获取所有可用的配置类型（排除当前类型）
     static GetAllConfigTypes(excludeType := "") {
         ; 获取configs目录
         configManagerPath := A_LineFile

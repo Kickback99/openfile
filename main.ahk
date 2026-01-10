@@ -4,8 +4,12 @@
 #Include src\GuiManager.ahk
 #Include "src\common\SettingsManager.ahk"
 
-; 入口文件顶部定义支持的配置类型数组
-global SupportedConfigTypes := ["openfile","ai","dev"]
+; 支持的配置类型数组
+global ConfigTypes := [
+    "openfile",
+    "ai",
+    "dev"
+]
 
 ; !!! 新增：启动时清理配置
 ; SettingsManager.EnsureConfigFile()
@@ -99,16 +103,16 @@ ShowGuiManager(configType) {
 
 ; win+q事件
 MainHotkeyHandler(*) {
-    ShowGuiManager(SupportedConfigTypes[1])
+    ShowGuiManager(ConfigTypes[1])
 }
 
 !c::{
-    isGui := WinActive("ahk_class AutoHotkeyGUI")
+    isManagerActive := WinActive("ahk_class AutoHotkeyGUI")
     
     ; 预先声明变量
     parentGui := ""
     
-    if(isGui){
+    if(isManagerActive){
         ; 获取当前激活的GUI对象
         parentHwnd := WinGetID("A")
         parentGui := GuiFromHwnd(parentHwnd)
@@ -128,16 +132,16 @@ MainHotkeyHandler(*) {
         parentGui.Opt("-OwnDialogs")
     }
     
-    IBv := IB.value 
+    userInput := IB.value 
 
     if(IB.Result == 'Cancel'){
         return
     }
 
     ; 检查是否在支持的类型中
-    for configType in SupportedConfigTypes {
-        if (IBv = configType) {
-            ShowManager(configType)
+    for configType in ConfigTypes {
+        if (userInput = configType) {
+            ShowGuiManager(configType)
             return
         }
     }
