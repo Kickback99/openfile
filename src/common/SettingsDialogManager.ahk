@@ -5,7 +5,7 @@
 class SettingsDialogManager {
     ; ==================== 设置按钮事件处理 ====================
     ; 设置按钮点击事件处理
-    ; t_softmanager_settings：get&set
+    ; t_openfile_settings：get&set
     static ShowSettingsDialog(guiManager) {
         ; 检查最小宽度
         if (WindowConstants.MORE_GUI_WIDTH < 100) {

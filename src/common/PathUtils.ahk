@@ -96,7 +96,7 @@ class PathUtils {
     }
     
     ; 静态方法：浏览选择文件
-    ; t_softmanager_settings：alwaysOnTop
+    ; t_openfile_settings：alwaysOnTop
     static BrowseForExecutable(currentPath := "",ownerGui := "",isTop := "") {
         ; ++++ 关键：如果有父窗口，临时启用OwnDialogs ++++
         if (IsObject(ownerGui) && isTop) {
