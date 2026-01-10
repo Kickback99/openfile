@@ -42,8 +42,8 @@ ShowManager(configType) {
     ; 创建GUI管理器
     guiMgr := GuiManager(configMgr)
     
-    ; 显示软件列表
-    guiMgr.ShowSoftwareList()
+    ; 显示文件列表
+    guiMgr.ShowFileList()
 }
 
 #q::{

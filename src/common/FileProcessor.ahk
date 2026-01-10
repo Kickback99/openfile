@@ -26,12 +26,12 @@ class FileProcessor {
             ; 设置section名称
             sectionName := fileNameNoExt
             
-            ; 检查是否已存在同名软件
+            ; 检查是否已存在同名文件
             duplicateFound := false
-            for existingName, software in guiManager.softwareMap {
-                if (software["name"] = displayName) {
+            for existingName, file in guiManager.fileMap {
+                if (file["name"] = displayName) {
                     duplicateFound := true
-                    response := MessageManager.ShowConfirm("已存在同名软件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
+                    response := MessageManager.ShowConfirm("已存在同名文件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
                     if (response != "Yes") {
                         return ""  ; 跳过这个文件
                     }
@@ -102,7 +102,7 @@ class FileProcessor {
         return selectedFiles
     }
     
-    ; ++++ 批量从选中的文件创建软件条目 ++++
+    ; ++++ 批量从选中的文件创建文件条目 ++++
     static BatchCreateFromSelectedFiles(guiManager, filePaths, enableExtension) {
 
         ; 首先过滤掉不存在的文件
@@ -135,7 +135,7 @@ class FileProcessor {
         progressGui := Gui()
         progressGui.Title := "批量创建中..."
         progressGui.Opt("+AlwaysOnTop +ToolWindow")
-        progressGui.Add("Text", "w300 Center", "正在批量创建软件条目...")
+        progressGui.Add("Text", "w300 Center", "正在批量创建文件条目...")
         progressText := progressGui.Add("Text", "w300 Center", "准备开始 (0/" . totalCount . ")")
 
         ;!!! 添加：创建中止按钮
@@ -189,14 +189,14 @@ class FileProcessor {
                     ; 设置section名称
                     sectionName := fileNameNoExt
                     
-                    ; 检查是否已存在同名软件
+                    ; 检查是否已存在同名文件
                     duplicateFound := false
-                    for existingName, software in guiManager.softwareMap {
-                        if (software["name"] = displayName) {
+                    for existingName, file in guiManager.fileMap {
+                        if (file["name"] = displayName) {
                             duplicateFound := true
                             
-                            ; 批量模式下，如果已存在同名软件，询问是否覆盖
-                            response := MessageManager.ShowConfirm("已存在同名软件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
+                            ; 批量模式下，如果已存在同名文件，询问是否覆盖
+                            response := MessageManager.ShowConfirm("已存在同名文件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
                             if (response != "Yes") {
                                 ; 跳过这个文件
                                 continue
@@ -206,13 +206,13 @@ class FileProcessor {
                     }
                     
                     ; 调用保存逻辑（使用GuiEventHandlers的方法）
-                    success := GuiEventHandlers.UpdateIniFileWithRoot(guiManager, displayName, filePath, sectionName, "create")
+                    success := IniTools.UpdateIniFileWithRoot(guiManager, displayName, filePath, sectionName, "create")
                     
                     if (success) {
                         successCount++
                         lastAddedName := displayName  ; 记录最后添加的项
                         
-                        ; 立即刷新列表，让softwareMap保持最新
+                        ; 立即刷新列表，让fileMap保持最新
                         guiManager.RefreshList()
                         
                         ; 添加短暂延迟让用户感知到处理完成
