@@ -64,7 +64,7 @@ class ConfigManager {
                 ; 创建一个基本的INI文件结构 - 使用字符串连接
                 basicContent := "[Root]`r`n" 
                     . "name=root`r`n" 
-                    . "path=C:\Users\Kickback\Desktop\tools\" this.configType "`r`n`r`n" 
+                    . "path=" this.configPath "`r`n`r`n" 
                     . "; 在此处添加你的文件配置`r`n" 
                     . "; 示例：`r`n" 
                     . "; [FileName]`r`n" 
