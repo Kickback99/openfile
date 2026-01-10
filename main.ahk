@@ -4,7 +4,7 @@
 #Include src\GuiManager.ahk
 #Include "src\common\SettingsManager.ahk"
 
-;!!! 新增：全局热键注册函数
+; 全局热键注册函数
 RegisterMainShortcut() {
     ; 从配置文件中读取快捷键
     shortcut := SettingsManager.GetValue("Shortcuts")
@@ -17,21 +17,21 @@ RegisterMainShortcut() {
 
     ; 先尝试移除已注册的热键
     try {
-        Hotkey(shortcut, ShowSoftManager, "Off")
+        Hotkey(shortcut, MainHotkeyHandler, "Off")
     }
     
     ; 注册热键
     try {
-        Hotkey(shortcut, ShowSoftManager, "On")
+        Hotkey(shortcut, MainHotkeyHandler, "On")
     } catch as e {
         ; 如果注册失败，使用默认热键
-        Hotkey("#q", ShowSoftManager, "On")
+        Hotkey("#q", MainHotkeyHandler, "On")
         MessageManager.ShowError("热键注册失败，已使用默认热键 Win+Q。`n错误信息: " e.Message, "警告", 0x30)
     }
 }
 
 ; 显示管理器函数
-ShowManager(configType) {
+ShowGuiManager(configType) {
 
    ; 检查是否已有同名的且是gui类型的窗口
     windowTitle := configType
@@ -72,9 +72,10 @@ ShowManager(configType) {
     guiMgr.ShowFileList()
 }
 
-ShowSoftManager(*) {
-    ShowManager('openfile')
+; win+q事件
+MainHotkeyHandler(*) {
+    ShowGuiManager('openfile')
 }
 
-;!!! 修改：启动时注册热键
+; 启动时注册热键
 RegisterMainShortcut()

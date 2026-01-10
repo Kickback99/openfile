@@ -4,6 +4,7 @@
 ; ==============================
 class SettingsDialogManager {
     ; ==================== 设置按钮事件处理 ====================
+    
     ; 设置按钮点击事件处理
     ; t_openfile_settings：get&set
     static ShowSettingsDialog(guiManager) {
@@ -61,7 +62,7 @@ class SettingsDialogManager {
             this.AddDividerLine(moreGui)
         }
                 
-        ;!!! 修改：调用 CreateRegularButtons 方法
+        ; 修改：调用 CreateRegularButtonsWithGui 方法
         this.CreateRegularButtonsWithGui(moreGui, guiManager)
         
         ; 计算并设置窗口尺寸和位置
@@ -70,7 +71,7 @@ class SettingsDialogManager {
         return moreGui
     }
 
-    ;!!! 新增：根据布局创建设置按钮的方法
+    ; 新增：根据布局创建设置按钮的方法
     static CreateSettingButtonsWithLayout(moreGui, buttonLayout) {
         btnRefs := Map()
         dialogWidth := WindowConstants.MORE_GUI_WIDTH
@@ -124,7 +125,7 @@ class SettingsDialogManager {
         return btnRefs
     }
 
-    ;!!! 新增：创建按钮布局的方法
+    ; 新增：创建按钮布局的方法
     static CreateButtonLayout() {
         buttonLayout := []
         currentRow := []
@@ -158,7 +159,7 @@ class SettingsDialogManager {
         return buttonLayout
     }
 
-    ;!!! 新增：添加分割线的方法
+    ; 添加分割线的方法
     static AddDividerLine(moreGui) {
         dividerLineWidth := WindowConstants.MORE_GUI_WIDTH * WindowConstants.DIVIDER_LINE_WIDTH_PERCENT // 100
         
@@ -175,7 +176,7 @@ class SettingsDialogManager {
         moreGui.Add("Text", dividerPosition " y+" WindowConstants.DIVIDER_LINE_TOP_MARGIN " w" dividerLineWidth " 0x10")
     }
 
-    ;!!! 新增：更新 CreateRegularButtons 方法，添加 guiManager 参数
+    ; 更新 CreateRegularButtons 方法，添加 guiManager 参数
     static CreateRegularButtonsWithGui(moreGui, guiManager) {
         dialogWidth := WindowConstants.MORE_GUI_WIDTH
         normalBtnWidth := WindowConstants.BUTTON_WIDTH
@@ -234,7 +235,7 @@ class SettingsDialogManager {
         btnLoad.OnEvent("Click", (btnCtrl, info) => guiManager.HandleLoad(moreGui))
     }
     
-    ;!!! 新增：计算并定位窗口的方法
+    ; 计算并定位窗口的方法
     static CalculateAndPositionWindow(moreGui, guiManager, buttonLayoutRows) {
         estimatedHeight := WindowConstants.CalculateEmpiricalHeight(buttonLayoutRows)
 
@@ -326,7 +327,7 @@ class SettingsDialogManager {
         return baseHeight + settingsHeight + dividerHeight + buttonAreaHeight + margin
     }
 
-    ;!!! 修改：更新 BindSettingButtonEvents 方法
+    ; 更新 BindSettingButtonEvents 方法
     static BindSettingButtonEvents(btnRefs, guiManager, moreGui) {
         ; 绑定各个按钮事件
         if (btnRefs.Has("AlwaysOnTop")) {
@@ -356,12 +357,12 @@ class SettingsDialogManager {
             ))
         }
         
-        ;!!! 新增：绑定快捷键按钮事件
+        ; 绑定快捷键按钮事件
         if (btnRefs.Has("Shortcuts")) {
             btnRefs["Shortcuts"].OnEvent("Click", (*) => this.HandleShortcutsClick(guiManager, moreGui))
         }
 
-        ;!!! 新增：绑定快捷键按钮事件
+        ; 绑定快捷键按钮事件
         if (btnRefs.Has("Contact")) {
             btnRefs["Contact"].OnEvent("Click", (*) => this.HandleContactClick(guiManager, moreGui))
         }
@@ -381,16 +382,16 @@ class SettingsDialogManager {
                 return this.GetShowSuccessMsgButtonText()
             case "ResetSettings":
                 return "重置"
-            case "Shortcuts":        ;!!! 新增：快捷键按钮文本
+            case "Shortcuts":
                 return "快捷键"
-            case "Contact":          ;!!! 新增：联系按钮
+            case "Contact":
                 return "联系"
             default:
                 return btnName
         }
     }
     
-    ;>>>新增：调试方法
+    ; 调试方法
     static DebugLayoutInfo(buttonLayout, dialogWidth) {
         debugMsg := "=== 布局调试信息 ===`n"
         debugMsg .= "对话框宽度：" dialogWidth "px`n"
@@ -463,37 +464,37 @@ class SettingsDialogManager {
         MessageManager.ShowInfo(debugMsg, "布局调试")
     }
 
-    ;  新增：获取置顶按钮文本
+    ; 获取置顶按钮文本
     static GetAlwaysOnTopButtonText() {
         isOnTop := SettingsManager.GetBool("AlwaysOnTop")
         return "置顶: " . (isOnTop ? "✅" : "❌")
     }
     
-    ;  新增：获取字母排序按钮文本
+    ; 获取字母排序按钮文本
     static GetSortAlphabetButtonText() {
         isSorted := SettingsManager.GetBool("SortByAlphabet")
         return "字母排序: " . (isSorted ? "✅" : "❌")
     }
     
-    ;  新增：获取扩展名按钮文本
+    ; 获取扩展名按钮文本
     static GetShowExtensionButtonText() {
         showExt := SettingsManager.GetBool("EnableExtension")
         return "显示扩展名: " . (showExt ? "✅" : "❌")
     }
 
-    ;  新增：获取批量阈值按钮文本
+    ; 获取批量阈值按钮文本
     static GetBatchThresholdButtonText() {
         threshold := SettingsManager.GetInt("BatchThreshold")
         return "批量阈值: " . threshold
     }
     
-    ;  新增：获取成功消息按钮文本
+    ; 获取成功消息按钮文本
     static GetShowSuccessMsgButtonText() {
         showMsg := SettingsManager.GetBool("ShowSuccessMsg")
         return "成功消息: " . (showMsg ? "✅" : "❌")
     }
     
-    ;  新增：处理设置切换
+    ; 处理设置切换
     static HandleSettingToggle(settingKey, buttonCtrl, guiManager,moreGui) {
         ; 获取当前值并切换
         currentValue := SettingsManager.GetBool(settingKey)
@@ -536,7 +537,7 @@ class SettingsDialogManager {
         }
     }
 
-    ;  新增：处理批量阈值点击
+    ; 处理批量阈值点击
     static HandleBatchThresholdClick(guiManager,btnBatchThreshold,parentGui) {
         ; 创建输入对话框
         inputGui := Gui()
@@ -564,16 +565,16 @@ class SettingsDialogManager {
         inputGui.Add("Text", "w" (WindowConstants.BATCH_THRESHOLD_WIDTH), "批量操作阈值：")
         inputGui.Add("Text", "w" (WindowConstants.BATCH_THRESHOLD_WIDTH) " cGray", "选中文件数量达到此值时显示进度条")
 
-        ;!!! 修改：使用 Edit 控件作为 UpDown 的伙伴控件
+        ; 使用 Edit 控件作为 UpDown 的伙伴控件
         ; 创建 Edit 控件（用于显示和输入）
         ctlEdit := inputGui.Add("Edit", "w100 Number")
         ; 创建 UpDown 控件并绑定到 Edit
         ctlUpDown := inputGui.Add("UpDown", "Range1-1000", currentValue)
         
-        ;!!! 修改：设置 Edit 控件的内容为当前值
+        ; 设置 Edit 控件的内容为当前值
         ctlEdit.Value := currentValue
         
-        ;!!! 修改：添加 UpDown 的 Change 事件处理
+        ; UpDown 的 Change 事件处理
         ctlUpDown.OnEvent("Change", (*) => this.ValidateUpDownInput(ctlUpDown, ctlEdit))
         
         ; 添加按钮
@@ -602,7 +603,7 @@ class SettingsDialogManager {
         )
     }
     
-    ;  新增：处理批量阈值保存
+    ; 处理批量阈值保存
     static HandleBatchThresholdSave(ctlUpDown, btnBatchThreshold,inputGui,parentGui) {
         ; 直接从 UpDown 控件获取值（确保在范围内）
         value := ctlUpDown.Value
@@ -624,13 +625,13 @@ class SettingsDialogManager {
         }
     }
 
-    ;!!! 新增：处理 UpDown 控件的 Change 事件
+    ; 处理 UpDown 控件的 Change 事件
     static ValidateUpDownInput(updownCtrl, editCtrl) {
         ; 从 UpDown 获取当前值并同步到 Edit 控件
         editCtrl.Value := updownCtrl.Value
     }
     
-    ;  新增：简单的关闭处理
+    ; 简单的关闭处理
     static HandleInputGuiClose(inputGui, parentGui) {
         ; 恢复主窗口
         parentGui.Opt("-Disabled")
@@ -639,7 +640,7 @@ class SettingsDialogManager {
         inputGui.Destroy()
     }
 
-    ;  新增：处理moreGui关闭
+    ; 处理moreGui关闭
     static HandleMoreGuiClose(guiManager, moreGui) {
         ; 恢复主窗口
         guiManager.gui.Opt("-Disabled")
@@ -648,8 +649,7 @@ class SettingsDialogManager {
         moreGui.Destroy()
     }
 
-    ; 3. 最简化重置设置函数:
-    ;  新增：处理重置设置到默认值
+    ; 处理重置设置到默认值
     static HandleResetSettings(btnAlwaysOnTop, btnSortAlphabet, btnShowExtension, btnBatchThreshold, btnShowSuccessMsg, guiManager,moreGui) {
         ; 简单确认
         result := MessageManager.ShowConfirm("确定要重置所有设置到默认值吗？", "重置设置确认",,moreGui.Hwnd)
@@ -774,7 +774,7 @@ class SettingsDialogManager {
     }
 
     
-    ;!!! 新增：保存热键设置
+    ; 保存热键设置
     static SaveHotkey(hotkeyInput, hotkeyGui, parentGui) {
         newHotkey := hotkeyInput.Value
         
@@ -786,7 +786,7 @@ class SettingsDialogManager {
             ; return
         }
 
-        ;!!! 新增：获取并禁用旧热键
+        ; 获取并禁用旧热键
         oldHotkey := SettingsManager.GetValue("Shortcuts")
         if (oldHotkey != "") {
             try {
@@ -804,7 +804,7 @@ class SettingsDialogManager {
         
         ; 保存到配置文件
         if (SettingsManager.SetValue("Shortcuts", newHotkey)) {
-            ;!!! 修正：直接调用全局函数重新注册热键
+            ; 直接调用全局函数重新注册热键
             try {
                 ; 更新显示文本
                 readableHotkey := this.ConvertHotkeyToReadable(newHotkey)
@@ -827,7 +827,7 @@ class SettingsDialogManager {
         }
     }
     
-    ;!!! 新增：检查热键冲突
+    ; 检查热键冲突
     static CheckHotkeyConflict(hotkey) {
         ; 检查常见系统快捷键
         systemHotkeys := [

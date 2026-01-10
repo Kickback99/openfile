@@ -29,7 +29,7 @@ class IniTools {
             isRootSection := (StrLower(section) = "root")
             
             if (isRootSection) {
-                ; >>> 处理Root section
+                ; 处理Root section
                 ; 检查是否已有Root section（不区分大小写）
                 hasExistingRoot := false
                 existingRootSectionName := ""
@@ -52,9 +52,9 @@ class IniTools {
                 ; 构建Root section内容
                 rootContent := ""
                 if (editMode = "create" || editMode = "edit") {
-                    ; >>> 使用用户输入的大小写
+                    ; 使用用户输入的大小写
                     rootContent := "[" section . "]`r`n"
-                    ; >>> name使用与section相同的大小写
+                    ; name使用与section相同的大小写
                     rootContent .= "name=" section . "`r`n"
                     rootContent .= "path=" path . "`r`n"
                 }
@@ -76,8 +76,8 @@ class IniTools {
                 }
                 
             } else {
-                ; >>> 处理普通section
-                ; >>> 检查section是否已存在（区分大小写）
+                ; 处理普通section
+                ; 检查section是否已存在（区分大小写）
                 sectionExists := false
                 existingSectionName := ""
                 currentSection := ""
@@ -302,10 +302,10 @@ class IniTools {
         }
     }
     
-    ; +++ 新增函数：文件名校验
+    ; 文件名校验
     static ValidateFileName(filePath, expectedConfigType) {
         SplitPath(filePath, , , , &fileNameNoExt)
-        ; >>> 严格检查：文件名必须完全等于当前configType
+        ; 严格检查：文件名必须完全等于当前configType
         if (fileNameNoExt != expectedConfigType) {
             MessageManager.ShowError(
                 "请选择 " expectedConfigType ".txt 文件进行操作！`n`n"
@@ -317,7 +317,7 @@ class IniTools {
         return true
     }
 
-    ; >>> 新增：智能校验TXT文件内容格式
+    ; 智能校验TXT文件内容格式
     static ValidateTxtContent(content, skipFirstPairCheck := false, skipMsgBox := false) {
         ; 分割成行并过滤空行
         lines := StrSplit(content, "`n", "`r")
@@ -401,7 +401,7 @@ class IniTools {
         return true
     }
 
-    ; >>> 新增辅助函数：验证名称是否合法
+    ; 验证名称是否合法
     static IsValidName(name, lineNumber := 0, skipMsgBox := false) {
         ; 检查是否是合法的文件名
         ; 文件名不能包含：\ / : * ? " < > |
@@ -426,7 +426,7 @@ class IniTools {
             return false
         }
         
-        ; >>> 新增：不允许为空
+        ; 新增：不允许为空
         if (name = "") {
             if (!skipMsgBox) {
                 MessageManager.ShowError(
@@ -439,7 +439,7 @@ class IniTools {
         return true
     }
 
-    ; >>> 新增辅助函数：验证路径是否合法
+    ; 验证路径是否合法
     static  IsValidPath(path, lineNumber := 0, skipMsgBox := false) {
         ; 必须包含多个\或/（至少一个）
         backslashCount := 0
@@ -493,7 +493,7 @@ class IniTools {
             return false
         }
         
-        ; >>> 新增：不允许为空
+        ; 新增：不允许为空
         if (path = "") {
             if (!skipMsgBox) {
                 MessageManager.ShowError(

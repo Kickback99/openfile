@@ -57,11 +57,11 @@ class GuiManager {
         ; 添加一个标志，记录用户是否"刚刚"在搜索框中
         this.userWasInSearchBox := false
 
-        this.listEmptyPrompt := false  ; 新增：标记列表是否完全为空
+        this.listEmptyPrompt := false  ; 标记列表是否完全为空
 
-        ; >>> 新增：存储按钮引用，用于启用/禁用
+        ; 存储按钮引用，用于启用/禁用
         this.buttons := Map()
-        ; >>> 新增：标记是否为多选状态
+        ; 标记是否为多选状态
         this._isMultiSelect := false
 
     }
@@ -72,9 +72,9 @@ class GuiManager {
         this.gui := Gui()
         this.gui.Title := (this.configType)
 
-        ; ++++ 添加AlwaysOnTop选项确保窗口置顶 ++++
+        ; 添加AlwaysOnTop选项确保窗口置顶
         ; t_openfile_settings：alwaysOnTop
-        ;  修改：根据配置动态设置窗口置顶
+        ; 根据配置动态设置窗口置顶
         if(this.isTop){
             this.gui.Opt("+AlwaysOnTop")
         } else {
@@ -108,7 +108,7 @@ class GuiManager {
         ; 创建ListBox,作为第一个可Tab访问的控件
         this.listBox := this.gui.Add("ListBox", "w500 r15 Center Tabstop +Multi")
 
-        ; >>> 新增：监听ListBox选择变化，更新按钮状态
+        ; 监听ListBox选择变化，更新按钮状态
         this.listBox.OnEvent("Change", (*) => this.UpdateButtonStates())
         
         ; 添加文件到ListBox
@@ -132,10 +132,10 @@ class GuiManager {
         btnRefresh := this.gui.Add("Button", "x+10 w80", "刷新")
         btnLocate := this.gui.Add("Button", "x+10 w80", "定位")
         btnMore := this.gui.Add("Button", "x+10 w80", "设置")
-        ; 新增回车打开事件
+        ; 回车打开事件
         this.gui.Add("Button",  "x+10 w0 Hidden Default", "打开").OnEvent('Click', (*) => GuiEventHandlers.HandleOpenFile(this))
 
-        ; >>> 保存按钮引用
+        ; 保存按钮引用
         this.buttons["create"] := btnCreate
         this.buttons["edit"] := btnEdit
         this.buttons["delete"] := btnDelete
@@ -158,7 +158,7 @@ class GuiManager {
         this.listBox.OnEvent("Focus", (*) => GuiEventHandlers.HandleListBoxFocus(this))
         ; this.listBox.OnEvent("LoseFocus", this.HandleListBoxLoseFocus.Bind(this))
 
-        ; 修改：使用CloseGui方法关闭窗口
+        ; 使用CloseGui方法关闭窗口
         this.gui.OnEvent("Escape", (*) => this.CloseGui())  ; ESC关闭窗口
         this.gui.OnEvent("Close", (*) => this.CloseGui())   ; 窗口关闭按钮
 
@@ -171,19 +171,19 @@ class GuiManager {
 
         this.lastTopState := false
 
-        ; >>> 初始更新按钮状态
+        ; 初始更新按钮状态
         this.UpdateButtonStates()
 
         ; 使用一次性定时器启用搜索框Tabstop
         ; SetTimer(ObjBindMethod(this, "EnableSearchBoxTab"), -50)
 
-        ; ++++ 关键：设置主窗口句柄给MessageManager ++++
+        ; 设置主窗口句柄给MessageManager
         ; t_openfile_settings：alwaysOnTop
         MessageManager.SetMainWindowHwnd(this.gui.Hwnd)
     }
     
     ; t_openfile_settings：alwaysOnTop-get
-    ;  新增：刷新配置值的方法
+    ;  刷新配置值的方法
     RefreshSettings() {
         ; 重新读取所有相关配置
         this.isTop := SettingsManager.GetBool("AlwaysOnTop")
@@ -239,7 +239,7 @@ class GuiManager {
         }
     }
 
-    ; 修改：统一关闭函数
+    ; 统一关闭函数
     CloseGui() {
         ; 取消消息监听
         if (this.messageListener) {
@@ -269,7 +269,7 @@ class GuiManager {
         return this.showingPrompt
     }
 
-    ; >>> 新增：检查用户是否真正离开了搜索框
+    ; 检查用户是否真正离开了搜索框
     CheckIfUserLeftSearchBox() {
         try {
             focusedControl := ControlGetFocus(this.gui)
@@ -287,7 +287,6 @@ class GuiManager {
     }
     
     
-    ; 修改PopulateFileList方法
     PopulateFileList() {
         ; 保存原始文件列表
         this.allFileList := this.fileList
@@ -458,7 +457,7 @@ class GuiManager {
     
     ; ==================== 原有方法 ====================
     
-    ; >>> 新增：更新按钮状态的方法
+    ; 更新按钮状态的方法
     UpdateButtonStates() {
         ; 获取当前选择状态
         selectedTexts := this.listBox.Text
@@ -489,10 +488,9 @@ class GuiManager {
         }
     }
     
-    ; >>> 修改：刷新列表时重置多选状态
-    ; >>> 修改：刷新列表时重置多选状态（修复边界情况）
+    ; 刷新列表时重置多选状态
     RefreshList(*) {
-        ; >>> 保存当前选中的所有文本和索引
+        ; 保存当前选中的所有文本和索引
         oldSelectedTexts := ListBoxHelper.GetSelectedTexts(this.listBox)
         oldSelectedIndices := ListBoxHelper.GetSelectedIndices(this.listBox)
         
@@ -512,7 +510,7 @@ class GuiManager {
             this.ShowAllFile()
         }
 
-        ; >>> 检查是否显示提示信息（列表为空）
+        ; 检查是否显示提示信息（列表为空）
         if (this.showingPrompt) {
             ; 列表为空，设置搜索框焦点
             try {
@@ -526,7 +524,7 @@ class GuiManager {
                 }
             }
             
-            ; >>> 更新按钮状态
+            ; 更新按钮状态
             this.UpdateButtonStates()
             
             ; 提示刷新完成
@@ -535,7 +533,7 @@ class GuiManager {
             return
         }
 
-        ; >>> 尝试恢复之前的所有选中项（多选）
+        ; 尝试恢复之前的所有选中项（多选）
         if (oldSelectedTexts.Length > 0 && this.allFileList.Length > 0) {
             this.RestoreSelectedItems(oldSelectedTexts, oldSelectedIndices)
         } else if (this.allFileList.Length > 0) {
@@ -547,7 +545,7 @@ class GuiManager {
             }
         }
         
-        ; >>> 更新按钮状态
+        ; 更新按钮状态
         this.UpdateButtonStates()
         
         ; 提示刷新完成
@@ -555,7 +553,7 @@ class GuiManager {
         SetTimer () => ToolTip(), -1000
     }
     
-    ; >>> 新增：恢复选中项（支持多选）
+    ; 恢复选中项（支持多选）
     RestoreSelectedItems(selectedTexts, oldIndices) {
         ; 清空当前选中
         try {
@@ -627,7 +625,7 @@ class GuiManager {
         }
     }
     
-    ; >>> 新增：恢复单个选中项（智能恢复位置）
+    ; 恢复单个选中项（智能恢复位置）
     RestoreSingleItem(textToSelect, oldIndex) {
         ; 先尝试在原来的位置查找
         try {
@@ -647,16 +645,16 @@ class GuiManager {
     }
     
     ; 处理搜索框变化（简化且高效）
-   ; >>> 修改：搜索框变化时也更新按钮状态
+    ; 搜索框变化时也更新按钮状态
     HandleSearchChange(*) {
-        ; >>> 用户正在搜索框中操作，设置标记
+        ; 用户正在搜索框中操作，设置标记
         this.userWasInSearchBox := true
         searchText := Trim(this.searchBox.Value)
         
         ; 如果搜索文本为空
         if (searchText = "") {
             
-            ; !!! 直接调用 ShowAllFile 方法
+            ; 直接调用 ShowAllFile 方法
             this.ShowAllFile()
 
             ; 搜索框为空时，如果用户在搜索框中，清除选中项
@@ -667,7 +665,7 @@ class GuiManager {
                 this.listBox.Value := 1
             }
                       
-            ; >>> 更新按钮状态
+            ; 更新按钮状态
             this.UpdateButtonStates()
             return
         }
@@ -720,14 +718,18 @@ class GuiManager {
             ; 不设置选中项
         }
         
-        ; >>> 更新按钮状态
+        ; 更新按钮状态
         this.UpdateButtonStates()
     }
 
     ; ==================== 导入导出事件处理器 ====================
 
-    ; 导出配置
-    ; >>> 新增：处理导入按钮点击
+    ; 处理导出按钮点击
+    HandleExport(moreGui) {
+        this.importExportMgr.ExportConfig(moreGui,this)
+    }
+
+    ; 处理导入按钮点击
     HandleImport(moreGui) {
         if (this.importExportMgr.ImportConfig(moreGui,this)) {
             ; 导入成功后刷新列表
@@ -735,12 +737,7 @@ class GuiManager {
         }
     }
 
-    ; >>> 新增：处理导出按钮点击
-    HandleExport(moreGui) {
-        this.importExportMgr.ExportConfig(moreGui,this)
-    }
-
-    ; >>> 新增：处理追加按钮点击
+    ; 处理追加按钮点击
     HandleAppend(moreGui) {
         if (this.importExportMgr.AppendConfig(moreGui,this)) {
             ; 追加成功后刷新列表
@@ -748,7 +745,7 @@ class GuiManager {
         }
     }
     
-    ; >>> 新增：处理载入按钮点击
+    ; 处理载入按钮点击
     HandleLoad(moreGui){
         ; 内部处理刷新列表
         this.importExportMgr.HandleLoad(moreGui,this)

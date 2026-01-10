@@ -87,7 +87,7 @@ class ConfigManager {
         sortByAlphabet := SettingsManager.GetBool("SortByAlphabet")
         
         if (sortByAlphabet) {
-            ; v1模式：使用传统方式（但我们会重写GetFileList方法）
+            ; v1模式：使用传统方式
             return this.LoadConfigBasic()
         } else {
             ; v2模式：使用顺序记录方式
@@ -137,7 +137,7 @@ class ConfigManager {
     LoadConfigWithOrder() {
         configData := Map()
         ; configData["_sectionsInOrder"] := []  ; 记录section顺序
-        sectionOrder := []  ; >>> 使用简化的变量名 记录section顺序
+        sectionOrder := []  ; 使用简化的变量名 记录section顺序
         
         currentSection := ""
         
@@ -155,7 +155,7 @@ class ConfigManager {
                 if (endPos > 1) {
                     currentSection := SubStr(line, 2, endPos - 2)
                     configData[currentSection] := Map()
-                     sectionOrder.Push(currentSection)  ; >>> 记录顺序到简化变量
+                     sectionOrder.Push(currentSection)  ; 记录顺序到简化变量
                 }
                 continue
             }
@@ -171,7 +171,7 @@ class ConfigManager {
                 }
             }
         }
-        ; >>> 将顺序数组存入配置数据
+        ; 将顺序数组存入配置数据
         configData["_sectionsInOrder"] := sectionOrder
         return configData
     }
@@ -180,7 +180,7 @@ class ConfigManager {
     GetFileListSortedByPinyin() {
         fileList := []
         
-        ; >>> 收集所有文件
+        ; 收集所有文件
         for section, sectionData in this.data {
             if (section = "Root") {
                 continue
@@ -195,7 +195,7 @@ class ConfigManager {
             }
         }
         
-        ; >>> 如果文件数量大于1才需要排序
+        ; 如果文件数量大于1才需要排序
         if (fileList.Length > 1) {
             fileList := this.SimpleBubbleSort(fileList)
         }
@@ -203,7 +203,7 @@ class ConfigManager {
         return fileList
     }
     
-    ; >>> 简化版冒泡排序
+    ; 简化版冒泡排序
     SimpleBubbleSort(arr) {
         count := arr.Length
         
@@ -213,7 +213,7 @@ class ConfigManager {
                 current := A_Index
                 next := current + 1
                 
-                ; >>> 修正：Map访问应该使用中括号，不是点号
+                ; 修正：Map访问应该使用中括号，不是点号
                 name1 := arr[current]["name"]
                 name2 := arr[next]["name"]
                 
@@ -229,13 +229,13 @@ class ConfigManager {
         return arr
     }
     
-    ; >>> 简化版名称比较函数
+    ; 简化版名称比较函数
     CompareNames(name1, name2) {
-        ; >>> 转换为小写进行不区分大小写比较
+        ; 转换为小写进行不区分大小写比较
         lower1 := StrLower(name1)
         lower2 := StrLower(name2)
         
-        ; >>> 尝试获取拼音首字母进行比较
+        ; 尝试获取拼音首字母进行比较
         try {
             py1 := py.initials_muti(lower1)
             py2 := py.initials_muti(lower2)
@@ -247,7 +247,7 @@ class ConfigManager {
             }
         }
         
-        ; >>> 拼音相同或拼音库失败，比较整个名称
+        ; 拼音相同或拼音库失败，比较整个名称
         return StrCompare(lower1, lower2, "Locale")
     }
 
@@ -257,7 +257,7 @@ class ConfigManager {
         
         ; 按照文件中的顺序遍历sections
         if (this.data.Has("_sectionsInOrder")) {
-            sectionOrder := this.data["_sectionsInOrder"]  ; >>> 获取顺序数组
+            sectionOrder := this.data["_sectionsInOrder"]  ; 获取顺序数组
             for section in sectionOrder {
                 ; 跳过Root项和顺序标记本身
                 if (section = "Root") {

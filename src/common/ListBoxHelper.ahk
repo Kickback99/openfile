@@ -4,7 +4,7 @@
 ; ==============================
 class ListBoxHelper {
 
-    ; >>> 新增：获取选中的文本数组（正确处理多选模式）
+    ; 获取选中的文本数组（正确处理多选模式）
     static GetSelectedTexts(listBox) {
         try {
             textValue := listBox.Text
@@ -25,7 +25,7 @@ class ListBoxHelper {
         }
     }
     
-    ; >>> 新增：获取选中的索引数组（正确处理多选模式）
+    ; 获取选中的索引数组（正确处理多选模式）
     static GetSelectedIndices(listBox) {
         try {
             value := listBox.Value
@@ -46,7 +46,7 @@ class ListBoxHelper {
         }
     }
     
-    ; >>> 新增：获取ListBox的文本（处理单选和多选）
+    ; 获取ListBox的文本（处理单选和多选）
     static GetListBoxText(listBox) {
         try {
             textValue := listBox.Text

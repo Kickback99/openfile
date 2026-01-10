@@ -23,7 +23,7 @@ class SettingsManager {
         "Link",   "https://github.com/Kickback99/openfile" ; 字符串
     )
     
-    ; ++++ 读取所有配置到Map中 ++++
+    ; 读取所有配置到Map中
     static ReadAllConfig() {
         ; 先创建默认配置
         config := this.CreateDefaultConfig()
@@ -103,17 +103,17 @@ class SettingsManager {
         return config
     }
 
-    ; ++++ 重置所有设置为默认值 ++++
+    ; 重置所有设置为默认值
     static ResetToDefault() {
         return this.WriteConfig(this.CreateDefaultConfig())
     }
 
-    ; ++++ 获取默认值（单个键）++++
+    ; 获取默认值（单个键）
     static GetDefaultValue(key) {
        return this.DefaultConfig.Get(key, "")
     }
     
-    ; ++++ 读取单个配置值 ++++
+    ; 读取单个配置值
     static GetValue(key) {
         config := this.ReadAllConfig()
     
@@ -126,7 +126,7 @@ class SettingsManager {
         return this.DefaultConfig.Get(key, "")
     }
     
-    ; ++++ 读取布尔值配置 ++++
+    ; 读取布尔值配置
     static GetBool(key) {
             value := this.GetValue(key)
             value := StrLower(Trim(value))
@@ -134,7 +134,7 @@ class SettingsManager {
         return (value = "true" || value = "1" || value = "yes" || value = "on")
     }
     
-    ; ++++ 读取整数值配置 ++++
+    ; 读取整数值配置
     static GetInt(key) {
         value := this.GetValue(key)
 
@@ -157,7 +157,7 @@ class SettingsManager {
         }
     }
     
-    ; ++++ 写入配置值 ++++
+    ; 写入配置值
     static SetValue(key, value) {
         try {
             settingsPath := this.ConfigPath
@@ -176,7 +176,7 @@ class SettingsManager {
         }
     }
     
-    ; ++++ 写入所有配置到文件 ++++
+    ; 写入所有配置到文件
     static WriteConfig(config) {
         try {
             settingsPath := this.ConfigPath
@@ -218,7 +218,7 @@ class SettingsManager {
         }
     }
     
-    ; ++++ 检查并修复配置文件 ++++
+    ; 检查并修复配置文件
     static EnsureConfigFile() {
         try {
             settingsPath := this.ConfigPath
@@ -252,7 +252,7 @@ class SettingsManager {
         }
     }
     
-    ; ++++ 创建默认配置文件 ++++
+    ; 创建默认配置文件
     static CreateDefaultConfig() {
         config := Map()
         
@@ -267,7 +267,7 @@ class SettingsManager {
         return config
     }
     
-    ; ++++ 检查内容是否乱码 ++++
+    ; 检查内容是否乱码
     static IsCorruptedContent(content) {
         ; 检查常见的中文乱码模式
         patterns := ["锟斤拷", "艳码辣", "阁变", "禄剧码", "伴权惧琅", "歙"]
@@ -286,7 +286,7 @@ class SettingsManager {
         return false
     }
     
-    ; ++++ 获取所有配置键 ++++
+    ; 获取所有配置键
     static GetAllKeys() {
         config := this.ReadAllConfig()
         keys := []
@@ -298,13 +298,13 @@ class SettingsManager {
         return keys
     }
     
-    ; ++++ 检查配置是否存在 ++++
+    ; 检查配置是否存在
     static HasKey(key) {
         config := this.ReadAllConfig()
         return config.Has(key)
     }
     
-    ; ++++ 删除配置项 ++++
+    ; 删除配置项
     static DeleteKey(key) {
         try {
             config := this.ReadAllConfig()
