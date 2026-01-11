@@ -7,20 +7,8 @@ class WindowConstants {
     ; 调试模式开关
     static DEBUG_MODE := false
 
-    ; ==================== 搜索框焦点控制常量 ====================
-    
-    ; 搜索结果条目数的最小阈值（大于此值才考虑焦点转移）
-    static SEARCH_RESULT_MIN_THRESHOLD := 1
-    ; 搜索结果条目数的最大阈值（小于此值才考虑焦点转移）
-    static SEARCH_RESULT_MAX_THRESHOLD := 6
-    ; 防抖延迟时间（毫秒）
-    static SEARCH_DEBOUNCE_DELAY := 500
-    
-    ; 封装判断方法：检查搜索结果条目数是否在阈值范围内
-    static ShouldFocusListBox(foundCount) {
-        return (foundCount > this.SEARCH_RESULT_MIN_THRESHOLD && 
-                foundCount < this.SEARCH_RESULT_MAX_THRESHOLD)
-    }
+    ; 默认配置类型
+    static DEFAULT_CONFIG_TYPE := "openfile"
     
     ; ==================== MoreGui 窗口常量 ====================
     
@@ -100,6 +88,7 @@ class WindowConstants {
         "BatchThreshold", 
         "ShowSuccessMsg", 
         "ResetSettings",
+        "ConfigTypes",       ;!!! 新增：配置类型按钮
         "Shortcuts",
         "Contact"
     ]
@@ -112,7 +101,7 @@ class WindowConstants {
         switch btnName {
             case "AlwaysOnTop", "ResetSettings", "Contact":
                 return WindowConstants.SETTING_BUTTON_NARROW_WIDTH
-            case "Shortcuts":
+            case "ConfigTypes", "Shortcuts":      ;!!! 新增：中等宽度按钮
                 return WindowConstants.SETTING_BUTTON_MEDIUM_WIDTH
             default:
                 return WindowConstants.SETTING_BUTTON_WIDE_WIDTH
@@ -142,6 +131,34 @@ class WindowConstants {
     static BATCH_THRESHOLD_ADJUST_LEFT := 60
     static BATCH_THRESHOLD_ADJUST_TOP := 20
 
+    ; ==================== 配置类型管理对话框常量 ====================
+
+    ; 配置类型管理对话框宽度
+    static CONFIG_TYPES_GUI_WIDTH := 300
+
+    ; 配置类型管理对话框高度
+    static CONFIG_TYPES_GUI_HEIGHT := 200
+
+    ; 配置类型管理对话框水平偏移量（向左偏移）
+    static CONFIG_TYPES_ADJUST_LEFT := 75
+
+    ; 配置类型管理对话框垂直偏移量（向上偏移）
+    static CONFIG_TYPES_ADJUST_TOP := 40
+
+    ; ==================== 修改配置类型对话框常量 ====================
+
+    ; 修改配置类型对话框宽度
+    static MODIFY_CONFIG_TYPE_WIDTH := 250
+
+    ; 修改配置类型对话框高度
+    static MODIFY_CONFIG_TYPE_HEIGHT := 180
+
+    ; 修改配置类型对话框水平偏移量
+    static MODIFY_CONFIG_TYPE_ADJUST_LEFT := 65
+
+    ; 修改配置类型对话框垂直偏移量
+    static MODIFY_CONFIG_TYPE_ADJUST_TOP := 5
+
     ; ==================== HotkeyGui 窗口常量 ====================
     
     ; HotkeyGui 宽度
@@ -170,5 +187,46 @@ class WindowConstants {
         ; 简单经验公式
         return this.BASE_HEIGHT_ONE_ROW + 
                (this.EXTRA_HEIGHT_PER_ROW * (buttonLayoutRows - 1))
+    }
+
+    ;!!! 新增：获取配置类型列表（包含默认值保障）
+    static GetConfigTypesWithFallback() {
+        ; 获取所有可用的配置类型
+        configTypes := ConfigManager.GetAllConfigTypes(false)
+        
+        ; 如果获取为空，返回包含默认值的数组
+        if (configTypes.Length = 0) {
+            return [this.DEFAULT_CONFIG_TYPE]
+        }
+        
+        return configTypes
+    }
+
+    ;!!! 新增：获取默认配置类型的方法
+    static GetDefaultConfigType() {
+        ; 获取所有可用的配置类型
+        availableTypes := ConfigManager.GetAllConfigTypes(false)
+        
+        ; 如果DEFAULT_CONFIG_TYPE在可用类型中，返回它
+        if (this.HasValue(availableTypes, this.DEFAULT_CONFIG_TYPE)) {
+            return this.DEFAULT_CONFIG_TYPE
+        }
+        
+        ; 否则返回可用类型的第一项，如果没有则返回默认值
+        if (availableTypes.Length > 0) {
+            return availableTypes[1]
+        }
+        
+        return this.DEFAULT_CONFIG_TYPE
+    }
+    
+    ;!!! 新增：辅助方法 - 检查数组是否包含某个值
+    static HasValue(arr, value) {
+        for item in arr {
+            if (item = value) {
+                return true
+            }
+        }
+        return false
     }
 }

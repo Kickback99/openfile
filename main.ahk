@@ -65,12 +65,26 @@ if(WindowConstants.DEBUG_MODE){
     VerifyPinyin()
 }
 
-; 支持的配置类型数组
-global ConfigTypes := [
-    "openfile",
-    "ai",
-    "dev"
-]
+; 支持的配置类型数组（改为空数组，从ConfigManager动态获取）
+global ConfigTypes := []  ;!!! 修改：改为空数组，从ConfigManager动态获取
+
+; 初始化时加载配置类型
+InitConfigTypes() {
+    global ConfigTypes
+    
+    ; 重新获取所有配置类型
+    ConfigTypes := WindowConstants.GetConfigTypesWithFallback()
+    
+    ; 确保每个类型在settings.ini中有对应的配置段
+    for configType in ConfigTypes {
+        SettingsManager.EnsureConfigFile()
+    }
+}
+
+; 刷新配置类型列表（供外部调用）
+RefreshConfigTypes() {
+    InitConfigTypes()
+}
 
 ; !!! 新增：启动时清理配置
 ; SettingsManager.EnsureConfigFile()
@@ -298,7 +312,8 @@ ShowGuiManager(configType) {
 
 ; win+q事件
 MainHotkeyHandler(*) {
-    ShowGuiManager(ConfigTypes[1])
+    defaultType := WindowConstants.GetDefaultConfigType()
+    ShowGuiManager(defaultType)
 }
 
 !c::{
@@ -346,6 +361,9 @@ InitProgram(){
     ; 初始化托盘菜单
     InitTrayMenu()
 
+    ; 初始化配置类型
+    InitConfigTypes()
+    
     ; 初始化版本配置
     InitVersionConfig()
 

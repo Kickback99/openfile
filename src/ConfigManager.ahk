@@ -337,7 +337,7 @@ class ConfigManager {
     }
 
     ; 获取所有可用的配置类型（排除当前类型）
-    static GetAllConfigTypes(excludeType := "") {
+    static GetAllConfigTypes(excludeCurrent := true) {
         ; 获取configs目录
         configManagerPath := A_LineFile
         SplitPath(configManagerPath, , &scriptDir)
@@ -345,16 +345,84 @@ class ConfigManager {
         
         ; 查找所有.ini文件
         configTypes := []
+
+        ; 检查目录是否存在
+        if (!DirExist(configsDir)) {
+            return configTypes
+        }
+
         Loop Files, configsDir "\*.ini" {
             ; 提取文件名（不含扩展名）
             SplitPath(A_LoopFileName, , , , &nameOnly)
             
-            ; 排除当前类型
-            if (nameOnly != excludeType) {
-                configTypes.Push(nameOnly)
+            ; 如果excludeCurrent为true且当前有configType，排除它
+            if (excludeCurrent && this.HasOwnProp("configType") && nameOnly = this.configType) {
+                continue
             }
+            
+            configTypes.Push(nameOnly)
         }
         
         return configTypes
+    }
+
+    ; 新增：删除配置文件
+    static DeleteConfigFile(configType) {
+        try {
+            ; 获取configs目录路径（复用现有逻辑）
+            configManagerPath := A_LineFile
+            SplitPath(configManagerPath, , &scriptDir)
+            configsDir := scriptDir "\configs"
+            
+            ; 构建配置文件路径
+            configPath := configsDir "\" configType ".ini"
+            
+            ; 检查文件是否存在
+            if (FileExist(configPath)) {
+                FileDelete(configPath)
+                return true
+            }
+            return false
+        } catch as e {
+            throw Error("删除配置文件失败: " e.Message)
+        }
+    }
+
+    ; 新增：获取configs目录路径
+    static GetConfigsDir() {
+        configManagerPath := A_LineFile
+        SplitPath(configManagerPath, , &scriptDir)
+        return scriptDir "\configs"
+    }
+
+    ;!!! 新增：重命名配置文件
+    static RenameConfigFile(oldConfigType, newConfigType) {
+        try {
+            ; 获取configs目录路径
+            configManagerPath := A_LineFile
+            SplitPath(configManagerPath, , &scriptDir)
+            configsDir := scriptDir "\configs"
+            
+            ; 构建旧文件路径和新文件路径
+            oldPath := configsDir "\" oldConfigType ".ini"
+            newPath := configsDir "\" newConfigType ".ini"
+            
+            ; 检查旧文件是否存在
+            if (!FileExist(oldPath)) {
+                throw Error("原始配置文件不存在: " oldConfigType)
+            }
+            
+            ; 检查新文件是否已存在
+            if (FileExist(newPath)) {
+                throw Error("目标配置文件已存在: " newConfigType)
+            }
+            
+            ; 重命名文件
+            FileMove(oldPath, newPath)
+            
+            return true
+        } catch as e {
+            throw Error("重命名配置文件失败: " e.Message)
+        }
     }   
 }
