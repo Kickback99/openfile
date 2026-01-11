@@ -103,8 +103,29 @@ MainHotkeyHandler(*) {
 }
 
 !c::{
+    isGui := WinActive("ahk_class AutoHotkeyGUI")
+    
+    ; 预先声明变量
+    parentGui := ""
+    
+    if(isGui){
+        ; 获取当前激活的GUI对象
+        parentHwnd := WinGetID("A")
+        parentGui := GuiFromHwnd(parentHwnd)
+        
+        if(parentGui){
+            ; 临时为该GUI设置+OwnDialogs
+            parentGui.Opt("+OwnDialogs")
+        }
+    }
+    
     IB := InputBox('请输入内容','AHKScript','w440 h150')
-
+    
+    ; 如果设置了+OwnDialogs，恢复原状
+    if(parentGui){
+        parentGui.Opt("-OwnDialogs")
+    }
+    
     IBv := IB.value 
 
     if(IB.Result == 'Cancel'){
