@@ -291,30 +291,37 @@ class SettingsManager {
     }
 
     ; 重要：按照入口数组顺序写入配置文件
+    ;!!! 修改：WriteAllConfig 方法也需要支持动态类型
     static WriteAllConfig(allConfig) {
-        global ConfigTypes
         try {
             settingsPath := this.ConfigPath
             
             ; 构建文件内容
             content := ""
             
-            ; 1. 首先写入Default section
-            /* if (allConfig.Has("Default")) {
-                content .= this.FormatSection("Default", allConfig["Default"])
-            } */
+            ;!!! 修改：动态获取配置类型顺序
+            configTypes := WindowConstants.GetConfigTypesWithFallback()
             
-            ; 2. 按照ConfigTypes数组顺序写入其他section
-            for configType in ConfigTypes {
+            ; 1. 按照动态获取的配置类型顺序写入section
+            for configType in configTypes {
                 if (allConfig.Has(configType)) {
                     content .= this.FormatSection(configType, allConfig[configType])
                 }
             }
             
-            ; 3. 写入其他不在数组中的section（保持兼容性）
+            ; 2. 写入其他不在数组中的section（保持兼容性）
             otherSections := []
             for sectionName, config in allConfig {
-                if (sectionName != "Default" && !this.IsSupportedType(sectionName)) {
+                ; 跳过已经在configTypes中的
+                isInConfigTypes := false
+                for configType in configTypes {
+                    if (configType = sectionName) {
+                        isInConfigTypes := true
+                        break
+                    }
+                }
+                
+                if (!isInConfigTypes && !InStr(sectionName, ";")) {
                     otherSections.Push(sectionName)
                 }
             }
@@ -346,14 +353,10 @@ class SettingsManager {
     }
     
     ; 检查是否是支持的配置类型
+    ;!!! 修改：IsSupportedType 方法也要支持动态类型
     static IsSupportedType(sectionName) {
-        global ConfigTypes
-        for configType in ConfigTypes {
-            if (configType = sectionName) {
-                return true
-            }
-        }
-        return false
+        configTypes := WindowConstants.GetConfigTypesWithFallback()
+        return WindowConstants.HasValue(configTypes, sectionName)
     }
     
     ; 格式化section内容
@@ -387,11 +390,17 @@ class SettingsManager {
                 return this.WriteAllConfig(this.DefaultConfig)
             }
 
-            ; 读取现有配置文件，清理无效的配置段
+
+            ;!!! 重构：使用WindowConstants获取支持的配置类型
+            supportedTypes := WindowConstants.GetConfigTypesWithFallback()
+
+            ;!!! 修改：动态获取支持的配置类型
+            ; 注意：这里不能直接调用ConfigManager，需要特殊处理
+            ; 先读取现有配置文件
             allConfig := this.ReadAllConfig()
             shouldWrite := false
             
-            ; 检查每个配置段是否在支持的配置类型中
+            ; 检查现有配置文件中的每个section
             sectionsToRemove := []
             for sectionName, _ in allConfig {
                 ; 跳过注释和空行
@@ -399,8 +408,10 @@ class SettingsManager {
                     continue
                 }
                 
+                isSupported := WindowConstants.HasValue(supportedTypes, sectionName)
+                
                 ; 如果不是支持的配置类型且不是注释段，标记为需要删除
-                if (!this.IsSupportedType(sectionName) && !InStr(sectionName, ";")) {
+                if (!isSupported && !InStr(sectionName, ";")) {
                     sectionsToRemove.Push(sectionName)
                 }
             }
@@ -411,7 +422,16 @@ class SettingsManager {
                 shouldWrite := true
             }
             
-            ; 如果删除了配置段，重新写入配置文件
+            ; 确保所有支持的配置类型都有对应的section
+            for configType in supportedTypes {
+                if (!allConfig.Has(configType)) {
+                    ; 创建默认配置
+                    allConfig[configType] := this.GetDefaultForSection(configType)
+                    shouldWrite := true
+                }
+            }
+            
+            ; 如果修改了配置，重新写入配置文件
             if (shouldWrite) {
                 return this.WriteAllConfig(allConfig)
             }
@@ -489,6 +509,36 @@ class SettingsManager {
             
         } catch {
             return false
+        }
+    }
+
+    ;!!! 新增：重命名配置段
+    static RenameConfigSection(oldSectionName, newSectionName) {
+        try {
+            settingsPath := this.ConfigPath
+            
+            ; 读取现有所有配置
+            allConfig := this.ReadAllConfig()
+            
+            ; 检查旧配置段是否存在
+            if (!allConfig.Has(oldSectionName)) {
+                throw Error("原始配置段不存在: " oldSectionName)
+            }
+            
+            ; 检查新配置段是否已存在
+            if (allConfig.Has(newSectionName)) {
+                throw Error("目标配置段已存在: " newSectionName)
+            }
+            
+            ; 移动配置数据
+            allConfig[newSectionName] := allConfig[oldSectionName]
+            allConfig.Delete(oldSectionName)
+            
+            ; 重新写入整个文件
+            return this.WriteAllConfig(allConfig)
+            
+        } catch as e {
+            throw Error("重命名配置段失败: " e.Message)
         }
     }
 }
