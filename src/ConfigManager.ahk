@@ -417,11 +417,45 @@ class ConfigManager {
                 throw Error("目标配置文件已存在: " newConfigType)
             }
             
-            ; 重命名文件
-            FileMove(oldPath, newPath)
+            ;!!! 读取原始文件（UTF-8编码）
+            fileContent := FileRead(oldPath, "UTF-8")
+            
+            ;!!! 替换路径中的文件名部分
+            ; 方法1：简单替换（处理大多数情况）
+            oldFileName := oldConfigType ".ini"
+            newFileName := newConfigType ".ini"
+            updatedContent := StrReplace(fileContent, oldFileName, newFileName)
+            
+            ;!!! 方法2：如果简单替换没生效，使用正则表达式
+            /* if (updatedContent = fileContent) {
+                ; 匹配格式：path=[任意字符]oldConfigType.ini
+                pattern := "path=.*\K\Q" . oldConfigType . "\E\.ini"
+                updatedContent := RegExReplace(fileContent, pattern, newFileName)
+            } */
+            
+            ; 再次检查是否真的需要替换
+            /* if (updatedContent = fileContent) {
+                ; 可能格式不同，尝试更通用的替换
+                oldFullPath := configsDir "\" oldFileName
+                newFullPath := configsDir "\" newFileName
+                updatedContent := StrReplace(fileContent, oldFullPath, newFullPath)
+            } */
+            
+            ;!!! 写入新文件（UTF-8编码）
+            FileAppend(updatedContent, newPath, "UTF-8")
+            
+            ;!!! 删除旧文件（操作已完成，可以安全删除）
+            FileDelete(oldPath)
             
             return true
+            
         } catch as e {
+            ; 错误处理
+            try {
+                if (FileExist(newPath)) {
+                    FileDelete(newPath)
+                }
+            }
             throw Error("重命名配置文件失败: " e.Message)
         }
     }   
