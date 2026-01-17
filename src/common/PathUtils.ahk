@@ -58,7 +58,17 @@ class PathUtils {
     
     ; 静态方法：定位根目录
     static LocateRootPath(rootPath) {
-        if (rootPath != "" && DirExist(rootPath)) {
+        if (rootPath = "") {
+            return false
+        }
+        
+        ; 如果是文件，使用LocateFile方法
+        if (FileExist(rootPath)) {
+            return this.LocateFile(rootPath)  ; 这会用explorer /select打开文件
+        }
+        
+        ; 如果是目录，打开目录
+        if (DirExist(rootPath)) {
             try {
                 Run('explorer.exe "' rootPath '"')
                 return true
@@ -66,6 +76,7 @@ class PathUtils {
                 return false
             }
         }
+        
         return false
     }
     
