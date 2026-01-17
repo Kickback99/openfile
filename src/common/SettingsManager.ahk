@@ -14,6 +14,11 @@ class SettingsManager {
     ; 配置段名称
     static SectionName := "General"
 
+    ;!!! 新增：配置管理相关常量
+    static DEFAULT_CONFIG_TYPE := "openfile"
+    static CONFIG_MANAGER_SECTION := "Global"
+    static ACTIVE_CONFIG_KEY := "ActiveConfig"
+
     ; 配置键的顺序（保持原有顺序）
     static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg"]
 
@@ -79,6 +84,65 @@ class SettingsManager {
             return this.DefaultConfig[sectionName]
         } else {
             return this.DefaultConfig["Default"]
+        }
+    }
+
+    ;!!! 重构：检查数组是否包含某个值
+    static HasValue(arr, value) {
+        for item in arr {
+            if (item = value) {
+                return true
+            }
+        }
+        return false
+    }
+
+    ;!!! 新增：创建默认settings.ini文件
+    static CreateDefaultSettingsFile() {
+        try {
+            settingsPath := this.ConfigPath
+            SplitPath(settingsPath, , &configDir)
+            
+            if (!DirExist(configDir)) {
+                DirCreate(configDir)
+            }
+            
+            ; 获取所有配置类型
+            configTypes := ConfigManager.GetAllConfigTypes(false)
+            
+            ; 构建文件内容
+            content := "[" . this.CONFIG_MANAGER_SECTION . "]`r`n"
+            content .= this.ACTIVE_CONFIG_KEY . "=" . (configTypes.Length > 0 ? configTypes[1] : this.DEFAULT_CONFIG_TYPE) . "`r`n"
+            content .= "`r`n"
+            
+            ; 为每个配置类型添加默认配置
+            if (configTypes.Length = 0) {
+                configTypes := [this.DEFAULT_CONFIG_TYPE]
+            }
+            
+            for configType in configTypes {
+                ; 使用现有DefaultConfig作为模板
+                defaultConfig := this.DefaultConfig["Default"].Clone()
+                content .= "[" . configType . "]`r`n"
+                
+                ; 写入所有配置键
+                for key in this.ConfigOrder {
+                    if (defaultConfig.Has(key)) {
+                        content .= key . "=" . defaultConfig[key] . "`r`n"
+                    }
+                }
+                
+                content .= "`r`n"
+            }
+            
+            ; 写入文件
+            file := FileOpen(settingsPath, "w", "UTF-8-RAW")
+            file.Write(content)
+            file.Close()
+            return true
+            
+        } catch {
+            return false
         }
     }
 
@@ -341,6 +405,7 @@ class SettingsManager {
 
     ; 重要：按照入口数组顺序写入配置文件
     ;!!! 修改：WriteAllConfig 方法也需要支持动态类型
+    ;!!! 重构：WriteAllConfig方法（简化版，避免递归）
     static WriteAllConfig(allConfig) {
         try {
             settingsPath := this.GetConfigPath()
@@ -348,43 +413,51 @@ class SettingsManager {
             ; 构建文件内容
             content := ""
             
-            ;!!! 修改：动态获取配置类型顺序
-            configTypes := WindowConstants.GetConfigTypesWithFallback()
+            ; 1. 首先写入Global section（放在最顶部）
+            if (allConfig.Has(this.CONFIG_MANAGER_SECTION)) {
+                configManagerSection := allConfig[this.CONFIG_MANAGER_SECTION]
+                content .= "[" . this.CONFIG_MANAGER_SECTION . "]`r`n"
+                if (configManagerSection.Has(this.ACTIVE_CONFIG_KEY)) {
+                    content .= this.ACTIVE_CONFIG_KEY . "=" . configManagerSection[this.ACTIVE_CONFIG_KEY] . "`r`n"
+                } else {
+                    ; 如果没有ActiveConfig，使用第一个配置类型
+                    configTypes := ConfigManager.GetAllConfigTypes(false)
+                    content .= this.ACTIVE_CONFIG_KEY . "=" . (configTypes.Length > 0 ? configTypes[1] : this.DEFAULT_CONFIG_TYPE) . "`r`n"
+                }
+                content .= "`r`n"
+            }
             
-            ; 1. 按照动态获取的配置类型顺序写入section
+            ; 2. 写入其他section（复用原有逻辑）
+            ; 获取所有配置类型
+            configTypes := ConfigManager.GetAllConfigTypes(false)
+            
+            ; 先写入支持的配置类型
             for configType in configTypes {
-                if (allConfig.Has(configType)) {
+                if (allConfig.Has(configType) && configType != this.CONFIG_MANAGER_SECTION) {
                     content .= this.FormatSection(configType, allConfig[configType])
                 }
             }
             
-            ; 2. 写入其他不在数组中的section（保持兼容性）
+            ; 写入其他section
             otherSections := []
             for sectionName, config in allConfig {
-                ; 跳过已经在configTypes中的
-                isInConfigTypes := false
-                for configType in configTypes {
-                    if (configType = sectionName) {
-                        isInConfigTypes := true
-                        break
-                    }
-                }
-                
-                if (!isInConfigTypes && !InStr(sectionName, ";")) {
+                if (sectionName != this.CONFIG_MANAGER_SECTION && 
+                    !this.HasValue(configTypes, sectionName) && 
+                    !InStr(sectionName, ";")) {
                     otherSections.Push(sectionName)
                 }
             }
             
             if (otherSections.Length > 0) {
-                Sort(otherSections)  ; 按字母排序
+                Sort(otherSections)
                 for sectionName in otherSections {
                     content .= this.FormatSection(sectionName, allConfig[sectionName])
                 }
             }
-
-            content := Trim(content, "`r`n") . "`r`n"  ; 移除末尾多余的空行
             
-            ; 确保目录存在并写入文件
+            content := Trim(content, "`r`n") . "`r`n"
+            
+            ; 写入文件
             SplitPath(settingsPath, , &configDir)
             if (!DirExist(configDir)) {
                 DirCreate(configDir)
@@ -393,7 +466,6 @@ class SettingsManager {
             file := FileOpen(settingsPath, "w", "UTF-8-RAW")
             file.Write(content)
             file.Close()
-            
             return true
             
         } catch {
@@ -404,8 +476,8 @@ class SettingsManager {
     ; 检查是否是支持的配置类型
     ;!!! 修改：IsSupportedType 方法也要支持动态类型
     static IsSupportedType(sectionName) {
-        configTypes := WindowConstants.GetConfigTypesWithFallback()
-        return WindowConstants.HasValue(configTypes, sectionName)
+        configTypes := ConfigManager.GetAllConfigTypes(false)
+        return this.HasValue(configTypes, sectionName)
     }
     
     ; 格式化section内容
@@ -428,59 +500,148 @@ class SettingsManager {
         return content
     }
 
-    
-    ; 检查并修复配置文件
-    static EnsureConfigFile() {
+    static EnsureConfigManagerSection() {
         try {
             settingsPath := this.GetConfigPath()
             
+            ; 如果文件不存在，调用 CreateDefaultSettingsFile
             if (!FileExist(settingsPath)) {
-                ; 创建默认配置文件
-                return this.WriteAllConfig(this.DefaultConfig)
+                return this.CreateDefaultSettingsFile()
             }
+            
+            ; 快速检查文件是否包含 Global
+            ; 使用更简单的方式，不读取整个文件到内存
+            file := FileOpen(settingsPath, "r", "UTF-8-RAW")
+            hasConfigManager := false
+            
+            ; 只读取前几行检查
+            Loop 10 {
+                if (file.AtEOF) {
+                    break
+                }
+                line := Trim(file.ReadLine())
+                if (line = "[" . this.CONFIG_MANAGER_SECTION . "]") {
+                    hasConfigManager := true
+                    break
+                }
+            }
+            file.Close()
+            
+            ; 如果已经包含 ConfigManager，直接返回
+            if (hasConfigManager) {
+                return true
+            }
+            
+            ; 文件存在但不包含 ConfigManager，读取整个文件
+            content := FileRead(settingsPath, "UTF-8")
+            if (content = "") {
+                content := FileRead(settingsPath, "CP0")
+            }
+            
+            ; 获取配置类型
+            configTypes := []
+            try {
+                configTypes := ConfigManager.GetAllConfigTypes(false)
+            } catch {
+                ; 忽略错误
+            }
+            
+            activeConfig := this.DEFAULT_CONFIG_TYPE
+            if (configTypes.Length > 0) {
+                activeConfig := configTypes[1]
+            }
+            
+            ; 在前面添加 Global section
+            newContent := "[" . this.CONFIG_MANAGER_SECTION . "]`r`n"
+            newContent .= this.ACTIVE_CONFIG_KEY . "=" . activeConfig . "`r`n"
+            newContent .= "`r`n"
+            newContent .= content
+            
+            ; 写入文件
+            SplitPath(settingsPath, , &configDir)
+            if (!DirExist(configDir)) {
+                DirCreate(configDir)
+            }
+            
+            file := FileOpen(settingsPath, "w", "UTF-8-RAW")
+            file.Write(newContent)
+            file.Close()
+            return true
+            
+        } catch {
+            return false
+        }
+    }
 
-
-            ;!!! 重构：使用WindowConstants获取支持的配置类型
-            supportedTypes := WindowConstants.GetConfigTypesWithFallback()
-
-            ;!!! 修改：动态获取支持的配置类型
-            ; 注意：这里不能直接调用ConfigManager，需要特殊处理
-            ; 先读取现有配置文件
+    
+    ; 检查并修复配置文件
+    ;!!! 重构：EnsureConfigFile方法（简化版，避免递归）
+    static EnsureConfigFile() {
+        try {
+            ; 1. 首先确保 Global section 存在
+            if (!this.EnsureConfigManagerSection()) {
+                return false
+            }
+            
+            ; 2. 获取实际存在的配置类型
+            existingTypes := []
+            try {
+                existingTypes := ConfigManager.GetAllConfigTypes(false)
+            } catch {
+                ; 如果获取失败，直接返回
+                return true
+            }
+            
+            ; 3. 使用现有方法读取配置
             allConfig := this.ReadAllConfig()
             shouldWrite := false
             
-            ; 检查现有配置文件中的每个section
+            ; 4. 清理无效的配置段
             sectionsToRemove := []
-            for sectionName, _ in allConfig {
-                ; 跳过注释和空行
-                if (sectionName = "" || InStr(sectionName, ";")) {
+            for sectionName, config in allConfig {
+                ; 跳过 Global 和注释
+                if (sectionName = this.CONFIG_MANAGER_SECTION || 
+                    sectionName = "" || InStr(sectionName, ";")) {
                     continue
                 }
                 
-                isSupported := WindowConstants.HasValue(supportedTypes, sectionName)
-                
-                ; 如果不是支持的配置类型且不是注释段，标记为需要删除
-                if (!isSupported && !InStr(sectionName, ";")) {
+                ; 如果配置类型不存在于实际配置文件中，标记为需要删除
+                if (!this.HasValue(existingTypes, sectionName)) {
                     sectionsToRemove.Push(sectionName)
                 }
             }
             
-            ; 删除无效的配置段
+            ; 执行清理
             for sectionName in sectionsToRemove {
                 allConfig.Delete(sectionName)
                 shouldWrite := true
             }
             
-            ; 确保所有支持的配置类型都有对应的section
-            for configType in supportedTypes {
+            ; 5. 添加缺失的配置段
+            for configType in existingTypes {
                 if (!allConfig.Has(configType)) {
-                    ; 创建默认配置
                     allConfig[configType] := this.GetDefaultForSection(configType)
                     shouldWrite := true
                 }
             }
             
-            ; 如果修改了配置，重新写入配置文件
+            ; 6. 如果 Global 中没有 ActiveConfig，设置一个
+            if (allConfig.Has(this.CONFIG_MANAGER_SECTION)) {
+                configManagerSection := allConfig[this.CONFIG_MANAGER_SECTION]
+                if (!configManagerSection.Has(this.ACTIVE_CONFIG_KEY) || 
+                    configManagerSection[this.ACTIVE_CONFIG_KEY] = "") {
+                    
+                    ; 使用第一个配置类型作为激活配置
+                    if (existingTypes.Length > 0) {
+                        configManagerSection[this.ACTIVE_CONFIG_KEY] := existingTypes[1]
+                    } else {
+                        configManagerSection[this.ACTIVE_CONFIG_KEY] := this.DEFAULT_CONFIG_TYPE
+                    }
+                    shouldWrite := true
+                }
+            }
+            
+            ; 7. 如果有修改，写入配置
             if (shouldWrite) {
                 return this.WriteAllConfig(allConfig)
             }
@@ -490,6 +651,41 @@ class SettingsManager {
         } catch {
             return false
         }
+    }
+
+    ;!!! 重构：获取激活的配置类型
+    static GetActiveConfig() {
+        ; 确保ConfigManager section存在
+        this.EnsureConfigManagerSection()
+        
+        ; 读取ActiveConfig值
+        activeConfig := this.GetValue(this.ACTIVE_CONFIG_KEY, this.CONFIG_MANAGER_SECTION)
+
+        ; 获取所有配置类型
+        configTypes := ConfigManager.GetAllConfigTypes(false)
+        
+        ; 验证配置类型是否有效
+        if (activeConfig != "" && this.HasValue(configTypes, activeConfig)) {
+            return activeConfig
+        }
+        
+        ; 如果无效，使用第一个可用配置类型
+        if (configTypes.Length > 0) {
+            return configTypes[1]
+        }
+        
+        return this.DEFAULT_CONFIG_TYPE
+    }
+
+    ;!!! 新增：设置激活的配置类型
+    static SetActiveConfig(configType) {
+        ; 验证配置类型是否有效
+        configTypes := ConfigManager.GetAllConfigTypes(false)
+        if (!this.HasValue(configTypes, configType)) {
+            return false
+        }
+        
+        return this.SetValue(this.ACTIVE_CONFIG_KEY, configType, this.CONFIG_MANAGER_SECTION)
     }
 
     ; 获取指定section的所有配置键
