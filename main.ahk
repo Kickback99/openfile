@@ -11,13 +11,16 @@ global ConfigTypes := []  ;!!! 修改：改为空数组，从ConfigManager动态
 InitConfigTypes() {
     global ConfigTypes
     
-    ; 重新获取所有配置类型
-    ConfigTypes := WindowConstants.GetConfigTypesWithFallback()
+    ;!!! 修改：直接从ConfigManager获取配置类型
+    ConfigTypes := ConfigManager.GetAllConfigTypes(false)
     
-    ; 确保每个类型在settings.ini中有对应的配置段
-    for configType in ConfigTypes {
-        SettingsManager.EnsureConfigFile()
+    ; 如果获取为空，使用默认值
+    if (ConfigTypes.Length = 0) {
+        ConfigTypes := [SettingsManager.DEFAULT_CONFIG_TYPE]
     }
+    
+    ; 确保ConfigManager section存在
+    SettingsManager.EnsureConfigFile()
 }
 
 ; 刷新配置类型列表（供外部调用）
@@ -117,7 +120,8 @@ ShowGuiManager(configType) {
 
 ; win+q事件
 MainHotkeyHandler(*) {
-    defaultType := WindowConstants.GetDefaultConfigType()
+    ;!!! 修改：从SettingsManager获取激活的配置类型
+    defaultType := SettingsManager.GetActiveConfig()
     ShowGuiManager(defaultType)
 }
 

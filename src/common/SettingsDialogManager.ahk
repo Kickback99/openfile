@@ -713,7 +713,7 @@ class SettingsDialogManager {
         
         ; 设置边距
         configTypesGui.MarginX := 20
-        configTypesGui.MarginY := 15
+        configTypesGui.MarginY := 10
 
         ; 计算可用宽度（减去边距）
         contentWidth := WindowConstants.CONFIG_TYPES_GUI_WIDTH
@@ -743,11 +743,13 @@ class SettingsDialogManager {
         btnAdd := configTypesGui.Add("Button", "w80", "新增")
         btnModify := configTypesGui.Add("Button", "x+10 w80", "修改")
         btnDelete := configTypesGui.Add("Button", "x+10 w80", "删除")
+        btnActivate := configTypesGui.Add("Button", "x+10 w80", "激活")
         
         ; 事件处理函数
         btnAdd.OnEvent("Click", (*) => this.HandleAddConfigType(configTypesGui, inputBox, comboBox, guiManager))
         btnModify.OnEvent("Click", (*) => this.HandleModifyConfigType(configTypesGui, comboBox, moreGui,guiManager)) 
         btnDelete.OnEvent("Click", (*) => this.HandleDeleteConfigType(configTypesGui, comboBox, guiManager))
+        btnActivate.OnEvent("Click", (*) => this.HandleActivateConfigType(configTypesGui, comboBox, guiManager))
         configTypesGui.OnEvent("Close", (*) => this.HandleConfigTypesGuiClose(configTypesGui, moreGui))
         configTypesGui.OnEvent("Escape", (*) => this.HandleConfigTypesGuiClose(configTypesGui, moreGui))
         
@@ -1038,6 +1040,44 @@ class SettingsDialogManager {
             
         } catch as e {
             MessageManager.ShowError("删除配置类型失败: " e.Message, , , configTypesGui.Hwnd)
+        }
+    }
+
+    ;!!! 新增：处理激活配置类型
+    static HandleActivateConfigType(configTypesGui, comboBox, guiManager) {
+        selectedType := Trim(comboBox.Text)
+        
+        if (selectedType = "") {
+            MessageManager.ShowWarning("请选择要激活的配置类型", , , configTypesGui.Hwnd)
+            return
+        }
+        
+        ; 获取当前激活的配置
+        /* currentActive := SettingsManager.GetActiveConfig()
+        
+        ; 如果已经是激活配置，提示用户
+        if (selectedType = currentActive) {
+            MessageManager.ShowInfo(
+                "配置类型 '" selectedType "' 已经是激活配置",
+                "提示",
+                , 
+                configTypesGui.Hwnd
+            )
+            return
+        } */
+        
+        ; 设置激活配置
+        if (SettingsManager.SetActiveConfig(selectedType)) {
+            ; 弹出成功消息，提示重启生效
+            MessageManager.ShowInfo(
+                "已将 '" selectedType "' 设置为激活配置`n`n" 
+                "重启软件后生效",
+                "激活成功",
+                , 
+                configTypesGui.Hwnd
+            )
+        } else {
+            MessageManager.ShowError("设置激活配置失败", , , configTypesGui.Hwnd)
         }
     }
 

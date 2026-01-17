@@ -6,9 +6,6 @@ class WindowConstants {
 
     ; 调试模式开关
     static DEBUG_MODE := false
-
-    ; 默认配置类型
-    static DEFAULT_CONFIG_TYPE := "openfile"
     
     ; ==================== MoreGui 窗口常量 ====================
     
@@ -140,10 +137,10 @@ class WindowConstants {
     static CONFIG_TYPES_GUI_HEIGHT := 200
 
     ; 配置类型管理对话框水平偏移量（向左偏移）
-    static CONFIG_TYPES_ADJUST_LEFT := 75
+    static CONFIG_TYPES_ADJUST_LEFT := 105
 
     ; 配置类型管理对话框垂直偏移量（向上偏移）
-    static CONFIG_TYPES_ADJUST_TOP := 40
+    static CONFIG_TYPES_ADJUST_TOP := 25
 
     ; ==================== 修改配置类型对话框常量 ====================
 
@@ -187,46 +184,5 @@ class WindowConstants {
         ; 简单经验公式
         return this.BASE_HEIGHT_ONE_ROW + 
                (this.EXTRA_HEIGHT_PER_ROW * (buttonLayoutRows - 1))
-    }
-
-    ;!!! 新增：获取配置类型列表（包含默认值保障）
-    static GetConfigTypesWithFallback() {
-        ; 获取所有可用的配置类型
-        configTypes := ConfigManager.GetAllConfigTypes(false)
-        
-        ; 如果获取为空，返回包含默认值的数组
-        if (configTypes.Length = 0) {
-            return [this.DEFAULT_CONFIG_TYPE]
-        }
-        
-        return configTypes
-    }
-
-    ;!!! 新增：获取默认配置类型的方法
-    static GetDefaultConfigType() {
-        ; 获取所有可用的配置类型
-        availableTypes := ConfigManager.GetAllConfigTypes(false)
-        
-        ; 如果DEFAULT_CONFIG_TYPE在可用类型中，返回它
-        if (this.HasValue(availableTypes, this.DEFAULT_CONFIG_TYPE)) {
-            return this.DEFAULT_CONFIG_TYPE
-        }
-        
-        ; 否则返回可用类型的第一项，如果没有则返回默认值
-        if (availableTypes.Length > 0) {
-            return availableTypes[1]
-        }
-        
-        return this.DEFAULT_CONFIG_TYPE
-    }
-    
-    ;!!! 新增：辅助方法 - 检查数组是否包含某个值
-    static HasValue(arr, value) {
-        for item in arr {
-            if (item = value) {
-                return true
-            }
-        }
-        return false
     }
 }
