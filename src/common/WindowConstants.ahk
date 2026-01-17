@@ -57,7 +57,7 @@ class WindowConstants {
     ; 按钮总数（MoreGui）
     static MORE_GUI_BUTTON_COUNT := 4
 
-    ;>>>新增：导入导出追加取消水平偏移量（用于微调居中位置）
+    ; 导入导出追加取消水平偏移量（用于微调居中位置）
     static MORE_GUI_BUTTON_HORIZONTAL_OFFSET := -3
     
     ; 按钮总数（EditGui - 保存和取消）
@@ -69,12 +69,12 @@ class WindowConstants {
     static SETTING_BUTTON_NARROW_WIDTH := 80
 
     ; 设置按钮中等宽度（配置类型、快捷键）
-    static SETTING_BUTTON_MEDIUM_WIDTH := 90  ;!!! 新增：中等宽度按钮
+    static SETTING_BUTTON_MEDIUM_WIDTH := 90
     
     ; 设置按钮宽宽度（字母排序、显示扩展名、批量阈值、成功消息）
     static SETTING_BUTTON_WIDE_WIDTH := 110
 
-    ;>>>新增：设置按钮水平偏移量（用于微调居中位置）
+    ; 设置按钮水平偏移量（用于微调居中位置）
     static SETTING_BUTTON_HORIZONTAL_OFFSET := 10
 
     ; 设置按钮顺序
@@ -85,17 +85,14 @@ class WindowConstants {
         "BatchThreshold", 
         "ShowSuccessMsg", 
         "ResetSettings",
-        "Shortcuts",         ;!!! 新增：快捷键按钮
-        "Contact"            ;!!! 新增：联系按钮
+        "Shortcuts",
+        "Contact"
     ]
-
-    ;>>>已移除：不再需要固定第一行按钮数量
-    ; static SETTING_BUTTON_FIRST_ROW_COUNT := 4
     
-    ;>>>新增：最大允许的按钮行宽度（留出边距）
+    ; 最大允许的按钮行宽度（留出边距）
     static SETTING_MAX_ROW_WIDTH := this.MORE_GUI_WIDTH - 20  ; 减去边距
     
-    ;>>>新增：获取按钮宽度的辅助方法
+    ; 获取按钮宽度的辅助方法
     static GetButtonWidth(btnName) {
         switch btnName {
             case "AlwaysOnTop", "ResetSettings", "Contact":
@@ -153,7 +150,7 @@ class WindowConstants {
     ; 每增加一行设置按钮增加的高度
     static EXTRA_HEIGHT_PER_ROW := 32
     
-    ;>>>新增：基于经验的高度计算
+    ; 基于经验的高度计算
     static CalculateEmpiricalHeight(buttonLayoutRows) {
         ; 简单经验公式
         return this.BASE_HEIGHT_ONE_ROW + 

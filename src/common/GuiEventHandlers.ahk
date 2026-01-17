@@ -103,7 +103,7 @@ class GuiEventHandlers {
         guiManager.editMode := "edit"
         guiManager.currentEditSection := file["section"]
 
-        ; >>> 保存要编辑的文件名称，用于编辑后重新选中
+        ; 保存要编辑的文件名称，用于编辑后重新选中
         guiManager.fileToSelectAfterEdit := file["name"]
         
         guiManager.ShowEditDialogGui(file["name"], file["path"])
@@ -146,7 +146,7 @@ class GuiEventHandlers {
         }
     }
 
-    ; >>> 修改：处理批量删除（同时处理单选和多选的数据类型）
+    ; 处理批量删除（同时处理单选和多选的数据类型）
     static HandleMultipleDelete(guiManager, selectedTexts) {
         ; 确认删除
         response := MessageManager.ShowError("确定要删除选中的 " selectedTexts.Length " 个文件吗？", "确认删除", "YesNo")
@@ -163,10 +163,10 @@ class GuiEventHandlers {
             }
         }
         
-        ; >>> 在删除前获取关键信息
+        ; 在删除前获取关键信息
         totalItems := guiManager.allFileList.Length  ; 删除前的总项目数
         
-        ; >>> 边界情况：如果要删除所有项目
+        ; 边界情况：如果要删除所有项目
         if (sectionsToDelete.Length >= totalItems) {
             ; 确认是否删除所有项目
             ; confirmResponse := MsgBox("确定要删除所有文件吗？这将清空整个列表。", "确认删除所有", 0x24)
@@ -197,10 +197,10 @@ class GuiEventHandlers {
             return  ; 不需要尝试选择任何项
         }
         
-        ; >>> 正常情况：不是删除所有项目
+        ; 正常情况：不是删除所有项目
         selectedIndices := ListBoxHelper.GetSelectedIndices(guiManager.listBox)  ; 选中的索引
         
-        ; >>> 智能查找删除后应该选中的项（改进版）
+        ; 智能查找删除后应该选中的项（改进版）
         nextItemText := ""
         
         if (selectedIndices.Length > 0) {
@@ -210,10 +210,10 @@ class GuiEventHandlers {
             ; 获取最大的索引（排序后的最后一个）
             maxIndex := sortedIndices[sortedIndices.Length]
             
-            ; >>> 判断是否包含最后一项
+            ; 判断是否包含最后一项
             containsLastItem := (maxIndex == totalItems)
             
-            ; >>> 改进的智能选择逻辑（添加边界检查）
+            ; 改进的智能选择逻辑（添加边界检查）
             try {
                 if (containsLastItem) {
                     ; 如果包含最后一项，向上找
@@ -277,7 +277,7 @@ class GuiEventHandlers {
         }
     }
     
-    ; >>> 修改：处理单个删除
+    ; 处理单个删除
     static HandleSingleDelete(guiManager, selectedText) {
         if (!guiManager.fileMap.Has(selectedText)) {
             MessageManager.ShowError("未找到选中的文件信息","提示")
@@ -292,7 +292,7 @@ class GuiEventHandlers {
             return
         }
 
-        ; >>> 获取选中索引（正确处理多选和单选的数据类型）
+        ; 获取选中索引（正确处理多选和单选的数据类型）
         selectedIndices := ListBoxHelper.GetSelectedIndices(guiManager.listBox)
         selectedIndex := 0
         
@@ -302,13 +302,13 @@ class GuiEventHandlers {
             }
         }
         
-        ; >>> 先获取总项目数
+        ; 先获取总项目数
         totalItems := guiManager.allFileList.Length
         if (totalItems == 0) {
             return
         }
         
-        ; >>> 边界情况：如果只有一个项目
+        ; 边界情况：如果只有一个项目
         if (totalItems == 1) {
             ; 从INI文件中删除
             if (!IniTools.DeleteFromIniFile(guiManager, file["section"])) {
@@ -335,7 +335,7 @@ class GuiEventHandlers {
         ; 刷新列表
         guiManager.RefreshList()
 
-        ; >>> 删除后尝试选中合适的项（添加边界检查）
+        ; 删除后尝试选中合适的项（添加边界检查）
         if (guiManager.allFileList.Length > 0) {  ; 确保删除后还有项目
             if (isLastItem) {
                 ; 删除的是最后一个项目，选择上一个（倒数第二个）
@@ -372,7 +372,6 @@ class GuiEventHandlers {
         this.ShowToolTip(guiManager, "删除成功！", 1500)
     }
 
-
     ; 简单的冒泡排序实现
     static SimpleBubbleSort(arr) {
         
@@ -406,7 +405,7 @@ class GuiEventHandlers {
             return
         }
         
-        ; >>> 简化逻辑：直接遍历查找
+        ; 简化逻辑：直接遍历查找
         ; 从第1项开始查找
         index := 1
         found := false
@@ -446,14 +445,14 @@ class GuiEventHandlers {
     
     ; 刷新按钮点击事件处理（特别注意userWasInSearchBox处理）
     static HandleRefreshClick(guiManager) {
-            ; >>> 保存刷新前的状态
+            ; 保存刷新前的状态
             searchBoxWasEmpty  := guiManager.searchBox.Value
             wasInSearchBox  := guiManager.userWasInSearchBox
             
-            ; >>> 执行刷新
+            ; 执行刷新
             guiManager.RefreshList()
             
-            ; >>> 关键逻辑：如果应该跳过自动选中，确保不选中
+            ; 关键逻辑：如果应该跳过自动选中，确保不选中
             if (wasInSearchBox && searchBoxWasEmpty = '') {
                 guiManager.listBox.Value := 0
                 
@@ -464,7 +463,7 @@ class GuiEventHandlers {
                     MessageManager.ShowError("ControlFocus失败: " e.Message)
                 }
             } else {
-                ; >>> 只有条件不满足时才清除标记
+                ; 只有条件不满足时才清除标记
                 guiManager.userWasInSearchBox := false
             }
         }
@@ -473,7 +472,7 @@ class GuiEventHandlers {
     
     ; 定位按钮点击事件处理
     static HandleLocateClick(guiManager) {
-        ; >>> 修改：按钮已被禁用时不会执行到这里，所以直接处理单选
+        ; 修改：按钮已被禁用时不会执行到这里，所以直接处理单选
         ; 获取选中的文本
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
@@ -502,7 +501,6 @@ class GuiEventHandlers {
         SettingsDialogManager.ShowSettingsDialog(guiManager)
     }
 
-    
     ; ==================== 打开文件事件处理 ====================
     
     ; 打开文件事件处理（支持多选，保持原有选中状态）
@@ -537,7 +535,7 @@ class GuiEventHandlers {
             file := guiManager.fileMap[text]
             path := file["path"]
             
-            ; >>> 使用PathUtils工具类
+            ; 使用PathUtils工具类
             result := PathUtils.RunProgram(path)
             if (result = true) {
                 openedCount++
@@ -555,7 +553,7 @@ class GuiEventHandlers {
             }
         }
         
-        ; >>> 重要：多选时不修改任何选中状态
+        ; 重要：多选时不修改任何选中状态
         
         ; 如果有失败的情况，显示错误信息
         if (failedCount > 0) {
@@ -595,7 +593,7 @@ class GuiEventHandlers {
         file := guiManager.fileMap[selectedText]
         path := file["path"]
         
-        ; >>> 使用PathUtils工具类
+        ; 使用PathUtils工具类
         result := PathUtils.RunProgram(path)
         if (result !== true) {
             MessageManager.ShowError(result) ; 显示错误信息
@@ -607,7 +605,7 @@ class GuiEventHandlers {
         
         ; ==================== 打开文件后的业务 ====================
         if (guiManager.searchBox.Value != "") {
-            ; >>> 情况1：搜索框有值，清空并设置焦点
+            ; 情况1：搜索框有值，清空并设置焦点
             guiManager.searchBox.Value := ""
             guiManager.ShowAllFile()
             guiManager.listBox.Value := 0
@@ -623,14 +621,13 @@ class GuiEventHandlers {
                 }
             }
         } else {
-            ; >>> 情况2：搜索框没值，保持选中刚才打开的项
+            ; 情况2：搜索框没值，保持选中刚才打开的项
             this.SelectItemByText(guiManager, file["name"])
         }
     }
     ; ==================== 搜索框事件处理 ====================
     
     ; 搜索框获得焦点事件处理
-    
     static HandleSearchBoxFocus(guiManager) {
         guiManager.searchBoxHasFocus := true
         guiManager.userWasInSearchBox := true
@@ -645,7 +642,7 @@ class GuiEventHandlers {
     static HandleSearchBoxLoseFocus(guiManager) {
         guiManager.searchBoxHasFocus := false
 
-        ; >>> 延迟检查用户是否离开了搜索框
+        ; 延迟检查用户是否离开了搜索框
         SetTimer(() => guiManager.CheckIfUserLeftSearchBox(), -100)
     }
     
@@ -666,7 +663,7 @@ class GuiEventHandlers {
     
     ; 保存文件按钮点击事件处理
     static HandleSaveClick(editGui, guiManager, name, path, section, chkBatchAdd := "") {
-        ; >>> 保存旧的选择信息
+        ; 保存旧的选择信息
         oldSelectedText := ""
         isEditingMode := (guiManager.editMode = "edit")
         if (isEditingMode && ListBoxHelper.GetListBoxText(guiManager.listBox) != "") {
@@ -689,7 +686,7 @@ class GuiEventHandlers {
             return
         }
 
-        ; >>> 使用统一的名称和路径校验
+        ; 使用统一的名称和路径校验
         if (!IniTools.IsValidName(name, 0, true)) {
             MessageManager.ShowError(
                 "文件名称包含非法字符！`n`n"
@@ -770,7 +767,7 @@ class GuiEventHandlers {
         } else if (guiManager.editMode = "create") {
             ; ************** 创建模式检查逻辑 **************
             
-            ; >>> 修改：创建模式允许Root，但要检查唯一性
+            ; 修改：创建模式允许Root，但要检查唯一性
             if (StrLower(section) = "root") {
                 ; 检查Root是否已存在
                 for displayName, file in guiManager.fileMap {
@@ -829,7 +826,7 @@ class GuiEventHandlers {
             ; editGui.Destroy()
             this.HandleEditGuiClose(guiManager,editGui)
             
-            ; >>> 刷新列表并根据模式选择相应的项
+            ; 刷新列表并根据模式选择相应的项
             if (guiManager.editMode = "edit") {
                 ; 编辑模式：重新选中编辑的项（或新名称）
                 this.RefreshAndSelect(guiManager,name)
@@ -845,7 +842,7 @@ class GuiEventHandlers {
             ; 将焦点设置到名称输入框，方便继续输入
             editGui.ctlName.Focus()
             
-            ; >>> 刷新列表并选中新增的项
+            ; 刷新列表并选中新增的项
             this.RefreshAndSelect(guiManager,name)
         }
     }
@@ -944,7 +941,7 @@ class GuiEventHandlers {
     
     ; 浏览文件按钮点击事件处理
     static HandleBrowseClick(pathControl,editGui,isTop) {
-        ; >>> 使用PathUtils工具类
+        ; 使用PathUtils工具类
         selectedFile := PathUtils.BrowseForExecutable(pathControl.Value,editGui,isTop)
         if (selectedFile != "" && editGui) {
             ; 使用统一的方法更新文件路径和名称
@@ -1028,7 +1025,7 @@ class GuiEventHandlers {
         guiManager.itemToSelectAfterRefresh := ""
     }
     
-    ; >>> 修改：根据文本选择列表项（处理单选和多选的数据类型）
+    ; 修改：根据文本选择列表项（处理单选和多选的数据类型）
     static SelectItemByText(guiManager, textToSelect) {
         if (textToSelect = "" || guiManager.showingPrompt) {
             return
@@ -1067,7 +1064,6 @@ class GuiEventHandlers {
             }
         }
     }
-
     
     ; 显示工具提示的方法
     static ShowToolTip(guiManager, message, duration := 1500) {

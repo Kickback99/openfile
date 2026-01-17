@@ -21,12 +21,12 @@ class MessageManager {
     static MainWindowHwnd := 0
     
     ; t_openfile_settings：showSuccessMsg-get-multi
-    ; ++++ 设置主窗口句柄（在GuiManager初始化时调用） ++++
+    ; 设置主窗口句柄（在GuiManager初始化时调用）
     static SetMainWindowHwnd(hwnd) {
         this.MainWindowHwnd := hwnd
     }
     
-    ; ++++ 智能获取所有者窗口句柄 ++++
+    ; 智能获取所有者窗口句柄
     static GetOwnerHwnd(ownerHwnd := 0) {
 
         ;检查AlwaysOnTop配置
@@ -49,7 +49,7 @@ class MessageManager {
         return 0
     }
     
-    ; ++++ 显示消息框（智能选择所有者窗口-带图标标识和置顶处理） ++++
+    ; 显示消息框（智能选择所有者窗口-带图标标识和置顶处理）
     static ShowMessageBox(message, title := "", options := "", icon := 0, ownerHwnd := 0) {
         ; 获取智能判断的所有者窗口
         actualOwner := this.GetOwnerHwnd(ownerHwnd)
@@ -125,7 +125,7 @@ class MessageManager {
         return result
     }
     
-    ; ++++ 显示成功消息（智能选择所有者窗口-受配置控制） ++++
+    ; 显示成功消息（智能选择所有者窗口-受配置控制）
     static ShowSuccess(message, title := "", options := "OK", ownerHwnd := 0) {
         ; 检查是否显示成功消息
         if (!SettingsManager.GetBool("ShowSuccessMsg")) {
@@ -136,43 +136,43 @@ class MessageManager {
         return this.ShowMessageBoxInternal(message, title, options, this.ICON_ASTERISK, ownerHwnd)
     }
     
-    ; ++++ 显示错误消息（智能选择所有者窗口-始终显示） ++++
+    ; 显示错误消息（智能选择所有者窗口-始终显示）
     static ShowError(message, title := "", options := "OK", ownerHwnd := 0) {
         ; 错误消息始终显示（带停止图标，智能选择所有者）
         return this.ShowMessageBoxInternal(message, title, options, this.ICON_STOP, ownerHwnd)
     }
     
-    ; ++++ 显示确认消息（智能选择所有者窗口-始终显示） ++++
+    ; 显示确认消息（智能选择所有者窗口-始终显示）
     static ShowConfirm(message, title := "", options := "YesNo", ownerHwnd := 0) {
         ; 确认消息始终显示（带问号图标，智能选择所有者）
         return this.ShowMessageBoxInternal(message, title, options, this.ICON_QUESTION, ownerHwnd)
     }
     
-    ; ++++ 显示警告消息（智能选择所有者窗口-始终显示） ++++
+    ; 显示警告消息（智能选择所有者窗口-始终显示）
     static ShowWarning(message, title := "", options := "OK", ownerHwnd := 0) {
         ; 警告消息始终显示（带惊叹号图标，智能选择所有者）
         return this.ShowMessageBoxInternal(message, title, options, this.ICON_EXCLAMATION, ownerHwnd)
     }
     
-    ; ++++ 显示信息消息（智能选择所有者窗口-受配置控制） ++++
+    ; 显示信息消息（智能选择所有者窗口-受配置控制）
     static ShowInfo(message, title := "", options := "OK", ownerHwnd := 0) {
         ; 信息消息受配置控制
         return this.ShowSuccess(message, title, options, ownerHwnd)
     }
     
-    ; ++++ 延迟显示成功消息（智能选择所有者窗口-受配置控制） ++++
+    ; 延迟显示成功消息（智能选择所有者窗口-受配置控制）
     static ShowSuccessDelayed(message, delay := 100, ownerHwnd := 0) {
         if (SettingsManager.GetBool("ShowSuccessMsg")) {
             SetTimer(() => this.ShowMessageBoxInternal(message, , "OK", this.ICON_ASTERISK, ownerHwnd), -delay)
         }
     }
     
-    ; ++++ 延迟显示信息消息（智能选择所有者窗口-受配置控制） ++++
+    ; 延迟显示信息消息（智能选择所有者窗口-受配置控制）
     static ShowInfoDelayed(message, delay := 100, ownerHwnd := 0) {
         this.ShowSuccessDelayed(message, delay, ownerHwnd)
     }
 
-    ; ++++ 内部方法：智能选择所有者的消息框（备选方法） ++++
+    ; 内部方法：智能选择所有者的消息框（备选方法）
     ; 注意：此方法使用智能所有者判断，不处理置顶/取消置顶逻辑
     ; 主要用于内部调用，或需要精确控制选项的场景
     static ShowMessageBoxInternal(message, title := "", options := "", icon := 0, ownerHwnd := 0) {
@@ -193,7 +193,7 @@ class MessageManager {
         return result
     }
     
-    ; ++++ 构建选项字符串（合并按钮和图标选项） ++++
+    ; 构建选项字符串（合并按钮和图标选项）
     static BuildOptions(buttonOptions := "", icon := 0) {
         ; 如果已经包含图标选项，直接返回
         if (InStr(buttonOptions, "Icon")) {
@@ -217,7 +217,7 @@ class MessageManager {
         return (buttonOptions != "" ? buttonOptions . " " : "") . iconOption
     }
     
-    ; ++++ 检查是否为确认消息 ++++
+    ; 检查是否为确认消息
     static IsConfirmMessage(options) {
         ; 检查选项是否包含确认按钮
         confirmKeywords := ["YesNo", "Y/N", "YN", "OKCancel", "O/C", "OC", "AbortRetryIgnore", "A/R/I", "ARI", "YesNoCancel", "Y/N/C", "YNC", "RetryCancel", "R/C", "RC", "CancelTryAgainContinue", "C/T/C", "CTC"]
@@ -230,7 +230,7 @@ class MessageManager {
         return false
     }
     
-    ; ++++ 检查是否为成功消息 ++++
+    ; 检查是否为成功消息
     static IsSuccessMessage(message) {
         successKeywords := ["成功", "完成", "导出成功", "导入成功", "追加成功", "保存成功", "添加成功", "覆盖成功", "添加", "保存", "导出", "导入", "追加", "已添加", "已保存"]
         
@@ -242,7 +242,7 @@ class MessageManager {
         return false
     }
     
-    ; ++++ 检查是否为错误消息 ++++
+    ; 检查是否为错误消息
     static IsErrorMessage(message) {
         errorKeywords := ["错误", "失败", "出错", "异常", "无效", "不存在", "无法", "不能", "未找到", "不支持", "失败", "出错", "错误"]
         
@@ -254,7 +254,7 @@ class MessageManager {
         return false
     }
     
-    ; ++++ 检查是否为警告消息 ++++
+    ; 检查是否为警告消息
     static IsWarningMessage(message) {
         warningKeywords := ["警告", "注意", "提示", "确认", "是否", "覆盖", "删除", "危险", "谨慎", "小心"]
         
@@ -266,7 +266,7 @@ class MessageManager {
         return false
     }
     
-    ; ++++ 智能显示消息（自动判断类型和图标） ++++
+    ; 智能显示消息（自动判断类型和图标）
     static ShowSmartMessage(message, title := "", options := "") {
         ; 智能判断消息类型并显示对应图标
         if (this.IsConfirmMessage(options)) {
@@ -287,13 +287,13 @@ class MessageManager {
         }
     }
     
-    ; ++++ 自定义图标消息框 ++++
+    ; 自定义图标消息框
     static ShowCustom(message, title := "", options := "", icon := 0) {
         ; 完全自定义的消息框
         return this.ShowMessageBoxInternal(message, title, options, icon)
     }
     
-    ; ++++ 显示带超时的消息框 ++++
+    ; 显示带超时的消息框
     static ShowWithTimeout(message, title := "", options := "", timeout := 5) {
         ; 添加超时选项
         timeoutOption := " T" . timeout
