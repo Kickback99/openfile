@@ -395,7 +395,7 @@ class ConfigManager {
         return scriptDir "\configs"
     }
 
-    ;!!! 新增：重命名配置文件
+    ; 新增：重命名配置文件
     static RenameConfigFile(oldConfigType, newConfigType) {
         try {
             ; 获取configs目录路径
