@@ -9,7 +9,7 @@ class SettingsManager {
     ; 配置段名称
     static SectionName := "General"
 
-    ;!!! 新增：配置管理相关常量
+    ; 新增：配置管理相关常量
     static DEFAULT_CONFIG_TYPE := "openfile"
     static CONFIG_MANAGER_SECTION := "Global"
     static ACTIVE_CONFIG_KEY := "ActiveConfig"
@@ -38,7 +38,7 @@ class SettingsManager {
         }
     }
 
-    ;!!! 重构：检查数组是否包含某个值
+    ; 重构：检查数组是否包含某个值
     static HasValue(arr, value) {
         for item in arr {
             if (item = value) {
@@ -48,7 +48,7 @@ class SettingsManager {
         return false
     }
 
-    ;!!! 新增：创建默认settings.ini文件
+    ; 新增：创建默认settings.ini文件
     static CreateDefaultSettingsFile() {
         try {
             settingsPath := this.ConfigPath
@@ -355,8 +355,8 @@ class SettingsManager {
     }
 
     ; 重要：按照入口数组顺序写入配置文件
-    ;!!! 修改：WriteAllConfig 方法也需要支持动态类型
-    ;!!! 重构：WriteAllConfig方法（简化版，避免递归）
+    ; 修改：WriteAllConfig 方法也需要支持动态类型
+    ; 重构：WriteAllConfig方法（简化版，避免递归）
     static WriteAllConfig(allConfig) {
         try {
             settingsPath := this.ConfigPath
@@ -425,7 +425,7 @@ class SettingsManager {
     }
     
     ; 检查是否是支持的配置类型
-    ;!!! 修改：IsSupportedType 方法也要支持动态类型
+    ; 修改：IsSupportedType 方法也要支持动态类型
     static IsSupportedType(sectionName) {
         configTypes := ConfigManager.GetAllConfigTypes(false)
         return this.HasValue(configTypes, sectionName)
@@ -490,16 +490,20 @@ class SettingsManager {
             }
             
             ; 获取配置类型
-            configTypes := []
+            existingTypes := []
             try {
-                configTypes := ConfigManager.GetAllConfigTypes(false)
+                existingTypes := ConfigManager.GetAllConfigTypes(false)
             } catch {
                 ; 忽略错误
             }
             
-            activeConfig := this.DEFAULT_CONFIG_TYPE
-            if (configTypes.Length > 0) {
-                activeConfig := configTypes[1]
+            ; 修复：根据三种情况设置 ActiveConfig
+            if (existingTypes.Length > 0) {
+                ; 情况1和2：使用第一个配置类型
+                activeConfig := existingTypes[1]
+            } else {
+                ; 情况3：使用默认配置类型
+                activeConfig := this.DEFAULT_CONFIG_TYPE
             }
             
             ; 在前面添加 Global section
@@ -526,7 +530,7 @@ class SettingsManager {
 
     
     ; 检查并修复配置文件
-    ;!!! 重构：EnsureConfigFile方法（简化版，避免递归）
+    ; 重构：EnsureConfigFile方法（简化版，避免递归）
     static EnsureConfigFile() {
         try {
             ; 1. 首先确保 Global section 存在
@@ -577,19 +581,28 @@ class SettingsManager {
             }
             
             ; 6. 如果 Global 中没有 ActiveConfig，设置一个
+            ; 新增：验证并修复 ActiveConfig 的逻辑
             if (allConfig.Has(this.CONFIG_MANAGER_SECTION)) {
                 configManagerSection := allConfig[this.CONFIG_MANAGER_SECTION]
-                if (!configManagerSection.Has(this.ACTIVE_CONFIG_KEY) || 
-                    configManagerSection[this.ACTIVE_CONFIG_KEY] = "") {
-                    
-                    ; 使用第一个配置类型作为激活配置
+                
+                ; 获取当前的 ActiveConfig
+                currentActiveConfig := configManagerSection.Has(this.ACTIVE_CONFIG_KEY) 
+                    ? configManagerSection[this.ACTIVE_CONFIG_KEY] 
+                    : ""
+                
+                ; 检查 ActiveConfig 是否有效
+                if (currentActiveConfig = "" || !this.HasValue(existingTypes, currentActiveConfig)) {
+                    ; 情况1和3：如果 ActiveConfig 无效或不存在
                     if (existingTypes.Length > 0) {
+                        ; 情况1：使用第一个配置类型
                         configManagerSection[this.ACTIVE_CONFIG_KEY] := existingTypes[1]
                     } else {
+                        ; 情况3：使用默认配置类型
                         configManagerSection[this.ACTIVE_CONFIG_KEY] := this.DEFAULT_CONFIG_TYPE
                     }
                     shouldWrite := true
                 }
+                ; 情况2：如果 ActiveConfig 有效，不做任何修改
             }
             
             ; 7. 如果有修改，写入配置
@@ -604,7 +617,7 @@ class SettingsManager {
         }
     }
 
-    ;!!! 重构：获取激活的配置类型
+    ; 重构：获取激活的配置类型
     static GetActiveConfig() {
         ; 确保ConfigManager section存在
         this.EnsureConfigManagerSection()
@@ -628,7 +641,7 @@ class SettingsManager {
         return this.DEFAULT_CONFIG_TYPE
     }
 
-    ;!!! 新增：设置激活的配置类型
+    ; 新增：设置激活的配置类型
     static SetActiveConfig(configType) {
         ; 验证配置类型是否有效
         configTypes := ConfigManager.GetAllConfigTypes(false)
@@ -708,7 +721,7 @@ class SettingsManager {
         }
     }
 
-    ;!!! 新增：重命名配置段
+    ; 新增：重命名配置段
     static RenameConfigSection(oldSectionName, newSectionName) {
         try {
             settingsPath := this.ConfigPath

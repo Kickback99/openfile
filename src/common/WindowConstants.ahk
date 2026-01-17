@@ -98,7 +98,7 @@ class WindowConstants {
         switch btnName {
             case "AlwaysOnTop", "ResetSettings", "Contact":
                 return WindowConstants.SETTING_BUTTON_NARROW_WIDTH
-            case "ConfigTypes", "Shortcuts":      ;!!! 新增：中等宽度按钮
+            case "ConfigTypes", "Shortcuts":
                 return WindowConstants.SETTING_BUTTON_MEDIUM_WIDTH
             default:
                 return WindowConstants.SETTING_BUTTON_WIDE_WIDTH
@@ -141,20 +141,6 @@ class WindowConstants {
 
     ; 配置类型管理对话框垂直偏移量（向上偏移）
     static CONFIG_TYPES_ADJUST_TOP := 25
-
-    ; ==================== 修改配置类型对话框常量 ====================
-
-    ; 修改配置类型对话框宽度
-    static MODIFY_CONFIG_TYPE_WIDTH := 250
-
-    ; 修改配置类型对话框高度
-    static MODIFY_CONFIG_TYPE_HEIGHT := 180
-
-    ; 修改配置类型对话框水平偏移量
-    static MODIFY_CONFIG_TYPE_ADJUST_LEFT := 65
-
-    ; 修改配置类型对话框垂直偏移量
-    static MODIFY_CONFIG_TYPE_ADJUST_TOP := 5
 
     ; ==================== HotkeyGui 窗口常量 ====================
     

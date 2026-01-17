@@ -5,13 +5,13 @@
 #Include "src\common\SettingsManager.ahk"
 
 ; 支持的配置类型数组（改为空数组，从ConfigManager动态获取）
-global ConfigTypes := []  ;!!! 修改：改为空数组，从ConfigManager动态获取
+global ConfigTypes := []  ; 修改：改为空数组，从ConfigManager动态获取
 
 ; 初始化时加载配置类型
 InitConfigTypes() {
     global ConfigTypes
     
-    ;!!! 修改：直接从ConfigManager获取配置类型
+    ; 修改：直接从ConfigManager获取配置类型
     ConfigTypes := ConfigManager.GetAllConfigTypes(false)
     
     ; 如果获取为空，使用默认值
@@ -120,7 +120,7 @@ ShowGuiManager(configType) {
 
 ; win+q事件
 MainHotkeyHandler(*) {
-    ;!!! 修改：从SettingsManager获取激活的配置类型
+    ; 修改：从SettingsManager获取激活的配置类型
     defaultType := SettingsManager.GetActiveConfig()
     ShowGuiManager(defaultType)
 }

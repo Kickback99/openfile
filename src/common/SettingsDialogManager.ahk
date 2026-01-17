@@ -357,7 +357,7 @@ class SettingsDialogManager {
             ))
         }
 
-        ;!!! 新增：绑定配置类型按钮事件
+        ; 新增：绑定配置类型按钮事件
         if (btnRefs.Has("ConfigTypes")) {
             btnRefs["ConfigTypes"].OnEvent("Click", (*) => this.HandleConfigTypesClick(guiManager, moreGui))
         }
@@ -387,7 +387,7 @@ class SettingsDialogManager {
                 return this.GetShowSuccessMsgButtonText(guiManager)
             case "ResetSettings":
                 return "重置"
-            case "ConfigTypes":      ;!!! 新增：配置类型按钮文本
+            case "ConfigTypes":      ; 新增：配置类型按钮文本
             return "配置类型"
             case "Shortcuts":
                 return "快捷键"
@@ -686,7 +686,7 @@ class SettingsDialogManager {
         }
     }
 
-    ;!!! 新增：处理配置类型按钮点击
+    ; 新增：处理配置类型按钮点击
     static HandleConfigTypesClick(guiManager, moreGui) {
         ; 创建配置类型管理对话框
         configTypesGui := Gui()
@@ -729,14 +729,14 @@ class SettingsDialogManager {
         configTypesGui.Add("Text", "w" contentWidth, "可用的配置类型:")
         comboBox := configTypesGui.Add("ComboBox", "w" contentWidth, allConfigTypes)
 
-        ;!!! 新增：自动选中当前配置类型
+        ; 新增：自动选中当前配置类型
         currentConfigType := guiManager.configType
         if (this.HasValue(allConfigTypes, currentConfigType)) {
             comboBox.Text := currentConfigType
         }
         
         ; 创建输入框用于新增
-        configTypesGui.Add("Text", "w" contentWidth " y+10", "新增配置类型:")
+        configTypesGui.Add("Text", "w" contentWidth " y+10", "新增/修改配置类型:")
         inputBox := configTypesGui.Add("Edit", "w" contentWidth, "")
         
         ; 创建按钮
@@ -747,7 +747,7 @@ class SettingsDialogManager {
         
         ; 事件处理函数
         btnAdd.OnEvent("Click", (*) => this.HandleAddConfigType(configTypesGui, inputBox, comboBox, guiManager))
-        btnModify.OnEvent("Click", (*) => this.HandleModifyConfigType(configTypesGui, comboBox, moreGui,guiManager)) 
+        btnModify.OnEvent("Click", (*) => this.HandleModifyConfigType(configTypesGui, inputBox, comboBox, guiManager)) 
         btnDelete.OnEvent("Click", (*) => this.HandleDeleteConfigType(configTypesGui, comboBox, guiManager))
         btnActivate.OnEvent("Click", (*) => this.HandleActivateConfigType(configTypesGui, comboBox, guiManager))
         configTypesGui.OnEvent("Close", (*) => this.HandleConfigTypesGuiClose(configTypesGui, moreGui))
@@ -764,7 +764,7 @@ class SettingsDialogManager {
         )
     }
 
-    ;!!! 新增：处理新增配置类型
+    ; 新增：处理新增配置类型
     static HandleAddConfigType(configTypesGui, inputBox, comboBox, guiManager) {
         newType := Trim(inputBox.Value)
         
@@ -789,7 +789,7 @@ class SettingsDialogManager {
         ; 创建对应的INI文件
         try {
 
-            ;!!! 修改：直接创建ConfigManager实例来自动创建配置文件
+            ; 修改：直接创建ConfigManager实例来自动创建配置文件
             configMgr := ConfigManager(newType)  ; 这会自动创建配置文件和目录
 
             ; 在settings.ini中添加对应的配置段
@@ -815,8 +815,8 @@ class SettingsDialogManager {
 
     }
 
-    ;!!! 新增：处理修改配置类型
-    static HandleModifyConfigType(configTypesGui, comboBox, parentGui,guiManager) {
+    ; 新增：处理修改配置类型
+    static HandleModifyConfigType(configTypesGui, inputBox, comboBox,guiManager) {
         selectedType := Trim(comboBox.Text)
         
         if (selectedType = "") {
@@ -824,97 +824,28 @@ class SettingsDialogManager {
             return
         }
 
-        ;!!! 新增：检查是否是当前类型，如果是则不允许修改
+        ; 新增：检查是否是当前类型，如果是则不允许修改
         if (selectedType = guiManager.configType) {
             MessageManager.ShowWarning("不能修改当前正在使用的配置类型", , , configTypesGui.Hwnd)
             return
         }
-        
-        ; 创建修改对话框
-        modifyGui := Gui()
-        modifyGui.Title := "修改配置类型"
 
-        ; 设置Owner关系
-        modifyGui.Opt("+Owner" configTypesGui.Hwnd)
-
-        ; 根据配置决定是否置顶
-        if (SettingsManager.GetBool("AlwaysOnTop", guiManager.configType)) {
-            modifyGui.Opt("+AlwaysOnTop")
-        }
-        
-        ; 禁用父窗口
-        configTypesGui.Opt("+Disabled")
-        
-        ; 移除最小化按钮
-        try {
-            WinSetStyle("-0x00020000", modifyGui.Hwnd)
-        }
-        
-        ; 设置字体和边距
-        modifyGui.SetFont("s9", "JetBrains Mono")
-        modifyGui.MarginX := 20
-        modifyGui.MarginY := 15
-
-        modifyWitch := WindowConstants.MODIFY_CONFIG_TYPE_WIDTH
-        
-        ; 添加标题
-        ; modifyGui.Add("Text", "w260 Center", "修改配置类型")
-        ; modifyGui.Add("Text", "w260 Center cGray", "当前类型: " selectedType)
-        
-        ; 添加编辑框（回显当前选择的文本）
-        modifyGui.Add("Text", "w" modifyWitch " y+10", "新类型名称:")
-        editBox := modifyGui.Add("Edit", "w" modifyWitch, selectedType)
-        
-        ; 添加按钮
-        btnSave := modifyGui.Add("Button", "w80", "保存")
-        btnCancel := modifyGui.Add("Button", "x+10 w80", "取消")
-        
-        ; 保存按钮事件
-        btnSave.OnEvent("Click", (*) => this.HandleSaveModify(
-            modifyGui, 
-            editBox, 
-            selectedType, 
-            comboBox,
-            configTypesGui,
-            parentGui
-        ))
-        
-        ; 取消/关闭事件
-        btnCancel.OnEvent("Click", (*) => this.HandleModifyGuiClose(modifyGui,configTypesGui))
-        modifyGui.OnEvent("Close", (*) => this.HandleModifyGuiClose(modifyGui,configTypesGui))
-        modifyGui.OnEvent("Escape", (*) => this.HandleModifyGuiClose(modifyGui,configTypesGui))
-        
-        ; 居中显示（使用EditGui的常量）
-        WindowPositionUtils.CenterChildWindowWithConstants(
-            configTypesGui.Hwnd,
-            modifyGui,
-            WindowConstants.MODIFY_CONFIG_TYPE_WIDTH,
-            WindowConstants.MODIFY_CONFIG_TYPE_HEIGHT,
-            WindowConstants.MODIFY_CONFIG_TYPE_ADJUST_LEFT,
-            WindowConstants.MODIFY_CONFIG_TYPE_ADJUST_TOP
-        )
-    }
-
-    ;!!! 新增：处理保存修改
-    static HandleSaveModify(modifyGui, editBox, oldType, comboBox, configTypesGui, parentGui) {
-        newType := Trim(editBox.Value)
+        newType := Trim(inputBox.Value)
         
         ; 检查是否为空
         if (newType = "") {
-            MessageManager.ShowWarning("新类型名称不能为空", , , modifyGui.Hwnd)
+            MessageManager.ShowWarning("新类型名称不能为空", , , configTypesGui.Hwnd)
             return
         }
         
         ; 检查是否与原名相同
-        if (newType = oldType) {
-            modifyGui.Destroy()
-            configTypesGui.Opt("-Disabled")
+        if (newType = selectedType) {
             return
         }
         
         ; 校验名称是否有效
         if (!SettingsDialogManager.IsValidConfigTypeName(newType)) {
-            MessageManager.ShowWarning("配置类型名称只能包含字母、数字和下划线", , , modifyGui.Hwnd)
+            MessageManager.ShowWarning("配置类型名称只能包含字母、数字和下划线", , , configTypesGui.Hwnd)
             return
         }
         
@@ -924,7 +855,7 @@ class SettingsDialogManager {
         ; 检查新名称是否已存在（排除自身）
         for type in allTypes {
             if (type = newType) {
-                MessageManager.ShowWarning("配置类型 '" newType "' 已存在", , , modifyGui.Hwnd)
+                MessageManager.ShowWarning("配置类型 '" newType "' 已存在", , , configTypesGui.Hwnd)
                 return
             }
         }
@@ -932,10 +863,10 @@ class SettingsDialogManager {
         ; 执行修改
         try {
             ; 1. 重命名配置文件
-            ConfigManager.RenameConfigFile(oldType, newType)
+            ConfigManager.RenameConfigFile(selectedType, newType)
             
             ; 2. 重命名settings.ini中的配置段
-            SettingsManager.RenameConfigSection(oldType, newType)
+            SettingsManager.RenameConfigSection(selectedType, newType)
             
             ; 3. 更新下拉列表框
             newTypes := ConfigManager.GetAllConfigTypes(false)
@@ -947,19 +878,18 @@ class SettingsDialogManager {
             try {
                 RefreshConfigTypes()
             }
+
+            ; 5. 清空输入框
+            inputBox.Value := ""
             
-            ; 5. 关闭修改对话框并恢复主对话框
-            modifyGui.Destroy()
-            configTypesGui.Opt("-Disabled")
-            
-            MessageManager.ShowSuccessDelayed("配置类型修改成功: " oldType " -> " newType, ,configTypesGui.Hwnd)
+            MessageManager.ShowSuccessDelayed("配置类型修改成功: " selectedType " -> " newType, ,configTypesGui.Hwnd)
             
         } catch as e {
-            MessageManager.ShowError("修改配置类型失败: " e.Message, , , modifyGui.Hwnd)
+            MessageManager.ShowError("修改配置类型失败: " e.Message, , , configTypesGui.Hwnd)
         }
     }
 
-    ;!!! 新增：处理删除配置类型
+    ; 新增：处理删除配置类型
     static HandleDeleteConfigType(configTypesGui, comboBox, guiManager) {
         selectedType := Trim(comboBox.Text)
         
@@ -1043,7 +973,7 @@ class SettingsDialogManager {
         }
     }
 
-    ;!!! 新增：处理激活配置类型
+    ; 新增：处理激活配置类型
     static HandleActivateConfigType(configTypesGui, comboBox, guiManager) {
         selectedType := Trim(comboBox.Text)
         
@@ -1081,7 +1011,7 @@ class SettingsDialogManager {
         }
     }
 
-    ;!!! 新增：关闭配置类型管理对话框
+    ; 新增：关闭配置类型管理对话框
     static HandleConfigTypesGuiClose(configTypesGui, parentGui) {
         ; 恢复父窗口
         parentGui.Opt("-Disabled")
@@ -1090,18 +1020,7 @@ class SettingsDialogManager {
         configTypesGui.Destroy()
     }
     
-
-    ;!!! 新增：关闭修改配置对话框
-    static HandleModifyGuiClose(modifyGui, parentGui) {
-        ; 恢复父窗口
-        parentGui.Opt("-Disabled")
-        
-        ; 关闭配置类型管理对话框
-        modifyGui.Destroy()
-    }
-    
-
-    ;!!! 新增：检查配置类型名称是否有效
+    ; 新增：检查配置类型名称是否有效
     static IsValidConfigTypeName(name) {
         ; 名称不能为空
         if (name = "") {
@@ -1121,7 +1040,7 @@ class SettingsDialogManager {
         return true
     }
 
-    ;!!! 新增：辅助函数 - 检查数组是否包含某个值
+    ; 新增：辅助函数 - 检查数组是否包含某个值
     static HasValue(arr, value) {
         for item in arr {
             if (item = value) {
@@ -1131,7 +1050,7 @@ class SettingsDialogManager {
         return false
     }
 
-    ;!!! 处理快捷键按钮点击
+    ; 处理快捷键按钮点击
     static HandleShortcutsClick(guiManager, parentGui) {
         ; 创建设置快捷键的GUI
         hotkeyGui := Gui()
