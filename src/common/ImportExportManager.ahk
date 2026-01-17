@@ -37,9 +37,7 @@ class ImportExportManager {
 
         ; 用户取消选择
         if (exportPath = "") {
-            if(guiManager.isTop){
-                ImportExportManager.HandleUserCancel(guiManager,selectedTexts)
-            }
+            ImportExportManager.HandleUserCancel(guiManager,selectedTexts)
             return false
         }
         
@@ -176,9 +174,7 @@ class ImportExportManager {
 
         importPath := FileSelect(1, , "选择要导入的配置文件", "文本文件 (*.txt)")
         if (importPath = "" || !FileExist(importPath)) {
-            if(guiManager.isTop){
-                ImportExportManager.HandleUserCancel(guiManager,selectedTexts)
-            }
+            ImportExportManager.HandleUserCancel(guiManager,selectedTexts)
             return false
         }
 
@@ -353,9 +349,7 @@ class ImportExportManager {
         
         appendPath := FileSelect(1, , "选择要追加的配置文件", "文本文件 (*.txt)")
         if (appendPath = "" || !FileExist(appendPath)) {
-            if(guiManager.isTop){
-                ImportExportManager.HandleUserCancel(guiManager,selectedTexts)
-            }
+            ImportExportManager.HandleUserCancel(guiManager,selectedTexts)
             return false
         }
 
@@ -641,12 +635,26 @@ class ImportExportManager {
     ; 新增：处理用户取消选择的通用逻辑
     static HandleUserCancel(guiManager, selectedTexts) {
         ; 恢复Owner关系
-        guiManager.gui.Opt("-OwnDialogs")
-        
+        if(guiManager.isTop){
+            guiManager.gui.Opt("-OwnDialogs")
+        }
+
         ; 恢复选择
         if (selectedTexts.Length > 0) {
             ; >>> 修改：恢复选中项（只恢复第一项，因为实际是单选）
             GuiEventHandlers.SelectItemInListBox(guiManager, selectedTexts[1])
+
+            ; !!! 修改：即使选中的是提示文本，也要恢复选中项
+            ; 检查是否为提示文本
+            firstText := selectedTexts[1]
+            isPrompt := guiManager.showingPrompt || 
+                    guiManager.listEmptyPrompt || 
+                    (InStr(firstText, ">>>") && InStr(firstText, "<<<"))
+            if (isPrompt) {
+                ; 如果是提示文本，恢复选中项
+                guiManager.listBox.Value := 1
+            }
+
         } else {
             ; 如果没有选中项，就让搜索框进入焦点
             guiManager.searchBox.Focus()
@@ -662,6 +670,9 @@ class ImportExportManager {
             SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
         }
 
+        ; 修改：保存当前选择的文本数组
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
+
         ; 临时启用OwnDialogs
         if(guiManager.isTop){
             guiManager.gui.Opt("+OwnDialogs")
@@ -671,7 +682,8 @@ class ImportExportManager {
         ; 显示文件选择对话框（支持多选，只能选择文件）
         fileDialog := FileSelect("M", , "选择要载入的文件", "所有文件 (*.*)")
         
-        if (fileDialog = "") {
+        if (Type(fileDialog) = "Array" && fileDialog.Length = 0) {
+            ImportExportManager.HandleUserCancel(guiManager,selectedTexts)
             return false
         }
         
