@@ -154,7 +154,7 @@ class WindowConstants {
     static HOTKEY_GUI_ADJUST_LEFT := 55
     
     ; HotkeyGui 垂直微调量（向上偏移）
-    static HOTKEY_GUI_ADJUST_TOP := 0
+    static HOTKEY_GUI_ADJUST_TOP := 65
     
 
     ; ==================== 经验高度常量 ====================

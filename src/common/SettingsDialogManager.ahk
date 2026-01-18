@@ -1058,7 +1058,7 @@ class SettingsDialogManager {
         if (guiManager.isTop) {
             hotkeyGui.Opt("+AlwaysOnTop")
         }
-        ;  关键：禁用主窗口（灰色不可操作）
+        ; 关键：禁用主窗口（灰色不可操作）
         parentGui.Opt("+Disabled")
 
         ; 设置字体
@@ -1069,37 +1069,47 @@ class SettingsDialogManager {
         hotkeyGui.Title := "设置快捷键"
         
         ; 获取当前快捷键
-        currentHotkey := SettingsManager.GetValue("MainHotkey", "Global")
+        currentMainHotkey := SettingsManager.GetValue("MainHotkey", "Global")
+        currentTypeHotkey := SettingsManager.GetValue("TypeHotkey", "Global")
 
-        ; 将 Windows 键符号转换为可读文本
-        readableHotkey := this.ConvertHotkeyToReadable(currentHotkey)
+        ; 将快捷键转换为可读文本
+        readableMainHotkey := this.ConvertHotkeyToReadable(currentMainHotkey)
+        readableTypeHotkey := this.ConvertHotkeyToReadable(currentTypeHotkey)
         
-        ; 添加文本控件并存储引用
-        hotkeyGui.AddText("w" WindowConstants.HOTKEY_GUI_WIDTH, "主热键：")
-        hotkeyTextCtrl := hotkeyGui.AddText("wp y+2 cGray vCurrentHotkeyText", "当前快捷键: " readableHotkey)
-
-        ; 添加热键控件
-        hotkeyInput := hotkeyGui.AddHotkey("wp vHotkeyInput", currentHotkey)
-
-        ; 存储控件引用到GUI对象中，方便后续访问
-        hotkeyGui.hotkeyTextCtrl := hotkeyTextCtrl
-        ; hotkeyGui.hotkeyInput := hotkeyInput
+        ;!!! 修改：重新设计布局，添加两行快捷键设置
+        contentWidth := WindowConstants.HOTKEY_GUI_WIDTH
         
-        ; 添加保存和取消按钮
+        ; 主热键行
+        hotkeyGui.AddText("w" contentWidth, "主热键：")
+        mainHotkeyTextCtrl := hotkeyGui.AddText("wp y+2 cGray", "当前热键: " readableMainHotkey)
+        mainHotkeyInput := hotkeyGui.AddHotkey("wp vMainHotkeyInput", currentMainHotkey)
+        
+        ; 类型热键行
+        hotkeyGui.AddText("wp y+10", "类型热键：")
+        typeHotkeyTextCtrl := hotkeyGui.AddText("wp y+2 cGray", "当前热键: " readableTypeHotkey)
+        typeHotkeyInput := hotkeyGui.AddHotkey("wp vTypeHotkeyInput", currentTypeHotkey)
+
+        ; 存储控件引用到GUI对象中
+        hotkeyGui.mainHotkeyTextCtrl := mainHotkeyTextCtrl  ;!!! 新增：存储主热键文本控件
+        hotkeyGui.typeHotkeyTextCtrl := typeHotkeyTextCtrl  ;!!! 新增：存储类型热键文本控件
+        
+        ;!!! 修改：添加保存和重置按钮
         btnRow := hotkeyGui.Add("Button", "w80 xm y+10", "保存")
-        btnRow.OnEvent("Click", (*) => this.SaveHotkey(hotkeyInput, hotkeyGui, parentGui))
+        btnRow.OnEvent("Click", (*) => this.SaveHotkeys(mainHotkeyInput, typeHotkeyInput, hotkeyGui))
         
         btnReset  := hotkeyGui.Add("Button", "w80 x+10 yp", "重置")
-        btnReset.OnEvent("Click", (*) => this.ResetHotkey(hotkeyInput,hotkeyGui,parentGui))
+        btnReset.OnEvent("Click", (*) => this.ResetHotkeys(mainHotkeyInput, typeHotkeyInput, hotkeyGui))
+        
         hotkeyGui.OnEvent("Close",(*) => this.handleCloseHotKeyGui(hotkeyGui,parentGui))
         hotkeyGui.OnEvent("Escape",(*) => this.handleCloseHotKeyGui(hotkeyGui,parentGui))
         
         ; 显示窗口
+        ;!!! 修改：调整窗口高度，因为增加了类型热键行
         WindowPositionUtils.CenterChildWindowWithConstants(
             parentGui.Hwnd,                           ; 父窗口句柄
             hotkeyGui,                                ; 子窗口对象
             WindowConstants.HOTKEY_GUI_WIDTH,         ; 对话框宽度
-            WindowConstants.HOTKEY_GUI_HEIGHT,        ; 对话框高度
+            WindowConstants.HOTKEY_GUI_HEIGHT,   ;!!! 增加高度容纳类型热键行
             WindowConstants.HOTKEY_GUI_ADJUST_LEFT,   ; 水平微调
             WindowConstants.HOTKEY_GUI_ADJUST_TOP     ; 垂直微调
         )
@@ -1120,82 +1130,129 @@ class SettingsDialogManager {
     }
 
     ; 重置快捷键到默认值 (Win+Q)
-    static ResetHotkey(hotkeyInput, hotkeyGui,parentGui) {
-        ; 设置默认快捷键为 Win+Q
-        defaultHotkey := "#q"
+    static ResetHotkeys(mainHotkeyInput, typeHotkeyInput,hotkeyGui) {
+        ; 设置默认快捷键
+        defaultMainHotkey := "#q"
+        defaultTypeHotkey := "!c"
 
-        try{
-            Hotkey(hotkeyInput.value,"off")
-        }catch as e {
-
+        ; 禁用当前热键
+        try {
+            Hotkey(mainHotkeyInput.Value, "off")
+        } catch as e {
+            ; 忽略错误
+        }
+        
+        try {
+            Hotkey(typeHotkeyInput.Value, "off")
+        } catch as e {
+            ; 忽略错误
         }
         
         ; 更新热键输入框的值
-        hotkeyInput.Value := defaultHotkey
+        mainHotkeyInput.Value := defaultMainHotkey
+        typeHotkeyInput.Value := defaultTypeHotkey
         
         ; 更新显示文本
-        readableHotkey := this.ConvertHotkeyToReadable(defaultHotkey)
-        hotkeyGui.hotkeyTextCtrl.Value := "当前快捷键: " readableHotkey
+        readableMainHotkey := this.ConvertHotkeyToReadable(defaultMainHotkey)
+        readableTypeHotkey := this.ConvertHotkeyToReadable(defaultTypeHotkey)
+        hotkeyGui.mainHotkeyTextCtrl.Value := "当前热键: " readableMainHotkey
+        hotkeyGui.typeHotkeyTextCtrl.Value := "当前热键: " readableTypeHotkey
             
-        MessageManager.ShowInfo("快捷键已重置为: " readableHotkey, "成功", "OK 0x40", hotkeyGui.Hwnd)
-
-
-        ; SettingsManager.SetValue("Shortcuts", defaultHotkey)
-        SettingsManager.SetValue("MainHotkey", defaultHotkey, "Global")
-        RegisterMainShortcut()  ; 调用main.ahk中的全局函数
+        ; 保存到配置文件
+        SettingsManager.SetValue("MainHotkey", defaultMainHotkey, "Global")
+        SettingsManager.SetValue("TypeHotkey", defaultTypeHotkey, "Global")
+        
+        ; 重新注册热键
+        RegisterMainShortcut()
+        RegisterTypeHotkey()
+        
+        MessageManager.ShowInfo("快捷键已重置为默认值", "成功", "OK 0x40", hotkeyGui.Hwnd)
     }
 
     
     ; 保存热键设置
-    static SaveHotkey(hotkeyInput, hotkeyGui, parentGui) {
-        newHotkey := hotkeyInput.Value
+    static SaveHotkeys(mainHotkeyInput, typeHotkeyInput, hotkeyGui) {
+        newMainHotkey := mainHotkeyInput.Value
+        newTypeHotkey := typeHotkeyInput.Value
+
+        ; MessageManager.ShowSuccess("值为" mainHotkeyInput.Value)
         
-        ; 验证热键
-        if (newHotkey = "") {
-            newHotkey := "#q"
-            hotkeyInput.Value := newHotkey  ; 更新输入框显示
-            ; MessageManager.ShowError("快捷键不能为空！", "错误", "OK 0x10", hotkeyGui.Hwnd)
+         ; 验证热键
+        if (newMainHotkey = "") {
+            newMainHotkey := "#q"
+            mainHotkeyInput.Value := newMainHotkey  ; 更新输入框显示
+            ; MessageManager.ShowError("主热键不能为空！", "错误", "OK 0x10", hotkeyGui.Hwnd)
+            ; return
+        }
+        
+        if (newTypeHotkey = "") {
+            newTypeHotkey := "!c"
+            typeHotkeyInput.Value := newTypeHotkey  ; 更新输入框显示
+            ; MessageManager.ShowError("类型热键不能为空！", "错误", "OK 0x10", hotkeyGui.Hwnd)
             ; return
         }
 
-        ;!!! 新增：获取并禁用旧热键
-        oldHotkey := SettingsManager.GetValue("MainHotkey", "Global")
-        if (oldHotkey != "") {
+        ; 检查是否与之前的热键相同
+        oldMainHotkey := SettingsManager.GetValue("MainHotkey", "Global")
+        oldTypeHotkey := SettingsManager.GetValue("TypeHotkey", "Global")
+
+        ;!!! 新增：如果两个热键都没变化，直接返回
+        if (newMainHotkey = oldMainHotkey && newTypeHotkey = oldTypeHotkey) {
+            ; MessageManager.ShowInfo("热键设置没有变化", "提示", "OK 0x40", hotkeyGui.Hwnd)
+            return
+        }
+
+        ; 检查热键冲突
+        if (this.CheckHotkeyConflict(newMainHotkey) || this.CheckHotkeyConflict(newTypeHotkey)) {
+            if (!MessageManager.ShowConfirm("热键可能与系统快捷键冲突，是否继续？", "警告", , hotkeyGui.Hwnd)) {
+                return
+            }
+        }
+
+        ; 禁用旧热键
+        if (oldMainHotkey != "") {
             try {
-                ; 禁用旧热键
-                Hotkey(oldHotkey,"Off")
-            } 
+                Hotkey(oldMainHotkey, "Off")
+            } catch {
+                ; 忽略错误
+            }
         }
         
-        ; 检查是否与系统快捷键冲突（简单检查）
-        if (this.CheckHotkeyConflict(newHotkey)) {
-            if (!MessageManager.ShowConfirm("该快捷键可能与系统快捷键冲突，是否继续？", "警告", ,hotkeyGui.Hwnd)) {
-                return
+        if (oldTypeHotkey != "") {
+            try {
+                Hotkey(oldTypeHotkey, "Off")
+            } catch {
+                ; 忽略错误
             }
         }
         
         ; 保存到配置文件
-        if (SettingsManager.SetValue("MainHotkey", newHotkey, "Global")) {
-            ; 直接调用全局函数重新注册热键
+        mainSaved := SettingsManager.SetValue("MainHotkey", newMainHotkey, "Global")
+        typeSaved := SettingsManager.SetValue("TypeHotkey", newTypeHotkey, "Global")
+        
+        if (mainSaved && typeSaved) {
             try {
                 ; 更新显示文本
-                readableHotkey := this.ConvertHotkeyToReadable(newHotkey)
-                hotkeyGui.hotkeyTextCtrl.Value := "当前快捷键: " readableHotkey
-
-                RegisterMainShortcut()  ; 调用main.ahk中的全局函数
-                MessageManager.ShowInfo("快捷键已更新为: " readableHotkey, "成功", "OK 0x40", hotkeyGui.Hwnd)
+                readableMainHotkey := this.ConvertHotkeyToReadable(newMainHotkey)
+                readableTypeHotkey := this.ConvertHotkeyToReadable(newTypeHotkey)
+                hotkeyGui.mainHotkeyTextCtrl.Value := "当前热键: " readableMainHotkey
+                hotkeyGui.typeHotkeyTextCtrl.Value := "当前热键: " readableTypeHotkey
+                
+                ; 重新注册热键
+                RegisterMainShortcut()
+                RegisterTypeHotkey()
+                
+                MessageManager.ShowInfo("热键设置已更新", "成功", "OK 0x40", hotkeyGui.Hwnd)
             } catch as e {
                 ; 如果注册失败，恢复原来的热键
-                oldHotkey :=  SettingsManager.GetValue("MainHotkey", "Global")
-                SettingsManager.SetValue("MainHotkey", oldHotkey, "Global")
-
-                ; 恢复显示文本
-                oldReadable := this.ConvertHotkeyToReadable(oldHotkey)
-                hotkeyGui.hotkeyTextCtrl.Value := "当前快捷键: " oldReadable
+                oldReadableMainHotkey := SettingsManager.SetValue("MainHotkey", oldMainHotkey, "Global")
+                oldReadableTypeHotkey := SettingsManager.SetValue("TypeHotkey", oldTypeHotkey, "Global")
+                hotkeyGui.mainHotkeyTextCtrl.Value := "当前热键: " oldReadableMainHotkey
+                hotkeyGui.typeHotkeyTextCtrl.Value := "当前热键: " oldReadableTypeHotkey
                 MessageManager.ShowError("注册热键失败，已恢复原设置`n错误信息: " e.Message, "错误", "OK 0x10", hotkeyGui.Hwnd)
             }
         } else {
-            MessageManager.ShowError("保存快捷键失败！", "错误", "OK 0x10", hotkeyGui.Hwnd)
+            MessageManager.ShowError("保存热键失败！", "错误", "OK 0x10", hotkeyGui.Hwnd)
         }
     }
     
