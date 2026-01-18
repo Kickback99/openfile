@@ -352,6 +352,16 @@ class SettingsDialogManager {
                 moreGui
             ))
         }
+        
+        ;!!! 新增：绑定快捷键按钮事件
+        if (btnRefs.Has("Shortcuts")) {
+            btnRefs["Shortcuts"].OnEvent("Click", (*) => this.HandleShortcutsClick(guiManager, moreGui))
+        }
+
+        ;!!! 新增：绑定快捷键按钮事件
+        if (btnRefs.Has("Contact")) {
+            btnRefs["Contact"].OnEvent("Click", (*) => this.HandleContactClick(guiManager, moreGui))
+        }
     }
 
     static GetButtonTextInternal(btnName) {
@@ -368,6 +378,10 @@ class SettingsDialogManager {
                 return this.GetShowSuccessMsgButtonText()
             case "ResetSettings":
                 return "重置"
+            case "Shortcuts":        ;!!! 新增：快捷键按钮文本
+                return "快捷键"
+            case "Contact":          ;!!! 新增：联系按钮
+                return "联系"
             default:
                 return btnName
         }
@@ -657,5 +671,17 @@ class SettingsDialogManager {
                 MessageManager.ShowError("重置设置失败",,,moreGui.Hwnd)
             }
         }
+    }
+
+    ; 新增：处理快捷键按钮点击
+    static HandleShortcutsClick(guiManager, moreGui) {
+        ; 简单消息框提示
+        MessageManager.ShowInfo("快捷键", "提示", "OK 0x40", moreGui.Hwnd)
+    }
+
+    ; 新增：处理联系按钮点击
+    static HandleContactClick(guiManager, moreGui) {
+        ; 简单消息框提示
+        MessageManager.ShowInfo("联系", "提示", "OK 0x40", moreGui.Hwnd)
     }
 }

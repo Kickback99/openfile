@@ -67,6 +67,9 @@ class WindowConstants {
 
     ; 设置按钮窄宽度（置顶、重置）
     static SETTING_BUTTON_NARROW_WIDTH := 80
+
+    ; 设置按钮中等宽度（配置类型、快捷键）
+    static SETTING_BUTTON_MEDIUM_WIDTH := 90  ;!!! 新增：中等宽度按钮
     
     ; 设置按钮宽宽度（字母排序、显示扩展名、批量阈值、成功消息）
     static SETTING_BUTTON_WIDE_WIDTH := 110
@@ -81,7 +84,9 @@ class WindowConstants {
         "EnableExtension", 
         "BatchThreshold", 
         "ShowSuccessMsg", 
-        "ResetSettings"
+        "ResetSettings",
+        "Shortcuts",         ;!!! 新增：快捷键按钮
+        "Contact"            ;!!! 新增：联系按钮
     ]
 
     ;>>>已移除：不再需要固定第一行按钮数量
@@ -92,10 +97,13 @@ class WindowConstants {
     
     ;>>>新增：获取按钮宽度的辅助方法
     static GetButtonWidth(btnName) {
-        if (btnName = "AlwaysOnTop" || btnName = "ResetSettings") {
-            return WindowConstants.SETTING_BUTTON_NARROW_WIDTH
-        } else {
-            return WindowConstants.SETTING_BUTTON_WIDE_WIDTH
+        switch btnName {
+            case "AlwaysOnTop", "ResetSettings", "Contact":
+                return WindowConstants.SETTING_BUTTON_NARROW_WIDTH
+            case "Shortcuts":      ; 新增：中等宽度按钮
+                return WindowConstants.SETTING_BUTTON_MEDIUM_WIDTH
+            default:
+                return WindowConstants.SETTING_BUTTON_WIDE_WIDTH
         }
     }
 

@@ -10,7 +10,7 @@ class SettingsManager {
     static SectionName := "General"
 
     ; 配置键的顺序（保持原有顺序）
-    static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg"]
+    static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg","Shortcuts","Link"]
 
     ; t_softmanager_settings：default
     static DefaultConfig := Map(
@@ -18,7 +18,9 @@ class SettingsManager {
         "SortByAlphabet", "false",  ; 字符串
         "EnableExtension", "false", ; 字符串
         "BatchThreshold", "5",      ; 字符串
-        "ShowSuccessMsg", "true"    ; 字符串
+        "ShowSuccessMsg", "true",    ; 字符串
+        "Shortcuts", "win+q",      ; 字符串
+        "Link",   "https://github.com/Kickback99/soft-manager" ; 字符串
     )
     
     ; ++++ 读取所有配置到Map中 ++++
