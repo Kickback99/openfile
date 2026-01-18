@@ -227,12 +227,12 @@ InitVersionConfig(){
 ; 全局热键注册函数
 RegisterMainShortcut() {
     ; 从配置文件中读取快捷键
-    shortcut := SettingsManager.GetValue("Shortcuts")
+    shortcut := SettingsManager.GetValue("MainHotkey", "Global")
     
     ; 如果没有设置或为空，使用默认值
     if (!shortcut || shortcut = "" || shortcut = "#q") {
         shortcut := "#q"
-        SettingsManager.SetValue("Shortcuts", shortcut)
+        SettingsManager.SetValue("MainHotkey", shortcut, "Global")
     }
 
     ; 先尝试移除已注册的热键
@@ -247,6 +247,30 @@ RegisterMainShortcut() {
         ; 如果注册失败，使用默认热键
         Hotkey("#q", MainHotkeyHandler, "On")
         MessageManager.ShowError("热键注册失败，已使用默认热键 Win+Q。`n错误信息: " e.Message, "警告", 0x30)
+    }
+}
+
+;!!! 修改：RegisterTypeHotkey函数
+RegisterTypeHotkey() {
+    ; 使用GetValue读取TypeHotkey
+    shortcut := SettingsManager.GetValue("TypeHotkey", "Global")
+    
+    ; 如果没有设置或为空，使用默认值
+    if (shortcut = "") {
+        shortcut := "!c"
+        SettingsManager.SetValue("TypeHotkey", shortcut, "Global")
+    }
+    
+    try {
+        ; 先尝试移除已注册的热键
+        Hotkey(shortcut, TypeHotkeyHandler, "Off")
+        
+        ; 注册新的热键
+        Hotkey(shortcut, TypeHotkeyHandler, "On")
+    } catch as e {
+        ; 如果注册失败，使用默认热键
+        Hotkey("!c", TypeHotkeyHandler, "On")
+        MessageManager.ShowError("类型热键注册失败，已使用默认热键 Alt+C。`n错误信息: " e.Message, "警告", 0x30)
     }
 }
 
@@ -316,11 +340,11 @@ ShowGuiManager(configType) {
 ; win+q事件
 MainHotkeyHandler(*) {
     ; 修改：从SettingsManager获取激活的配置类型
-    defaultType := SettingsManager.GetValue("MainHotkey", "Global")
-    ShowGuiManager(defaultType)
+    activeType := SettingsManager.GetValue("ActiveConfig", "Global")
+    ShowGuiManager(activeType)
 }
 
-!c::{
+TypeHotkeyHandler(*){
     isManagerActive := WinActive("ahk_class AutoHotkeyGUI")
     
     ; 预先声明变量
@@ -371,8 +395,9 @@ InitProgram(){
     ; 初始化版本配置
     InitVersionConfig()
 
-    ; 启动时注册热键
+    ;!!! 修改：在脚本启动时注册两个热键
     RegisterMainShortcut()
+    RegisterTypeHotkey()
 
     ; 最终验证自启动状态
     CheckAndSetAutoStart()

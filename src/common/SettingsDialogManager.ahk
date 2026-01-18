@@ -1069,7 +1069,7 @@ class SettingsDialogManager {
         hotkeyGui.Title := "设置快捷键"
         
         ; 获取当前快捷键
-        currentHotkey := SettingsManager.GetValue("Shortcuts")
+        currentHotkey := SettingsManager.GetValue("MainHotkey", "Global")
 
         ; 将 Windows 键符号转换为可读文本
         readableHotkey := this.ConvertHotkeyToReadable(currentHotkey)
@@ -1140,7 +1140,8 @@ class SettingsDialogManager {
         MessageManager.ShowInfo("快捷键已重置为: " readableHotkey, "成功", "OK 0x40", hotkeyGui.Hwnd)
 
 
-        SettingsManager.SetValue("Shortcuts", defaultHotkey)
+        ; SettingsManager.SetValue("Shortcuts", defaultHotkey)
+        SettingsManager.SetValue("MainHotkey", defaultHotkey, "Global")
         RegisterMainShortcut()  ; 调用main.ahk中的全局函数
     }
 
@@ -1157,8 +1158,8 @@ class SettingsDialogManager {
             ; return
         }
 
-        ; 获取并禁用旧热键
-        oldHotkey := SettingsManager.GetValue("Shortcuts")
+        ;!!! 新增：获取并禁用旧热键
+        oldHotkey := SettingsManager.GetValue("MainHotkey", "Global")
         if (oldHotkey != "") {
             try {
                 ; 禁用旧热键
@@ -1174,7 +1175,7 @@ class SettingsDialogManager {
         }
         
         ; 保存到配置文件
-        if (SettingsManager.SetValue("Shortcuts", newHotkey)) {
+        if (SettingsManager.SetValue("MainHotkey", newHotkey, "Global")) {
             ; 直接调用全局函数重新注册热键
             try {
                 ; 更新显示文本
@@ -1185,8 +1186,8 @@ class SettingsDialogManager {
                 MessageManager.ShowInfo("快捷键已更新为: " readableHotkey, "成功", "OK 0x40", hotkeyGui.Hwnd)
             } catch as e {
                 ; 如果注册失败，恢复原来的热键
-                oldHotkey := SettingsManager.GetValue("Shortcuts")
-                SettingsManager.SetValue("Shortcuts", oldHotkey)
+                oldHotkey :=  SettingsManager.GetValue("MainHotkey", "Global")
+                SettingsManager.SetValue("MainHotkey", oldHotkey, "Global")
 
                 ; 恢复显示文本
                 oldReadable := this.ConvertHotkeyToReadable(oldHotkey)
