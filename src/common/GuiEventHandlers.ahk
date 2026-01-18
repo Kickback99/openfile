@@ -483,15 +483,13 @@ class GuiEventHandlers {
             return
         }
         
-        ; 取第一个选中项（如果是多选，按钮会被禁用，所以这里应该是单选）
-        selectedText := selectedTexts[1]
-        
-        if (!guiManager.fileMap.Has(selectedText)) {
-            return
+        ; 批量定位所有选中的文件
+        for text in selectedTexts {
+            if (guiManager.fileMap.Has(text)) {
+                file := guiManager.fileMap[text]
+                PathUtils.LocateFile(file["path"])
+            }
         }
-        
-        file := guiManager.fileMap[selectedText]
-        PathUtils.LocateFile(file["path"])
     }
     
     ; ==================== 设置按钮事件处理 ====================
