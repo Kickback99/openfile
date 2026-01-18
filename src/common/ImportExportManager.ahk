@@ -358,17 +358,19 @@ class ImportExportManager {
             return false
         } */
 
-        result := this.AppendFromTxtWithRoot(appendPath)
+        result := this.AppendFromTxtWithRoot(appendPath,guiManager)
         if (result) {
             MessageManager.ShowSuccessDelayed("追加成功！",100)
         } else {
             MessageManager.ShowError("追加失败！")
+            ; 恢复选择
+            ImportExportManager.HandleUserCancel(guiManager, selectedTexts)
         }
         return result
     }
     
     ; 从TXT追加
-    AppendFromTxtWithRoot(filePath) {
+    AppendFromTxtWithRoot(filePath,guiManager :="") {
         try {
             ; 读取现有INI内容
             oldContent := FileRead(this.configPath)
@@ -393,11 +395,37 @@ class ImportExportManager {
 
             ; 格式化文件
             IniTools.FormatAndSaveIniFile(this.configPath)
+
+            ; 选中最后一项
+            this.SelectLastItemInternal(guiManager,appendContent)
             
             return true
         } catch Error as e {
             MessageManager.ShowError("追加错误: " e.Message)
             return false
+        }
+    }
+    
+    ; 内部选中最后一项的实现
+    SelectLastItemInternal(guiManager, txtContent := "") {
+        ; 重新加载列表
+        guiManager.RefreshList()
+        
+        ; 如果提供了TXT内容，解析并获取最后一个文件名称
+        if (txtContent != "") {
+            ; 解析TXT内容，获取最后一个非Root的section名称
+            parsedData := ImportExportManager.ParseTxtContentWithRoot(txtContent)
+            newSections := parsedData["sections"]
+            
+            ; 获取最后一个section的文件名称
+            if (newSections.Length > 0) {
+                lastSection := newSections[newSections.Length]
+                lastFileName := lastSection["name"]  ; 这是TXT中的文件名称
+                
+                ; 在ListBox中查找并选中该项
+                GuiEventHandlers.SelectItemByText(guiManager, lastFileName)
+                return
+            }
         }
     }
     
