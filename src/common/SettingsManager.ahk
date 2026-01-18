@@ -23,7 +23,8 @@ class SettingsManager {
     static GlobalConfigKeys := Map(
         this.ACTIVE_CONFIG_KEY, this.DEFAULT_CONFIG_TYPE,
         "MainHotkey", "#q",
-        "TypeHotkey", "!c"
+        "TypeHotkey", "!c",
+        "Link", "https://github.com/Kickback99/openfile"
         ; 未来扩展示例:
         ; "DebugMode", "false",
         ; "AutoStart", "true"
