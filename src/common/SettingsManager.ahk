@@ -19,6 +19,16 @@ class SettingsManager {
     static CONFIG_MANAGER_SECTION := "Global"
     static ACTIVE_CONFIG_KEY := "ActiveConfig"
 
+    ;!!! 修改：Global配置键和默认值Map
+    static GlobalConfigKeys := Map(
+        this.ACTIVE_CONFIG_KEY, this.DEFAULT_CONFIG_TYPE,
+        "MainHotkey", "#q",
+        "TypeHotkey", "!c"
+        ; 未来扩展示例:
+        ; "DebugMode", "false",
+        ; "AutoStart", "true"
+    )
+
     ; 配置键的顺序（保持原有顺序）
     static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg"]
 
@@ -80,6 +90,16 @@ class SettingsManager {
 
     ; 新增：获取指定section的默认配置
     static GetDefaultForSection(sectionName) {
+        ;!!! 修改：Global节使用GlobalConfigKeys的默认值
+        if (sectionName = this.CONFIG_MANAGER_SECTION) {
+            ; 返回GlobalConfigKeys的副本作为默认配置
+            globalDefaults := Map()
+            for key, defaultValue in this.GlobalConfigKeys {
+                globalDefaults[key] := defaultValue
+            }
+            return globalDefaults
+        }
+        
         if (this.DefaultConfig.Has(sectionName)) {
             return this.DefaultConfig[sectionName]
         } else {
@@ -110,9 +130,19 @@ class SettingsManager {
             ; 获取所有配置类型
             configTypes := ConfigManager.GetAllConfigTypes(false)
             
+            ;!!! 修改：直接使用GlobalConfigKeys构建内容
             ; 构建文件内容
             content := "[" . this.CONFIG_MANAGER_SECTION . "]`r`n"
-            content .= this.ACTIVE_CONFIG_KEY . "=" . (configTypes.Length > 0 ? configTypes[1] : this.DEFAULT_CONFIG_TYPE) . "`r`n"
+            
+            ; 写入所有Global配置键
+            for key, defaultValue in this.GlobalConfigKeys {
+                ; 特殊处理ActiveConfig
+                if (key = this.ACTIVE_CONFIG_KEY) {
+                    content .= key . "=" . (configTypes.Length > 0 ? configTypes[1] : defaultValue) . "`r`n"
+                } else {
+                    content .= key . "=" . defaultValue . "`r`n"
+                }
+            }
             content .= "`r`n"
             
             ; 为每个配置类型添加默认配置
@@ -417,17 +447,20 @@ class SettingsManager {
             if (allConfig.Has(this.CONFIG_MANAGER_SECTION)) {
                 configManagerSection := allConfig[this.CONFIG_MANAGER_SECTION]
                 content .= "[" . this.CONFIG_MANAGER_SECTION . "]`r`n"
-                if (configManagerSection.Has(this.ACTIVE_CONFIG_KEY)) {
-                    content .= this.ACTIVE_CONFIG_KEY . "=" . configManagerSection[this.ACTIVE_CONFIG_KEY] . "`r`n"
-                } else {
-                    ; 如果没有ActiveConfig，使用第一个配置类型
-                    configTypes := ConfigManager.GetAllConfigTypes(false)
-                    content .= this.ACTIVE_CONFIG_KEY . "=" . (configTypes.Length > 0 ? configTypes[1] : this.DEFAULT_CONFIG_TYPE) . "`r`n"
+                
+                ; 确保Global节包含所有必要的键
+                for key, defaultValue in this.GlobalConfigKeys {
+                    if (configManagerSection.Has(key)) {
+                        value := configManagerSection[key]
+                    } else {
+                        value := defaultValue
+                    }
+                    content .= key . "=" . value . "`r`n"
                 }
                 content .= "`r`n"
             }
             
-            ; 2. 写入其他section（复用原有逻辑）
+            ; 2. 写入其他section
             ; 获取所有配置类型
             configTypes := ConfigManager.GetAllConfigTypes(false)
             
@@ -510,11 +543,9 @@ class SettingsManager {
             }
             
             ; 快速检查文件是否包含 Global
-            ; 使用更简单的方式，不读取整个文件到内存
             file := FileOpen(settingsPath, "r", "UTF-8-RAW")
             hasConfigManager := false
             
-            ; 只读取前几行检查
             Loop 10 {
                 if (file.AtEOF) {
                     break
@@ -546,18 +577,19 @@ class SettingsManager {
                 ; 忽略错误
             }
             
-            ; 修复：根据三种情况设置 ActiveConfig
-            if (existingTypes.Length > 0) {
-                ; 情况1和2：使用第一个配置类型
-                activeConfig := existingTypes[1]
-            } else {
-                ; 情况3：使用默认配置类型
-                activeConfig := this.DEFAULT_CONFIG_TYPE
-            }
-            
             ; 在前面添加 Global section
             newContent := "[" . this.CONFIG_MANAGER_SECTION . "]`r`n"
-            newContent .= this.ACTIVE_CONFIG_KEY . "=" . activeConfig . "`r`n"
+            
+            ; 写入所有Global配置键
+            for key, defaultValue in this.GlobalConfigKeys {
+                if (key = this.ACTIVE_CONFIG_KEY) {
+                    ; 特殊处理ActiveConfig
+                    activeConfig := existingTypes.Length > 0 ? existingTypes[1] : defaultValue
+                    newContent .= key . "=" . activeConfig . "`r`n"
+                } else {
+                    newContent .= key . "=" . defaultValue . "`r`n"
+                }
+            }
             newContent .= "`r`n"
             newContent .= content
             
@@ -629,29 +661,24 @@ class SettingsManager {
                 }
             }
             
-            ; 6. 如果 Global 中没有 ActiveConfig，设置一个
-            ; 新增：验证并修复 ActiveConfig 的逻辑
+            ; 6. 验证并修复Global节配置
             if (allConfig.Has(this.CONFIG_MANAGER_SECTION)) {
                 configManagerSection := allConfig[this.CONFIG_MANAGER_SECTION]
                 
-                ; 获取当前的 ActiveConfig
-                currentActiveConfig := configManagerSection.Has(this.ACTIVE_CONFIG_KEY) 
-                    ? configManagerSection[this.ACTIVE_CONFIG_KEY] 
-                    : ""
-                
-                ; 检查 ActiveConfig 是否有效
-                if (currentActiveConfig = "" || !this.HasValue(existingTypes, currentActiveConfig)) {
-                    ; 情况1和3：如果 ActiveConfig 无效或不存在
-                    if (existingTypes.Length > 0) {
-                        ; 情况1：使用第一个配置类型
-                        configManagerSection[this.ACTIVE_CONFIG_KEY] := existingTypes[1]
-                    } else {
-                        ; 情况3：使用默认配置类型
-                        configManagerSection[this.ACTIVE_CONFIG_KEY] := this.DEFAULT_CONFIG_TYPE
+                ; 确保所有Global配置键都存在且有效
+                for key, defaultValue in this.GlobalConfigKeys {
+                    if (!configManagerSection.Has(key)) {
+                        configManagerSection[key] := defaultValue
+                        shouldWrite := true
+                    } else if (key = this.ACTIVE_CONFIG_KEY) {
+                        ; 特殊验证ActiveConfig
+                        currentActiveConfig := configManagerSection[key]
+                        if (currentActiveConfig = "" || !this.HasValue(existingTypes, currentActiveConfig)) {
+                            configManagerSection[key] := existingTypes.Length > 0 ? existingTypes[1] : defaultValue
+                            shouldWrite := true
+                        }
                     }
-                    shouldWrite := true
                 }
-                ; 情况2：如果 ActiveConfig 有效，不做任何修改
             }
             
             ; 7. 如果有修改，写入配置
@@ -664,41 +691,6 @@ class SettingsManager {
         } catch {
             return false
         }
-    }
-
-    ; 重构：获取激活的配置类型
-    static GetActiveConfig() {
-        ; 确保ConfigManager section存在
-        this.EnsureConfigManagerSection()
-        
-        ; 读取ActiveConfig值
-        activeConfig := this.GetValue(this.ACTIVE_CONFIG_KEY, this.CONFIG_MANAGER_SECTION)
-
-        ; 获取所有配置类型
-        configTypes := ConfigManager.GetAllConfigTypes(false)
-        
-        ; 验证配置类型是否有效
-        if (activeConfig != "" && this.HasValue(configTypes, activeConfig)) {
-            return activeConfig
-        }
-        
-        ; 如果无效，使用第一个可用配置类型
-        if (configTypes.Length > 0) {
-            return configTypes[1]
-        }
-        
-        return this.DEFAULT_CONFIG_TYPE
-    }
-
-    ; 新增：设置激活的配置类型
-    static SetActiveConfig(configType) {
-        ; 验证配置类型是否有效
-        configTypes := ConfigManager.GetAllConfigTypes(false)
-        if (!this.HasValue(configTypes, configType)) {
-            return false
-        }
-        
-        return this.SetValue(this.ACTIVE_CONFIG_KEY, configType, this.CONFIG_MANAGER_SECTION)
     }
 
     ; 获取指定section的所有配置键
