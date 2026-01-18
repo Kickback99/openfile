@@ -121,7 +121,7 @@ ShowGuiManager(configType) {
 ; win+q事件
 MainHotkeyHandler(*) {
     ; 修改：从SettingsManager获取激活的配置类型
-    defaultType := SettingsManager.GetActiveConfig()
+    defaultType := SettingsManager.GetValue("MainHotkey", "Global")
     ShowGuiManager(defaultType)
 }
 

@@ -983,7 +983,7 @@ class SettingsDialogManager {
         }
         
         ; 获取当前激活的配置
-        /* currentActive := SettingsManager.GetActiveConfig()
+        /* currentActive := SettingsManager.GetValue("MainHotkey", "Global")
         
         ; 如果已经是激活配置，提示用户
         if (selectedType = currentActive) {
@@ -997,7 +997,7 @@ class SettingsDialogManager {
         } */
         
         ; 设置激活配置
-        if (SettingsManager.SetActiveConfig(selectedType)) {
+        if (SettingsManager.SetValue("ActiveConfig", selectedType, "Global")) {
             ; 弹出成功消息，提示重启生效
             MessageManager.ShowInfo(
                 "已将 '" selectedType "' 设置为激活配置`n`n" 
