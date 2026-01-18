@@ -19,8 +19,8 @@ class SettingsManager {
         "EnableExtension", "false", ; 字符串
         "BatchThreshold", "5",      ; 字符串
         "ShowSuccessMsg", "true",    ; 字符串
-        "Shortcuts", "win+q",      ; 字符串
-        "Link",   "https://github.com/Kickback99/soft-manager" ; 字符串
+        "Shortcuts", "#q",      ; 字符串
+        "Link",   "https://github.com/Kickback99/openfile" ; 字符串
     )
     
     ; ++++ 读取所有配置到Map中 ++++
