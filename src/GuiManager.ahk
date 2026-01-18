@@ -107,9 +107,6 @@ class GuiManager {
         
         ; 创建ListBox,作为第一个可Tab访问的控件
         this.listBox := this.gui.Add("ListBox", "w500 r15 Center Tabstop +Multi")
-
-        ; 监听ListBox选择变化，更新按钮状态
-        this.listBox.OnEvent("Change", (*) => this.UpdateButtonStates())
         
         ; 添加文件到ListBox
         this.PopulateFileList()
@@ -170,9 +167,6 @@ class GuiManager {
         OnMessage(0x47, this.messageListener)   ; WM_WINDOWPOSCHANGED
 
         this.lastTopState := false
-
-        ; 初始更新按钮状态
-        this.UpdateButtonStates()
 
         ; 使用一次性定时器启用搜索框Tabstop
         ; SetTimer(ObjBindMethod(this, "EnableSearchBoxTab"), -50)
@@ -457,37 +451,6 @@ class GuiManager {
     
     ; ==================== 原有方法 ====================
     
-    ; 更新按钮状态的方法
-    UpdateButtonStates() {
-        ; 获取当前选择状态
-        selectedTexts := this.listBox.Text
-        
-        ; 判断是否为多选
-        if (Type(selectedTexts) = "Array") {
-            this._isMultiSelect := selectedTexts.Length > 1
-        } else {
-            this._isMultiSelect := false
-        }
-        
-        ; 根据多选状态启用/禁用按钮
-        if (this._isMultiSelect) {
-            ; 多选状态：禁用除删除和刷新外的所有按钮
-            this.buttons["create"].Enabled := true
-            this.buttons["edit"].Enabled := false
-            this.buttons["locate"].Enabled := true
-            this.buttons["more"].Enabled := true
-            
-            ; 启用删除和刷新按钮
-            this.buttons["delete"].Enabled := true
-            this.buttons["refresh"].Enabled := true
-        } else {
-            ; 单选或未选状态：启用所有按钮
-            for name, btn in this.buttons {
-                btn.Enabled := true
-            }
-        }
-    }
-    
     ; 刷新列表时重置多选状态
     RefreshList(*) {
         ; 保存当前选中的所有文本和索引
@@ -524,9 +487,6 @@ class GuiManager {
                 }
             }
             
-            ; 更新按钮状态
-            this.UpdateButtonStates()
-            
             ; 提示刷新完成
             ToolTip("列表已刷新")
             SetTimer () => ToolTip(), -1000
@@ -544,9 +504,6 @@ class GuiManager {
                 ; 忽略错误
             }
         }
-        
-        ; 更新按钮状态
-        this.UpdateButtonStates()
         
         ; 提示刷新完成
         ToolTip("列表已刷新")
@@ -664,9 +621,7 @@ class GuiManager {
             } else if (!this.IsFirstItemPrompt()) {
                 this.listBox.Value := 1
             }
-                      
-            ; 更新按钮状态
-            this.UpdateButtonStates()
+
             return
         }
         
@@ -717,9 +672,6 @@ class GuiManager {
             this.listEmptyPrompt := false  ; 这不是列表为空的情况
             ; 不设置选中项
         }
-        
-        ; 更新按钮状态
-        this.UpdateButtonStates()
     }
 
     ; ==================== 导入导出事件处理器 ====================
