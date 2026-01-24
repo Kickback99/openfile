@@ -9,7 +9,7 @@ class PathUtils {
         if (!FileExist(filePath)) {
             return "文件不存在或路径错误:`n`n" filePath
         }
-        
+
         try {
             Run(filePath)
             return true
@@ -17,13 +17,13 @@ class PathUtils {
             return "打开失败: " e.Message
         }
     }
-    
+
     ; 静态方法：在资源管理器中定位文件
     static LocateFile(filePath) {
         if (filePath = "") {
             return false
         }
-        
+
         if (FileExist(filePath)) {
             try {
                 Run('explorer.exe /select,"' filePath '"')
@@ -55,18 +55,18 @@ class PathUtils {
             return false
         }
     }
-    
+
     ; 静态方法：定位根目录
     static LocateRootPath(rootPath) {
         if (rootPath = "") {
             return false
         }
-        
-        ; 如果是文件，使用LocateFile方法
+
+        ; 如果是文件，使用 LocateFile 方法
         if (FileExist(rootPath)) {
-            return this.LocateFile(rootPath)  ; 这会用explorer /select打开文件
+            return this.LocateFile(rootPath)  ; 这会用 explorer /select 打开文件
         }
-        
+
         ; 如果是目录，打开目录
         if (DirExist(rootPath)) {
             try {
@@ -76,10 +76,10 @@ class PathUtils {
                 return false
             }
         }
-        
+
         return false
     }
-    
+
     ; 静态方法：打开此电脑
     static OpenThisPC() {
         try {
@@ -94,11 +94,11 @@ class PathUtils {
             }
         }
     }
-    
+
     ; 静态方法：浏览选择文件
     ; t_openfile_settings：alwaysOnTop
     static BrowseForExecutable(currentPath := "",ownerGui := "",isTop := "") {
-        ; 如果有父窗口，临时启用OwnDialogs
+        ; 如果有父窗口，临时启用 OwnDialogs
         if (IsObject(ownerGui) && isTop) {
             ownerGui.Opt("+OwnDialogs")
         }else {
@@ -110,36 +110,36 @@ class PathUtils {
             MessageManager.ShowError("文件不存在", "错误")
             return "" ; 返回空字符串表示选择无效
         }
-        
-        ; 无论用户选择还是取消，都恢复Owner关系
+
+        ; 无论用户选择还是取消，都恢复 Owner 关系
         if (IsObject(ownerGui) && isTop) {
             ownerGui.Opt("-OwnDialogs")
         }
 
         return selectedFile
     }
-    
+
     ; 静态方法：检查文件是否存在并返回结果
     static CheckFileExists(filePath) {
         return FileExist(filePath)
     }
-    
+
     ; 静态方法：获取文件所在目录
     static GetFileDirectory(filePath) {
         SplitPath(filePath, , &dir)
         return dir
     }
-    
+
     ; 静态方法：智能定位（根据路径选择最优方式）
     static SmartLocate(filePath, rootPath := "") {
         if (filePath != "") {
             return this.LocateFile(filePath)
         }
-        
+
         if (rootPath != "") {
             return this.LocateRootPath(rootPath) || this.OpenThisPC()
         }
-        
+
         return this.OpenThisPC()
     }
 }
