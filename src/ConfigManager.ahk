@@ -6,6 +6,8 @@
 ; ============================================================
 class ConfigManager {
 
+    ; ==================== 配置初始化 ====================
+
     __New(configType := "") {
         ; 使用 A_LineFile 获取 ConfigManager.ahk 的完整路径
         configManagerPath := A_LineFile  ; 这是 ConfigManager.ahk 的完整路径
@@ -78,6 +80,8 @@ class ConfigManager {
             }
         }
     }
+
+    ; ==================== 配置加载 ====================
 
     ; 加载配置文件（支持两种模式）
     ; t_openfile_settings：sortByAlphabet-get
@@ -176,6 +180,8 @@ class ConfigManager {
         configData["_sectionsInOrder"] := sectionOrder
         return configData
     }
+
+    ; ==================== 文件列表排序 ====================
 
     ; V1 模式：获取文件列表并按拼音智能排序
     GetFileListSortedByPinyin() {
@@ -278,6 +284,8 @@ class ConfigManager {
 
         return fileList
     }
+
+    ; ==================== 列表查询 ====================
 
     ; 获取所有文件列表（根据配置选择排序方式）
     ; t_openfile_settings：sortByAlphabet-get

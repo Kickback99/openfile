@@ -21,6 +21,8 @@ class MessageManager {
     ; 主窗口句柄（用于智能判断）
     static MainWindowHwnd := 0
 
+    ; ==================== 窗口句柄 ====================
+
     ; t_openfile_settings：showSuccessMsg-get-multi
     ; 设置主窗口句柄（在 GuiManager 初始化时调用）
     static SetMainWindowHwnd(hwnd) {
@@ -49,6 +51,8 @@ class MessageManager {
         ; 3. 否则返回 0（表示无 Owner）
         return 0
     }
+
+    ; ==================== 基础消息框 ====================
 
     ; 显示消息框（智能选择所有者窗口-带图标标识和置顶处理）
     static ShowMessageBox(message, title := "", options := "", icon := 0, ownerHwnd := 0) {
@@ -126,6 +130,8 @@ class MessageManager {
         return result
     }
 
+    ; ==================== 消息快捷方法 ====================
+
     ; 显示成功消息（智能选择所有者窗口-受配置控制）
     static ShowSuccess(message, title := "", options := "OK", ownerHwnd := 0) {
         ; 检查是否显示成功消息
@@ -161,6 +167,8 @@ class MessageManager {
         return this.ShowSuccess(message, title, options, ownerHwnd)
     }
 
+    ; ==================== 延迟消息 ====================
+
     ; 延迟显示成功消息（智能选择所有者窗口-受配置控制）
     static ShowSuccessDelayed(message, delay := 100, ownerHwnd := 0) {
         if (SettingsManager.GetBool("ShowSuccessMsg")) {
@@ -172,6 +180,8 @@ class MessageManager {
     static ShowInfoDelayed(message, delay := 100, ownerHwnd := 0) {
         this.ShowSuccessDelayed(message, delay, ownerHwnd)
     }
+
+    ; ==================== 内部实现 ====================
 
     ; 内部方法：智能选择所有者的消息框（备选方法）
     ; 注意：此方法使用智能所有者判断，不处理置顶/取消置顶逻辑
@@ -217,6 +227,8 @@ class MessageManager {
 
         return (buttonOptions != "" ? buttonOptions . " " : "") . iconOption
     }
+
+    ; ==================== 消息类型判断 ====================
 
     ; 检查是否为确认消息
     static IsConfirmMessage(options) {
@@ -266,6 +278,8 @@ class MessageManager {
         }
         return false
     }
+
+    ; ==================== 智能与自定义 ====================
 
     ; 智能显示消息（自动判断类型和图标）
     static ShowSmartMessage(message, title := "", options := "") {

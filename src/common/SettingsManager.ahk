@@ -24,6 +24,8 @@ class SettingsManager {
         "Link",   "https://github.com/Kickback99/openfile" ; 字符串
     )
 
+    ; ==================== 配置读取 ====================
+
     ; 读取所有配置到 Map 中
     static ReadAllConfig() {
         ; 先创建默认配置
@@ -114,6 +116,8 @@ class SettingsManager {
        return this.DefaultConfig.Get(key, "")
     }
 
+    ; ==================== 单值读写 ====================
+
     ; 读取单个配置值
     static GetValue(key) {
         config := this.ReadAllConfig()
@@ -177,6 +181,8 @@ class SettingsManager {
         }
     }
 
+    ; ==================== 配置写入 ====================
+
     ; 写入所有配置到文件
     static WriteConfig(config) {
         try {
@@ -219,6 +225,8 @@ class SettingsManager {
         }
     }
 
+    ; ==================== 文件维护 ====================
+
     ; 检查并修复配置文件
     static EnsureConfigFile() {
         try {
@@ -253,6 +261,8 @@ class SettingsManager {
         }
     }
 
+    ; ==================== 默认文件修复 ====================
+
     ; 创建默认配置文件
     static CreateDefaultConfig() {
         config := Map()
@@ -286,6 +296,8 @@ class SettingsManager {
 
         return false
     }
+
+    ; ==================== 键管理 ====================
 
     ; 获取所有配置键
     static GetAllKeys() {

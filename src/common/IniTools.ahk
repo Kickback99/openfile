@@ -209,6 +209,8 @@ class IniTools {
         }
     }
 
+    ; ==================== 格式化与清理 ====================
+
     ; 删除 INI 文件中的注释（以;开头的行）
     static RemoveCommentsFromIniFile(filePath) {
         try {
@@ -307,6 +309,8 @@ class IniTools {
             return false
         }
     }
+
+    ; ==================== 校验工具 ====================
 
     ; 文件名校验
     static ValidateFileName(filePath, expectedConfigType) {
@@ -528,6 +532,8 @@ class IniTools {
 
         return true
     }
+
+    ; ==================== 正则工具 ====================
 
     ; 正则表达式转义函数（转义 4 个）
     static RegExEscape(str) {
