@@ -70,10 +70,10 @@ class GuiManager {
     ShowFileList() {
         ; 创建GUI
         this.gui := Gui()
-        this.gui.Title := (this.configType . "-manager")
+        this.gui.Title := (this.configType)
 
         ; ++++ 添加AlwaysOnTop选项确保窗口置顶 ++++
-        ; t_softmanager_settings：alwaysOnTop
+        ; t_openfile_settings：alwaysOnTop
         ;  修改：根据配置动态设置窗口置顶
         if(this.isTop){
             this.gui.Opt("+AlwaysOnTop")
@@ -175,11 +175,11 @@ class GuiManager {
         ; SetTimer(ObjBindMethod(this, "EnableSearchBoxTab"), -50)
 
         ; ++++ 关键：设置主窗口句柄给MessageManager ++++
-        ; t_softmanager_settings：alwaysOnTop
+        ; t_openfile_settings：alwaysOnTop
         MessageManager.SetMainWindowHwnd(this.gui.Hwnd)
     }
     
-    ; t_softmanager_settings：alwaysOnTop-get
+    ; t_openfile_settings：alwaysOnTop-get
     ;  新增：刷新配置值的方法
     RefreshSettings() {
         ; 重新读取所有相关配置
@@ -353,7 +353,7 @@ class GuiManager {
         ; 总是设置 Owner 关系
         editGui.Opt("+Owner" this.gui.Hwnd)
 
-        ; t_softmanager_settings：alwaysOnTop
+        ; t_openfile_settings：alwaysOnTop
         if(this.isTop){
             editGui.Opt("+AlwaysOnTop")
         }

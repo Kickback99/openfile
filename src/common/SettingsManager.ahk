@@ -12,7 +12,7 @@ class SettingsManager {
     ; 配置键的顺序（保持原有顺序）
     static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg","Shortcuts","Link"]
 
-    ; t_softmanager_settings：default
+    ; t_openfile_settings：default
     static DefaultConfig := Map(
         "AlwaysOnTop", "true",      ; 字符串
         "SortByAlphabet", "false",  ; 字符串

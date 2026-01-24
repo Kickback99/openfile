@@ -34,7 +34,7 @@ RegisterMainShortcut() {
 ShowManager(configType) {
 
    ; 检查是否已有同名的且是gui类型的窗口
-    windowTitle := configType . "-manager"
+    windowTitle := configType
     hwnd := WinExist(windowTitle " ahk_class AutoHotkeyGUI")
     
     if (hwnd) {
@@ -46,7 +46,7 @@ ShowManager(configType) {
             WinRestore(hwnd)
         }
 
-        ; t_softmanager_settings：alwaysOnTop-get
+        ; t_openfile_settings：alwaysOnTop-get
         isTop := SettingsManager.GetBool("AlwaysOnTop")
 
         if(isTop){
@@ -73,7 +73,7 @@ ShowManager(configType) {
 }
 
 ShowSoftManager(*) {
-    ShowManager('soft')
+    ShowManager('openfile')
 }
 
 ;!!! 修改：启动时注册热键
