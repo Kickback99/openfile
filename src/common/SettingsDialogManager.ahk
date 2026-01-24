@@ -62,7 +62,7 @@ class SettingsDialogManager {
             this.AddDividerLine(moreGui)
         }
                 
-        ; 修改：调用 CreateRegularButtonsWithGui 方法
+        ; 调用 CreateRegularButtonsWithGui 方法
         this.CreateRegularButtonsWithGui(moreGui, guiManager)
         
         ; 计算并设置窗口尺寸和位置
@@ -71,7 +71,7 @@ class SettingsDialogManager {
         return moreGui
     }
 
-    ; 新增：根据布局创建设置按钮的方法
+    ; 根据布局创建设置按钮的方法
     static CreateSettingButtonsWithLayout(moreGui, buttonLayout) {
         btnRefs := Map()
         dialogWidth := WindowConstants.MORE_GUI_WIDTH
@@ -125,7 +125,7 @@ class SettingsDialogManager {
         return btnRefs
     }
 
-    ; 新增：创建按钮布局的方法
+    ; 创建按钮布局的方法
     static CreateButtonLayout() {
         buttonLayout := []
         currentRow := []
@@ -679,7 +679,7 @@ class SettingsDialogManager {
         }
     }
 
-    ; 新增：处理快捷键按钮点击
+    ; 处理快捷键按钮点击
     static HandleShortcutsClick(guiManager, parentGui) {
         ; 创建设置快捷键的GUI
         hotkeyGui := Gui()
@@ -862,7 +862,7 @@ class SettingsDialogManager {
         hotKey.Destroy()
     }
 
-    ; 新增：处理联系按钮点击
+    ; 处理联系按钮点击
     static HandleContactClick(guiManager, moreGui) {
         contactUrl := SettingsManager.GetValue("Link")
         if (!contactUrl || contactUrl = "") {

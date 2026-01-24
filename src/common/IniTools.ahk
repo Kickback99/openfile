@@ -448,7 +448,7 @@ class IniTools {
             return false
         }
         
-        ; 新增：不允许为空
+        ; 不允许为空
         if (name = "") {
             if (!skipMsgBox) {
                 MessageManager.ShowError(
@@ -515,7 +515,7 @@ class IniTools {
             return false
         }
         
-        ; 新增：不允许为空
+        ; 不允许为空
         if (path = "") {
             if (!skipMsgBox) {
                 MessageManager.ShowError(

@@ -28,7 +28,7 @@ class WindowConstants {
     static MORE_GUI_WIDTH := 420
     
     ; MoreGui 高度
-    static MORE_GUI_HEIGHT := 200  ;  修改：增加高度以容纳设置按钮
+    static MORE_GUI_HEIGHT := 200
 
     ; 高度控制模式：
     ; "fixed" - 固定使用 MORE_GUI_HEIGHT
@@ -40,7 +40,7 @@ class WindowConstants {
     static MORE_GUI_ADJUST_LEFT := 78
     
     ; MoreGui 垂直微调量（向上偏移）
-    static MORE_GUI_ADJUST_TOP := 50  ;  新增：设置区域高度
+    static MORE_GUI_ADJUST_TOP := 50
     
     
     ; ==================== EditGui 窗口常量 ====================
@@ -112,7 +112,7 @@ class WindowConstants {
         switch btnName {
             case "AlwaysOnTop", "ResetSettings", "Contact":
                 return WindowConstants.SETTING_BUTTON_NARROW_WIDTH
-            case "Shortcuts":      ; 新增：中等宽度按钮
+            case "Shortcuts":
                 return WindowConstants.SETTING_BUTTON_MEDIUM_WIDTH
             default:
                 return WindowConstants.SETTING_BUTTON_WIDE_WIDTH
