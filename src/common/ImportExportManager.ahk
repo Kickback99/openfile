@@ -9,7 +9,7 @@ class ImportExportManager {
         this.configPath := configPath
     }
     
-    ; t_softmanager_settings：alwaysOnTop-multi
+    ; t_openfile_settings：alwaysOnTop-multi
     ; ==================== 导出相关方法 ====================
     
     ; 导出配置（主方法）

@@ -12,14 +12,14 @@ class ConfigManager {
         SplitPath(configManagerPath, , &scriptDir)
         
         ; 现在 scriptDir 是 ConfigManager.ahk 所在的目录
-        ; 应该是：E:\release\SoftManager\src
+        ; 应该是：E:\release\openfile\src
         
         ; configs目录就在当前目录下
         configsDir := scriptDir "\configs"
 
         ; 自动构建配置文件路径：configs\{configType}.ini
         if (configType = "") {
-            configType := "soft"  ; 默认使用soft
+            configType := "openfile"  ; 默认使用openfile
         }
 
         this.configPath := configsDir "\" configType ".ini"
@@ -79,7 +79,7 @@ class ConfigManager {
     }
     
     ; 加载配置文件（支持两种模式）
-    ; t_softmanager_settings：sortByAlphabet-get
+    ; t_openfile_settings：sortByAlphabet-get
     LoadConfig() {
         configData := Map()
         
@@ -279,7 +279,7 @@ class ConfigManager {
     }
     
     ; 获取所有文件列表（根据配置选择排序方式）
-    ; t_softmanager_settings：sortByAlphabet-get
+    ; t_openfile_settings：sortByAlphabet-get
     GetFileList() {
         ; 检查是否启用了字母排序
         if (SettingsManager.GetBool("SortByAlphabet")) {
