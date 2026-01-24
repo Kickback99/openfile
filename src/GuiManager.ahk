@@ -651,36 +651,10 @@ class GuiManager {
         
         ; 如果搜索文本为空
         if (searchText = "") {
-            ; !!! 检查列表是否为空
-            if (this.allSoftwareList.Length = 0) {
-                ; 列表为空，显示提示信息
-                this.ShowAllSoftware()  ; !!! 直接调用 ShowAllSoftware 方法
-            } else {
-                ; 清空ListBox并显示所有软件
-                this.listBox.Delete()
-                this.softwareMap := Map()
-                
-                ; 重新填充所有软件
-                for software in this.allSoftwareList {
-                    name := software["name"]
-                    path := software["path"]
-                    section := software["section"]
-                    
-                    displayName := name
-                    
-                    ; 添加到ListBox
-                    this.listBox.Add([displayName])
-                    
-                    ; 存储到映射Map
-                    this.softwareMap[displayName] := Map(
-                        "name", name,
-                        "path", path,
-                        "section", section,
-                        "displayName", displayName
-                    )
-                }
-            }
             
+            ; !!! 直接调用 ShowAllSoftware 方法
+            this.ShowAllSoftware()
+
             ; 搜索框为空时，如果用户在搜索框中，清除选中项
             ; 否则，如果有实际软件，选中第一项
             if (this.userWasInSearchBox) {
@@ -688,8 +662,7 @@ class GuiManager {
             } else if (!this.IsFirstItemPrompt()) {
                 this.listBox.Value := 1
             }
-            ; 重置搜索无结果标志
-            this.listEmptyPrompt := false            
+                      
             ; >>> 更新按钮状态
             this.UpdateButtonStates()
             return
