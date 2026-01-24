@@ -50,8 +50,8 @@ class GuiEventHandlers {
         
         ; 8. 根据结果处理
         if (selectedFiles.Length > 0) {
-            ; t_softmanager_settings：enableExtension-get
-            ; t_softmanager_settings：batchThreshold-get
+            ; t_openfile_settings：enableExtension-get
+            ; t_openfile_settings：batchThreshold-get
             enableExtension := SettingsManager.GetBool("EnableExtension")
             batchThreshold := SettingsManager.GetInt("BatchThreshold")
             
