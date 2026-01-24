@@ -6,6 +6,21 @@ class WindowConstants {
 
     ; 调试模式开关
     static DEBUG_MODE := false
+
+    ; ==================== 搜索框焦点控制常量 ====================
+    
+    ; 搜索结果条目数的最小阈值（大于此值才考虑焦点转移）
+    static SEARCH_RESULT_MIN_THRESHOLD := 1
+    ; 搜索结果条目数的最大阈值（小于此值才考虑焦点转移）
+    static SEARCH_RESULT_MAX_THRESHOLD := 6
+    ; 防抖延迟时间（毫秒）
+    static SEARCH_DEBOUNCE_DELAY := 500
+    
+    ; 封装判断方法：检查搜索结果条目数是否在阈值范围内
+    static ShouldFocusListBox(foundCount) {
+        return (foundCount > this.SEARCH_RESULT_MIN_THRESHOLD && 
+                foundCount < this.SEARCH_RESULT_MAX_THRESHOLD)
+    }
     
     ; ==================== MoreGui 窗口常量 ====================
     
