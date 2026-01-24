@@ -651,28 +651,34 @@ class GuiManager {
         
         ; 如果搜索文本为空
         if (searchText = "") {
-            ; 清空ListBox并显示所有软件
-            this.listBox.Delete()
-            this.softwareMap := Map()
-            
-            ; 重新填充所有软件
-            for software in this.allSoftwareList {
-                name := software["name"]
-                path := software["path"]
-                section := software["section"]
+            ; !!! 检查列表是否为空
+            if (this.allSoftwareList.Length = 0) {
+                ; 列表为空，显示提示信息
+                this.ShowAllSoftware()  ; !!! 直接调用 ShowAllSoftware 方法
+            } else {
+                ; 清空ListBox并显示所有软件
+                this.listBox.Delete()
+                this.softwareMap := Map()
                 
-                displayName := name
-                
-                ; 添加到ListBox
-                this.listBox.Add([displayName])
-                
-                ; 存储到映射Map
-                this.softwareMap[displayName] := Map(
-                    "name", name,
-                    "path", path,
-                    "section", section,
-                    "displayName", displayName
-                )
+                ; 重新填充所有软件
+                for software in this.allSoftwareList {
+                    name := software["name"]
+                    path := software["path"]
+                    section := software["section"]
+                    
+                    displayName := name
+                    
+                    ; 添加到ListBox
+                    this.listBox.Add([displayName])
+                    
+                    ; 存储到映射Map
+                    this.softwareMap[displayName] := Map(
+                        "name", name,
+                        "path", path,
+                        "section", section,
+                        "displayName", displayName
+                    )
+                }
             }
             
             ; 搜索框为空时，如果用户在搜索框中，清除选中项
