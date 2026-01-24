@@ -1442,7 +1442,7 @@ class GuiEventHandlers {
     ; ListBox获得焦点事件处理
     static HandleListBoxFocus(guiManager) {
         ; 只有当ListBox当前没有选中项时，才设置选中第一项
-        if (guiManager.listBox.Value = 0) {
+        if (ListBoxHelper.GetSelectedIndices(guiManager.listBox).Length = 0) {
             ; 不是提示消息，设置为选中项
         ;    if(!guiManager.IsFirstItemPrompt()){
                 guiManager.listBox.Value := 1
