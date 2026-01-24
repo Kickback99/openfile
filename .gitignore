@@ -1,2 +1,9 @@
 src/configs
 settings.ini
+CLAUDE.md
+.claude/
+.comment-style-lint
+.commit-msg-lint
+.editorconfig
+tools/
+debug-main.ahk
