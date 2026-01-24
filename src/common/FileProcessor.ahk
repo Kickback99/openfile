@@ -1,8 +1,9 @@
-; ==============================
+; ============================================================
 ; FileProcessor.ahk
 ; 文件处理工具类（批量创建、文件选择等）
-; ==============================
+; ============================================================
 class FileProcessor {
+
     ; 创建单个文件并返回名称（不显示进度条）
     static CreateSingleFileAndReturnName(guiManager, filePath, enableExtension) {
         ; 首先检查文件是否存在
@@ -257,5 +258,4 @@ class FileProcessor {
 
         return lastAddedName
     }
-
 }

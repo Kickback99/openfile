@@ -1,9 +1,11 @@
 #Include "../lib/py-master/lib/py.ahk"
-; ==============================
+
+; ============================================================
 ; ConfigManager.ahk
 ; 支持动态配置文件的 INI 管理器
-; ==============================
+; ============================================================
 class ConfigManager {
+
     __New(configType := "") {
         ; 使用 A_LineFile 获取 ConfigManager.ahk 的完整路径
         configManagerPath := A_LineFile  ; 这是 ConfigManager.ahk 的完整路径

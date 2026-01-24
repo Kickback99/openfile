@@ -1,8 +1,9 @@
-; ==============================
+; ============================================================
 ; ImportExportManager.ahk
 ; 导入导出管理类
-; ==============================
+; ============================================================
 class ImportExportManager {
+
     ; 构造函数
     __New(configType, configPath) {
         this.configType := configType
@@ -10,6 +11,7 @@ class ImportExportManager {
     }
 
     ; t_openfile_settings：alwaysOnTop-multi
+
     ; ==================== 导出相关方法 ====================
 
     ; 导出配置（主方法）
@@ -741,6 +743,7 @@ class ImportExportManager {
     }
 
     ; ==================== 载入相关方法 ====================
+
     HandleLoad(moreGui,guiManager) {
         ; 如果传入了 moreGui，才需要关闭对话框
         if(moreGui != ""){
