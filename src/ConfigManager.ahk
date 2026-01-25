@@ -105,7 +105,7 @@ class ConfigManager {
         configData := Map()
         
         ; 读取排序配置
-        ; 修改：使用当前configType作为section读取排序配置
+        ; 使用当前configType作为section读取排序配置
         sortByAlphabet := SettingsManager.GetBool("SortByAlphabet", this.configType)
         
         if (sortByAlphabet) {
@@ -337,7 +337,7 @@ class ConfigManager {
     }
 
     ; 获取所有可用的配置类型（排除当前类型）
-    ;!!! 重构：兼容 v1 和 v2 调用的 GetAllConfigTypes 方法
+    ; 重构：兼容 v1 和 v2 调用的 GetAllConfigTypes 方法
     static GetAllConfigTypes(excludeType := "") {
         ; 参数说明：
         ; excludeType: 可选参数，要排除的配置类型名称
@@ -361,7 +361,7 @@ class ConfigManager {
             ; 提取文件名（不含扩展名）
             SplitPath(A_LoopFileName, , , , &nameOnly)
             
-            ;!!! 新逻辑：如果传了参数且匹配，则排除；否则都添加
+            ; 如果传了参数且匹配，则排除；否则都添加
             if (excludeType != "" && nameOnly = excludeType) {
                 continue  ; 排除指定类型
             }
@@ -372,7 +372,7 @@ class ConfigManager {
         return configTypes
     }
 
-    ; 新增：删除配置文件
+    ; 删除配置文件
     static DeleteConfigFile(configType) {
         try {
             ; 获取configs目录路径（复用现有逻辑）
@@ -394,14 +394,14 @@ class ConfigManager {
         }
     }
 
-    ; 新增：获取configs目录路径
+    ; 获取configs目录路径
     static GetConfigsDir() {
         userHome := A_MyDocuments
         SplitPath(userHome, , &userHomeDir)
         return userHomeDir "\openfile\configs"
     }
 
-    ; 新增：重命名配置文件
+    ; 重命名配置文件
     static RenameConfigFile(oldConfigType, newConfigType) {
         try {
             ; 获取用户家目录下的 configs 目录路径
@@ -423,16 +423,16 @@ class ConfigManager {
                 throw Error("目标配置文件已存在: " newConfigType)
             }
             
-            ;!!! 读取原始文件（UTF-8编码）
+            ; 读取原始文件（UTF-8编码）
             fileContent := FileRead(oldPath, "UTF-8")
             
-            ;!!! 替换路径中的文件名部分
+            ; 替换路径中的文件名部分
             ; 方法1：简单替换（处理大多数情况）
             oldFileName := oldConfigType ".ini"
             newFileName := newConfigType ".ini"
             updatedContent := StrReplace(fileContent, oldFileName, newFileName)
             
-            ;!!! 方法2：如果简单替换没生效，使用正则表达式
+            ; 方法2：如果简单替换没生效，使用正则表达式
             /* if (updatedContent = fileContent) {
                 ; 匹配格式：path=[任意字符]oldConfigType.ini
                 pattern := "path=.*\K\Q" . oldConfigType . "\E\.ini"
@@ -447,10 +447,10 @@ class ConfigManager {
                 updatedContent := StrReplace(fileContent, oldFullPath, newFullPath)
             } */
             
-            ;!!! 写入新文件（UTF-8编码）
+            ; 写入新文件（UTF-8编码）
             FileAppend(updatedContent, newPath, "UTF-8")
             
-            ;!!! 删除旧文件（操作已完成，可以安全删除）
+            ; 删除旧文件（操作已完成，可以安全删除）
             FileDelete(oldPath)
             
             return true

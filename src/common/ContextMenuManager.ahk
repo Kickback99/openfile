@@ -146,7 +146,7 @@ class ContextMenuManager {
         }
     }
 
-    ; 新增：统一的复制/移动执行方法
+    ; 统一的复制/移动执行方法
     static ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, isMove) {
         ; 获取脚本所在目录（common目录的父目录）
         tempDir := this.EnsureTempDirectory()
@@ -157,7 +157,7 @@ class ContextMenuManager {
         ; 创建临时TXT文件
         timestamp := A_TickCount
         actionType := isMove ? "move" : "copy"
-        ;!!! 修改：使用时间戳和随机数确保唯一性
+        ; 使用时间戳和随机数确保唯一性
         randomNum := Random(1000, 9999)
         tempTxtPath := tempDir . "\openfile_" actionType "_" timestamp "_" randomNum ".txt"
         
@@ -226,7 +226,6 @@ class ContextMenuManager {
 
     ; 确保temp目录存在的辅助方法
     static EnsureTempDirectory() {
-        ;!!! 修改：使用用户家目录下的openfile目录
         ; 获取用户家目录
         userHome := A_MyDocuments  ; 文档目录
         SplitPath(userHome, , &userHomeDir)

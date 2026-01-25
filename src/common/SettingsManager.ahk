@@ -14,12 +14,12 @@ class SettingsManager {
     ; 配置段名称
     static SectionName := "General"
 
-    ; 新增：配置管理相关常量
+    ; 配置管理相关常量
     static DEFAULT_CONFIG_TYPE := "openfile"
     static CONFIG_MANAGER_SECTION := "Global"
     static ACTIVE_CONFIG_KEY := "ActiveConfig"
 
-    ;!!! 修改：Global配置键和默认值Map
+    ; Global配置键和默认值Map
     static GlobalConfigKeys := Map(
         this.ACTIVE_CONFIG_KEY, this.DEFAULT_CONFIG_TYPE,
         "MainHotkey", "#q",
@@ -36,7 +36,7 @@ class SettingsManager {
     static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg"]
 
     ; t_openfile_settings：default
-    ; 修改：添加默认section
+    ; 添加默认section
     static DefaultConfig := Map(
         "Default", Map(  ; 默认section
             "AlwaysOnTop", "true",      ; 字符串
@@ -100,9 +100,9 @@ class SettingsManager {
         }
     }
 
-    ; 新增：获取指定section的默认配置
+    ; 获取指定section的默认配置
     static GetDefaultForSection(sectionName) {
-        ;!!! 修改：Global节使用GlobalConfigKeys的默认值
+        ; Global节使用GlobalConfigKeys的默认值
         if (sectionName = this.CONFIG_MANAGER_SECTION) {
             ; 返回GlobalConfigKeys的副本作为默认配置
             globalDefaults := Map()
@@ -129,7 +129,7 @@ class SettingsManager {
         return false
     }
 
-    ; 新增：创建默认settings.ini文件
+    ; 创建默认settings.ini文件
     static CreateDefaultSettingsFile() {
         try {
             settingsPath := this.GetConfigPath()
@@ -142,7 +142,7 @@ class SettingsManager {
             ; 获取所有配置类型
             configTypes := ConfigManager.GetAllConfigTypes()
             
-            ;!!! 修改：直接使用GlobalConfigKeys构建内容
+            ; 直接使用GlobalConfigKeys构建内容
             ; 构建文件内容
             content := "[" . this.CONFIG_MANAGER_SECTION . "]`r`n"
             
@@ -446,7 +446,7 @@ class SettingsManager {
     }
 
     ; 重要：按照入口数组顺序写入配置文件
-    ; 修改：WriteAllConfig 方法也需要支持动态类型
+    ; WriteAllConfig 方法也需要支持动态类型
     ; 重构：WriteAllConfig方法（简化版，避免递归）
     static WriteAllConfig(allConfig) {
         try {
@@ -519,7 +519,7 @@ class SettingsManager {
     }
     
     ; 检查是否是支持的配置类型
-    ; 修改：IsSupportedType 方法也要支持动态类型
+    ; IsSupportedType 方法也要支持动态类型
     static IsSupportedType(sectionName) {
         configTypes := ConfigManager.GetAllConfigTypes()
         return this.HasValue(configTypes, sectionName)
@@ -774,7 +774,7 @@ class SettingsManager {
         }
     }
 
-    ; 新增：重命名配置段
+    ; 重命名配置段
     static RenameConfigSection(oldSectionName, newSectionName) {
         try {
             settingsPath := this.GetConfigPath()

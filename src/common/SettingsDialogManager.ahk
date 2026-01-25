@@ -357,7 +357,7 @@ class SettingsDialogManager {
             ))
         }
 
-        ; 新增：绑定配置类型按钮事件
+        ; 绑定配置类型按钮事件
         if (btnRefs.Has("ConfigTypes")) {
             btnRefs["ConfigTypes"].OnEvent("Click", (*) => this.HandleConfigTypesClick(guiManager, moreGui))
         }
@@ -387,7 +387,7 @@ class SettingsDialogManager {
                 return this.GetShowSuccessMsgButtonText(guiManager)
             case "ResetSettings":
                 return "重置"
-            case "ConfigTypes":      ; 新增：配置类型按钮文本
+            case "ConfigTypes":
             return "配置类型"
             case "Shortcuts":
                 return "快捷键"
@@ -686,7 +686,7 @@ class SettingsDialogManager {
         }
     }
 
-    ; 新增：处理配置类型按钮点击
+    ; 处理配置类型按钮点击
     static HandleConfigTypesClick(guiManager, moreGui) {
         ; 创建配置类型管理对话框
         configTypesGui := Gui()
@@ -732,7 +732,7 @@ class SettingsDialogManager {
         configTypesGui.Add("Text", "w" contentWidth, "可用的配置类型:")
         comboBox := configTypesGui.Add("ComboBox", "w" contentWidth, allConfigTypes)
 
-        ; 新增：自动选中当前配置类型
+        ; 自动选中当前配置类型
         currentConfigType := guiManager.configType
         if (this.HasValue(allConfigTypes, currentConfigType)) {
             comboBox.Text := currentConfigType
@@ -767,7 +767,7 @@ class SettingsDialogManager {
         )
     }
 
-    ; 新增：处理新增配置类型
+    ; 处理新增配置类型
     static HandleAddConfigType(configTypesGui, inputBox, comboBox, guiManager) {
         newType := Trim(inputBox.Value)
         
@@ -805,7 +805,7 @@ class SettingsDialogManager {
         ; 创建对应的INI文件
         try {
 
-            ; 修改：直接创建ConfigManager实例来自动创建配置文件
+            ; 直接创建ConfigManager实例来自动创建配置文件
             configMgr := ConfigManager(newType)  ; 这会自动创建配置文件和目录
 
             ; 在settings.ini中添加对应的配置段
@@ -825,7 +825,7 @@ class SettingsDialogManager {
             
             MessageManager.ShowSuccessDelayed("配置类型 '" newType "' 创建成功", , configTypesGui.Hwnd)
 
-            ;!!! 更新主窗口的上下文菜单
+            ; 更新主窗口的上下文菜单
             guiManager.CreateContextMenu()
             
         } catch as e {
@@ -834,7 +834,7 @@ class SettingsDialogManager {
 
     }
 
-    ; 新增：处理修改配置类型
+    ; 处理修改配置类型
     static HandleModifyConfigType(configTypesGui, inputBox, comboBox,guiManager) {
         selectedType := Trim(comboBox.Text)
         
@@ -843,7 +843,7 @@ class SettingsDialogManager {
             return
         }
 
-        ; 新增：检查是否是当前类型，如果是则不允许修改
+        ; 检查是否是当前类型，如果是则不允许修改
         if (selectedType = guiManager.configType) {
             MessageManager.ShowWarning("不能修改当前正在使用的配置类型", , , configTypesGui.Hwnd)
             return
@@ -906,7 +906,7 @@ class SettingsDialogManager {
             
             MessageManager.ShowSuccessDelayed("配置类型修改成功: " selectedType " -> " newType, ,configTypesGui.Hwnd)
 
-            ;!!! 更新主窗口的上下文菜单
+            ; 更新主窗口的上下文菜单
             guiManager.CreateContextMenu()
             
         } catch as e {
@@ -914,7 +914,7 @@ class SettingsDialogManager {
         }
     }
 
-    ; 新增：处理删除配置类型
+    ; 处理删除配置类型
     static HandleDeleteConfigType(configTypesGui, comboBox, guiManager) {
         selectedType := Trim(comboBox.Text)
         
@@ -993,7 +993,7 @@ class SettingsDialogManager {
             }
             MessageManager.ShowSuccessDelayed("配置类型 '" selectedType "' 删除成功", , configTypesGui.Hwnd)
 
-            ;!!! 更新主窗口的上下文菜单
+            ; 更新主窗口的上下文菜单
             guiManager.CreateContextMenu()
             
         } catch as e {
@@ -1001,7 +1001,7 @@ class SettingsDialogManager {
         }
     }
 
-    ; 新增：处理激活配置类型
+    ; 处理激活配置类型
     static HandleActivateConfigType(configTypesGui, comboBox, guiManager,moreGui) {
         selectedType := Trim(comboBox.Text)
         
@@ -1032,10 +1032,9 @@ class SettingsDialogManager {
         
         ; 设置激活配置
         if (SettingsManager.SetValue("ActiveConfig", selectedType, "Global")) {
-            ; 弹出成功消息，提示重启生效
+            ; 弹出成功消息
             MessageManager.ShowInfo(
-                "已将 '" selectedType "' 设置为激活配置`n`n" 
-                "重启软件后生效",
+                "已将 '" selectedType "' 设置为激活配置",
                 "激活成功"
             )
         } else {
@@ -1043,7 +1042,7 @@ class SettingsDialogManager {
         }
     }
 
-    ; 新增：关闭配置类型管理对话框
+    ; 关闭配置类型管理对话框
     static HandleConfigTypesGuiClose(configTypesGui, parentGui) {
         ; 恢复父窗口
         parentGui.Opt("-Disabled")
@@ -1052,7 +1051,7 @@ class SettingsDialogManager {
         configTypesGui.Destroy()
     }
 
-    ; 新增：辅助函数 - 检查数组是否包含某个值
+    ; 辅助函数 - 检查数组是否包含某个值
     static HasValue(arr, value) {
         for item in arr {
             if (item = value) {
@@ -1088,7 +1087,7 @@ class SettingsDialogManager {
         readableMainHotkey := this.ConvertHotkeyToReadable(currentMainHotkey)
         readableTypeHotkey := this.ConvertHotkeyToReadable(currentTypeHotkey)
         
-        ;!!! 修改：重新设计布局，添加两行快捷键设置
+        ; 重新设计布局，添加两行快捷键设置
         contentWidth := WindowConstants.HOTKEY_GUI_WIDTH
         
         ; 主热键行
@@ -1102,10 +1101,10 @@ class SettingsDialogManager {
         typeHotkeyInput := hotkeyGui.AddHotkey("wp vTypeHotkeyInput", currentTypeHotkey)
 
         ; 存储控件引用到GUI对象中
-        hotkeyGui.mainHotkeyTextCtrl := mainHotkeyTextCtrl  ;!!! 新增：存储主热键文本控件
-        hotkeyGui.typeHotkeyTextCtrl := typeHotkeyTextCtrl  ;!!! 新增：存储类型热键文本控件
+        hotkeyGui.mainHotkeyTextCtrl := mainHotkeyTextCtrl  ; 存储主热键文本控件
+        hotkeyGui.typeHotkeyTextCtrl := typeHotkeyTextCtrl  ; 存储类型热键文本控件
         
-        ;!!! 修改：添加保存和重置按钮
+        ; 添加保存和重置按钮
         btnRow := hotkeyGui.Add("Button", "w80 xm y+10", "保存")
         btnRow.OnEvent("Click", (*) => this.SaveHotkeys(mainHotkeyInput, typeHotkeyInput, hotkeyGui))
         
@@ -1116,12 +1115,11 @@ class SettingsDialogManager {
         hotkeyGui.OnEvent("Escape",(*) => this.handleCloseHotKeyGui(hotkeyGui,parentGui))
         
         ; 显示窗口
-        ;!!! 修改：调整窗口高度，因为增加了类型热键行
         WindowPositionUtils.CenterChildWindowWithConstants(
             parentGui.Hwnd,                           ; 父窗口句柄
             hotkeyGui,                                ; 子窗口对象
             WindowConstants.HOTKEY_GUI_WIDTH,         ; 对话框宽度
-            WindowConstants.HOTKEY_GUI_HEIGHT,   ;!!! 增加高度容纳类型热键行
+            WindowConstants.HOTKEY_GUI_HEIGHT,        ; 对话框高度
             WindowConstants.HOTKEY_GUI_ADJUST_LEFT,   ; 水平微调
             WindowConstants.HOTKEY_GUI_ADJUST_TOP     ; 垂直微调
         )
@@ -1208,7 +1206,7 @@ class SettingsDialogManager {
         oldMainHotkey := SettingsManager.GetValue("MainHotkey", "Global")
         oldTypeHotkey := SettingsManager.GetValue("TypeHotkey", "Global")
 
-        ;!!! 新增：如果两个热键都没变化，直接返回
+        ; 如果两个热键都没变化，直接返回
         if (newMainHotkey = oldMainHotkey && newTypeHotkey = oldTypeHotkey) {
             ; MessageManager.ShowInfo("热键设置没有变化", "提示", "OK 0x40", hotkeyGui.Hwnd)
             return
