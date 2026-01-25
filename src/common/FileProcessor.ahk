@@ -6,9 +6,9 @@ class FileProcessor {
     ; ++++ 创建单个文件并返回名称（不显示进度条） ++++
     static CreateSingleFileAndReturnName(guiManager, filePath, enableExtension) {
         ; 首先检查文件是否存在
-        if (!FileExist(filePath) || DirExist(filePath)) {
-            ; 文件不存在或是目录，显示警告
-            MessageManager.ShowWarning("文件不存在或无效：`n" filePath)
+        if (!FileExist(filePath)) {
+            ; 文件不存在，显示错误
+            MessageManager.ShowError("文件不存在：`n" filePath,"错误")
             return ""
         }
         try {
@@ -108,12 +108,12 @@ class FileProcessor {
         ; 首先过滤掉不存在的文件
         validFiles := []
         for filePath in filePaths {
-            if (FileExist(filePath) && !DirExist(filePath)) {
+            if (FileExist(filePath)) {
                 validFiles.Push(filePath)
             } else {
                 ; 可以在这里记录日志或提示用户
-                ; 文件不存在或是目录，显示警告
-                MessageManager.ShowWarning("文件不存在或无效：`n" filePath)
+                ; 文件不存在，显示错误
+                MessageManager.ShowError("文件不存在：`n" filePath)
                 return ""
             }
         }
