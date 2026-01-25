@@ -543,9 +543,18 @@ class SettingsDialogManager {
         inputGui.SetFont("s9", "JetBrains Mono")
         inputGui.Add("Text", "w" (WindowConstants.BATCH_THRESHOLD_WIDTH), "批量操作阈值：")
         inputGui.Add("Text", "w" (WindowConstants.BATCH_THRESHOLD_WIDTH) " cGray", "选中文件数量达到此值时显示进度条")
+
+        ;!!! 修改：使用 Edit 控件作为 UpDown 的伙伴控件
+        ; 创建 Edit 控件（用于显示和输入）
+        ctlEdit := inputGui.Add("Edit", "w100 Number")
+        ; 创建 UpDown 控件并绑定到 Edit
+        ctlUpDown := inputGui.Add("UpDown", "Range1-1000", currentValue)
         
-        ctlThreshold := inputGui.Add("Edit", "w100 Number", currentValue)
-        ctlThreshold.OnEvent("Change", (*) => this.ValidateThresholdInput(ctlThreshold))
+        ;!!! 修改：设置 Edit 控件的内容为当前值
+        ctlEdit.Value := currentValue
+        
+        ;!!! 修改：添加 UpDown 的 Change 事件处理
+        ctlUpDown.OnEvent("Change", (*) => this.ValidateUpDownInput(ctlUpDown, ctlEdit))
         
         ; 添加按钮
         btnSave := inputGui.Add("Button", "w80", "保存")
@@ -553,7 +562,7 @@ class SettingsDialogManager {
         
         ;  修正：定义单独的函数
         ; btnSave.OnEvent("Click", this.HandleBatchThresholdSave.Bind(this, ctlThreshold, btnBatchThreshold,inputGui,parentGui))
-        btnSave.OnEvent("Click", (*) => this.HandleBatchThresholdSave(ctlThreshold, btnBatchThreshold, inputGui, parentGui))
+        btnSave.OnEvent("Click", (*) => this.HandleBatchThresholdSave(ctlUpDown, btnBatchThreshold, inputGui, parentGui))
         ; btnCancel.OnEvent("Click", (*) => inputGui.Destroy())
         ; 然后在其他关闭方式中调用同一个函数：
         btnCancel.OnEvent("Click", (*) => this.HandleInputGuiClose(inputGui, parentGui))
@@ -574,31 +583,11 @@ class SettingsDialogManager {
     }
     
     ;  新增：处理批量阈值保存
-    static HandleBatchThresholdSave(ctlThreshold, btnBatchThreshold,inputGui,parentGui) {
-        ; 获取原始值
-        rawValue := Trim(ctlThreshold.Value)
+    static HandleBatchThresholdSave(ctlUpDown, btnBatchThreshold,inputGui,parentGui) {
+        ; 直接从 UpDown 控件获取值（确保在范围内）
+        value := ctlUpDown.Value
         
-        ;  检查是否为空
-        if (rawValue = "") {
-            MessageManager.ShowError("批量阈值不能为空",,,parentGui.Hwnd)
-            return  ; 不关闭窗口，让用户重新输入
-        }
-        
-        ;  检查是否为有效数字
-        if (!RegExMatch(rawValue, "^\d+$")) {
-            MessageManager.ShowError("请输入有效的数字",,,parentGui.Hwnd)
-            return
-        }
-        
-        ; 转换为数字
-        try {
-            value := Integer(rawValue)
-        } catch {
-            MessageManager.ShowError("请输入有效的数字",,,parentGui.Hwnd)
-            return
-        }
-        
-        ; 验证范围
+        ; 验证范围（UpDown 已经自动限制，但双重检查）
         if (value < 1 || value > 1000) {
             MessageManager.ShowError("请输入1-1000之间的数字",,,parentGui.Hwnd)
             return
@@ -614,24 +603,13 @@ class SettingsDialogManager {
             MessageManager.ShowError("更新失败",,,parentGui.Hwnd)
         }
     }
-    
-    ;  新增：验证阈值输入（简化版，只过滤非数字字符）
-    static ValidateThresholdInput(ctrl, *) {
-        rawValue := ctrl.Value
-        
-        ; 只允许数字
-        if (rawValue != "" && !RegExMatch(rawValue, "^\d*$")) {
-            ; 删除非数字字符
-            newValue := ""
-            for i, ch in StrSplit(rawValue) {
-                if (ch >= "0" && ch <= "9") {
-                    newValue .= ch
-                }
-            }
-            ctrl.Value := newValue
-        }
-    }
 
+    ;!!! 新增：处理 UpDown 控件的 Change 事件
+    static ValidateUpDownInput(updownCtrl, editCtrl) {
+        ; 从 UpDown 获取当前值并同步到 Edit 控件
+        editCtrl.Value := updownCtrl.Value
+    }
+    
     ;  新增：简单的关闭处理
     static HandleInputGuiClose(inputGui, parentGui) {
         ; 恢复主窗口
