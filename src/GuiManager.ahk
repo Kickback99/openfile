@@ -87,7 +87,10 @@ class GuiManager {
         }
 
         ;设置字体
-        this.gui.SetFont("s9", "JetBrains Mono")
+        this.gui.SetFont("s9")  ; 先重置为默认字体
+        this.gui.SetFont("s10", "Microsoft YaHei")  ; 最低优先级
+        this.gui.SetFont("s10", "Consolas")         ; 中等优先级  
+        this.gui.SetFont("s9", "JetBrains Mono")   ; 最高优先级（最后设置）
 
         ; 设置默认边距（左、上、右、下）
         this.gui.MarginX := 25

@@ -33,7 +33,10 @@ class SettingsDialogManager {
         }
         
         ; 设置字体
-        moreGui.SetFont("s9", "JetBrains Mono")
+        moreGui.SetFont("s9")  ; 先重置为默认字体
+        moreGui.SetFont("s10", "Microsoft YaHei")  ; 最低优先级
+        moreGui.SetFont("s10", "Consolas")         ; 中等优先级  
+        moreGui.SetFont("s9", "JetBrains Mono")   ; 最高优先级（最后设置）
 
         ; 设置边距，减少顶部间距
         moreGui.MarginY := 12
@@ -554,7 +557,10 @@ class SettingsDialogManager {
         currentValue := SettingsManager.GetInt("BatchThreshold")
         
         ; 添加控件
-        inputGui.SetFont("s9", "JetBrains Mono")
+        inputGui.SetFont("s9")  ; 先重置为默认字体
+        inputGui.SetFont("s10", "Microsoft YaHei")  ; 最低优先级
+        inputGui.SetFont("s10", "Consolas")         ; 中等优先级  
+        inputGui.SetFont("s9", "JetBrains Mono")   ; 最高优先级（最后设置）
         inputGui.Add("Text", "w" (WindowConstants.BATCH_THRESHOLD_WIDTH), "批量操作阈值：")
         inputGui.Add("Text", "w" (WindowConstants.BATCH_THRESHOLD_WIDTH) " cGray", "选中文件数量达到此值时显示进度条")
 
@@ -685,7 +691,10 @@ class SettingsDialogManager {
         parentGui.Opt("+Disabled")
 
         ; 设置字体
-        hotkeyGui.SetFont('s9', 'Microsoft YaHei UI')
+        hotkeyGui.SetFont("s9")  ; 先重置为默认字体
+        hotkeyGui.SetFont("s10", "Microsoft YaHei")  ; 最低优先级
+        hotkeyGui.SetFont("s10", "Consolas")         ; 中等优先级  
+        hotkeyGui.SetFont("s9", "JetBrains Mono")   ; 最高优先级（最后设置）
         hotkeyGui.Title := "设置快捷键"
         
         ; 获取当前快捷键
