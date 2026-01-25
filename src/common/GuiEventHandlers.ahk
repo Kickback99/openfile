@@ -16,11 +16,15 @@ class GuiEventHandlers {
     }
 
     static IsDownKeyHandled(*) {
-        return GuiEventHandlers.IsSearchBoxActive() || GuiEventHandlers.IsListBoxAtBottom()
+        return GuiEventHandlers.IsSearchBoxActive()
+            || GuiEventHandlers.IsListBoxAtBottom()
+            || GuiEventHandlers.IsBottomButtonActive()
     }
 
     static IsUpKeyHandled(*) {
-        return GuiEventHandlers.IsCreateButtonActive() || GuiEventHandlers.IsListBoxAtTop()
+        return GuiEventHandlers.IsCreateButtonActive()
+            || GuiEventHandlers.IsListBoxAtTop()
+            || GuiEventHandlers.IsSearchBoxActive()
     }
 
     static OnDownKey(*) {
@@ -28,7 +32,12 @@ class GuiEventHandlers {
             GuiEventHandlers.MoveFocusIntoList(1)
             return
         }
-        GuiEventHandlers.ActiveGuiManager().buttons["create"].Focus()
+        guiManager := GuiEventHandlers.ActiveGuiManager()
+        if (GuiEventHandlers.IsBottomButtonActive()) {
+            guiManager.searchBox.Focus()
+            return
+        }
+        guiManager.buttons["create"].Focus()
     }
 
     static OnUpKey(*) {
@@ -36,7 +45,12 @@ class GuiEventHandlers {
             GuiEventHandlers.MoveFocusIntoList(-1)
             return
         }
-        GuiEventHandlers.ActiveGuiManager().searchBox.Focus()
+        guiManager := GuiEventHandlers.ActiveGuiManager()
+        if (GuiEventHandlers.IsSearchBoxActive()) {
+            guiManager.buttons["more"].Focus()
+            return
+        }
+        guiManager.searchBox.Focus()
     }
 
     ; 取当前活动窗口的 GuiManager，弹窗和其它程序都返回空
@@ -66,10 +80,18 @@ class GuiEventHandlers {
     }
 
     static IsCreateButtonActive(*) {
+        return GuiEventHandlers.IsButtonActive("create")
+    }
+
+    static IsBottomButtonActive(*) {
+        return GuiEventHandlers.IsButtonActive("more")
+    }
+
+    static IsButtonActive(key) {
         guiManager := GuiEventHandlers.ActiveGuiManager()
-        if (!guiManager || !guiManager.buttons.Has("create"))
+        if (!guiManager || !guiManager.buttons.Has(key))
             return false
-        return GuiEventHandlers.FocusedControlHwnd(guiManager) = guiManager.buttons["create"].Hwnd
+        return GuiEventHandlers.FocusedControlHwnd(guiManager) = guiManager.buttons[key].Hwnd
     }
 
     ; 列表已在首项/末项时，上下键交给相邻控件；提示行不参与
