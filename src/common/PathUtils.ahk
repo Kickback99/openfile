@@ -104,7 +104,12 @@ class PathUtils {
         }else {
         }
 
-        selectedFile := FileSelect(1, currentPath, "选择可执行文件", "可执行文件 (*.exe; *.bat; *.cmd)")
+        selectedFile := FileSelect("F", currentPath, "选择文件")
+
+        if (selectedFile && !FileExist(selectedFile)) {
+            MessageManager.ShowError("文件不存在", "错误")
+            return "" ; 返回空字符串表示选择无效
+        }
         
         ; >>> 无论用户选择还是取消，都恢复Owner关系
         if (IsObject(ownerGui) && isTop) {
