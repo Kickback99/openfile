@@ -100,7 +100,7 @@ class WindowConstants {
         "BatchThreshold", 
         "ShowSuccessMsg", 
         "ResetSettings",
-        "ConfigTypes",       ;!!! 新增：配置类型按钮
+        "ConfigTypes",
         "Shortcuts",
         "Contact"
     ]

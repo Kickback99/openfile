@@ -70,7 +70,7 @@ class GuiManager {
         ; 标记是否为多选状态
         this._isMultiSelect := false
 
-        ; 新增：右键菜单相关属性
+        ; 右键菜单相关属性
         this.contextMenu := ""
         this.moveMenu := ""
         this.targetConfigs := []  ; 存储可移动的目标配置
@@ -122,10 +122,10 @@ class GuiManager {
         ; 添加文件到ListBox
         this.PopulateFileList()
 
-        ; 新增：创建右键菜单
+        ; 创建右键菜单
         this.CreateContextMenu()
         
-        ; 新增：绑定ListBox右键事件
+        ; 绑定ListBox右键事件
         this.listBox.OnEvent("ContextMenu", (*) => this.ShowContextMenu())
         
         ; 添加按钮区域
@@ -207,7 +207,7 @@ class GuiManager {
     ;  刷新配置值的方法
     RefreshSettings() {
         ; 重新读取所有相关配置
-        ; 修改：使用configType作为section名称
+        ; 使用configType作为section名称
         this.isTop := SettingsManager.GetBool("AlwaysOnTop", this.configType)
         this.sortByAlphabet := SettingsManager.GetBool("SortByAlphabet", this.configType)
         this.enableExtension := SettingsManager.GetBool("EnableExtension", this.configType)
@@ -384,8 +384,8 @@ class GuiManager {
         ; 添加"移动到..."子菜单
         this.moveMenu := Menu()
 
-        ; 新增：创建"复制到"子菜单  
-        this.copyMenu := Menu()  ; 新增复制菜单
+        ; 创建"复制到"子菜单  
+        this.copyMenu := Menu()  ; 复制菜单
         
         ; 获取所有可用的配置类型（排除当前类型）
         this.targetConfigs := ConfigManager.GetAllConfigTypes(this.configType)
@@ -396,13 +396,13 @@ class GuiManager {
             ; 为每个目标配置创建子菜单项
             for index, configType in this.targetConfigs {
                 ; 创建一个闭包来捕获当前configType
-                ; 修改：使用闭包确保参数正确传递
+                ; 使用闭包确保参数正确传递
                 this.moveMenu.Add(configType, ((currentType) => (*) => ContextMenuManager.HandleMoveTo(this, currentType))(configType))
             
-                ; 新增：复制菜单项
+                ; 复制菜单项
                 this.copyMenu.Add(configType, ((currentType) => (*) => ContextMenuManager.HandleCopyTo(this, currentType))(configType))
             }
-            ; 新增：添加复制菜单项
+            ; 添加复制菜单项
             this.contextMenu.Add("复制到", this.copyMenu)
             this.contextMenu.Add("移动到...", this.moveMenu)
         }

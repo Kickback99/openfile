@@ -4,14 +4,14 @@
 #Include src\GuiManager.ahk
 #Include "src\common\SettingsManager.ahk"
 
-; 支持的配置类型数组（改为空数组，从ConfigManager动态获取）
-global ConfigTypes := []  ; 修改：改为空数组，从ConfigManager动态获取
+; 支持的配置类型数组（从ConfigManager动态获取）
+global ConfigTypes := []
 
 ; 初始化时加载配置类型
 InitConfigTypes() {
     global ConfigTypes
     
-    ; 修改：直接从ConfigManager获取配置类型
+    ; 直接从ConfigManager获取配置类型
     ConfigTypes := ConfigManager.GetAllConfigTypes()
     
     ; 如果获取为空，使用默认值
@@ -28,10 +28,7 @@ RefreshConfigTypes() {
     InitConfigTypes()
 }
 
-; !!! 新增：启动时清理配置
-; SettingsManager.EnsureConfigFile()
-
-; 全局热键注册函数
+; 全局主热键注册函数
 RegisterMainShortcut() {
     ; 从配置文件中读取快捷键
     shortcut := SettingsManager.GetValue("MainHotkey", "Global")
@@ -57,7 +54,7 @@ RegisterMainShortcut() {
     }
 }
 
-;!!! 修改：RegisterTypeHotkey函数
+; 全局类型热键注册函数
 RegisterTypeHotkey() {
     ; 使用GetValue读取TypeHotkey
     shortcut := SettingsManager.GetValue("TypeHotkey", "Global")
@@ -250,6 +247,7 @@ MainHotkeyHandler(*) {
      ShowGuiManager(activeType)
 }
 
+; alt+c事件
 TypeHotkeyHandler(*){
     isManagerActive := WinActive("ahk_class AutoHotkeyGUI")
     
@@ -295,7 +293,7 @@ InitProgram(){
     ; 初始化配置类型
     InitConfigTypes()
 
-    ;!!! 修改：在脚本启动时注册两个热键
+    ; 在脚本启动时注册两个热键
     RegisterMainShortcut()
     RegisterTypeHotkey()
 }

@@ -146,7 +146,7 @@ class ContextMenuManager {
         }
     }
 
-    ; 新增：统一的复制/移动执行方法
+    ; 统一的复制/移动执行方法
     static ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, isMove) {
         ; 获取脚本所在目录（common目录的父目录）
         tempDir := this.EnsureTempDirectory()
