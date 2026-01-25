@@ -79,9 +79,8 @@ class GuiManager {
         this.gui := Gui()
         this.gui.Title := (this.configType)
 
-        ; 添加 AlwaysOnTop 选项确保窗口置顶
         ; t_openfile_settings：alwaysOnTop
-        ; 根据配置动态设置窗口置顶
+        ; 按配置设置窗口置顶
         if(this.isTop){
             this.gui.Opt("+AlwaysOnTop")
         } else {
@@ -293,6 +292,7 @@ class GuiManager {
         this.userWasInSearchBox := false
     }
 
+    ; 保存完整列表后重建显示，供刷新与搜索复用
     PopulateFileList() {
         ; 保存原始文件列表
         this.allFileList := this.fileList
@@ -458,7 +458,7 @@ class GuiManager {
         )
     }
 
-    ; ==================== 原有方法 ====================
+    ; ==================== 列表刷新与选择 ====================
 
     ; 刷新列表时重置多选状态
     RefreshList(*) {

@@ -371,6 +371,7 @@ class SettingsDialogManager {
         }
     }
 
+    ; 按设置键返回对应按钮文案
     static GetButtonTextInternal(btnName) {
         switch btnName {
             case "AlwaysOnTop":
@@ -861,6 +862,7 @@ class SettingsDialogManager {
         return false
     }
 
+    ; 关闭热键窗口时恢复父窗口状态
     static handleCloseHotKeyGui(hotKey, parentGui){
         ; 恢复父窗口
         parentGui.Opt("-Disabled")
