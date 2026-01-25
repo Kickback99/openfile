@@ -16,7 +16,7 @@ class SettingsDialogManager {
         }
         ; 创建设置对话框
         moreGui := Gui()
-        moreGui.Title := "设置操作 - " guiManager.configType
+        moreGui.Title := "设置操作 - " ConfigManager.GetDisplayType(guiManager.configType)
 
         ; 总是设置 Owner 关系
         moreGui.Opt("+Owner" guiManager.gui.Hwnd)

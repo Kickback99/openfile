@@ -16,7 +16,7 @@ class ConfigManager {
         SplitPath(configManagerPath, , &scriptDir)
 
         ; 现在 scriptDir 是 ConfigManager.ahk 所在的目录
-        ; 应该是：E:\release\openfile\src
+        ; L:\openfile\openfile\src
 
         ; configs 目录就在当前目录下
         configsDir := scriptDir "\configs"
@@ -308,6 +308,11 @@ class ConfigManager {
     ; 获取配置类型
     GetConfigType() {
         return this.configType
+    }
+
+    ; 品牌配置类型统一显示为 OpenFile
+    static GetDisplayType(configType) {
+        return StrLower(configType) = "openfile" ? "OpenFile" : configType
     }
 
     ; 获取配置文件路径
