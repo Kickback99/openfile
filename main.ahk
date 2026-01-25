@@ -34,7 +34,8 @@ RegisterMainShortcut() {
 ShowGuiManager(configType) {
 
    ; 检查是否已有同名的且是 gui 类型的窗口
-    windowTitle := configType
+    ; WinExist 标题匹配区分大小写，须用显示名
+    windowTitle := ConfigManager.GetDisplayType(configType)
     hwnd := WinExist(windowTitle " ahk_class AutoHotkeyGUI")
 
     if (hwnd) {
