@@ -504,7 +504,8 @@ InitProgram(){
     CheckAndSetAutoStart()
 
     ; 自动启动应用程序
-    ShowGuiManager('openfile')
+    activeType := SettingsManager.GetValue("ActiveConfig", "Global")
+    ShowGuiManager(activeType)
 }
 
 ; 执行初始化
