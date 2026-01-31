@@ -36,7 +36,7 @@ class PinyinHelper {
     static GetPinyinMatchScore(chineseName, searchText) {
         try {
 
-            ;!!! 修改：添加错误处理
+            ; 添加错误处理
             if (!chineseName || chineseName == "") {
                 return 0
             }

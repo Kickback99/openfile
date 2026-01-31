@@ -4,7 +4,7 @@
 ; ==============================
 class SettingsManager {
     ; 静态属性：配置文件路径
-    ;!!! 修改：将配置文件路径改为用户家目录下的openfile/settings.ini
+    ; 将配置文件路径改为用户家目录下的openfile/settings.ini
     static ConfigPath := ""
 
     ; 配置版本常量
@@ -46,7 +46,7 @@ class SettingsManager {
         }
     }
 
-    ;!!! 新增：获取配置文件路径的静态方法
+    ; 获取配置文件路径的静态方法
     static GetConfigPath() {
         if (this.ConfigPath = "") {
             ; 获取用户家目录
@@ -63,7 +63,7 @@ class SettingsManager {
         return this.ConfigPath
     }
     
-    ;!!! 新增：确保设置目录存在的方法
+    ; 确保设置目录存在的方法
     static EnsureSettingsDirectory(appDataDir) {
         if (!DirExist(appDataDir)) {
             try {

@@ -5,7 +5,6 @@
 	static out_str_size := 2048000
     static tempDllPath := ""  ; 存储临时DLL路径，用于清理
     
-    ;!!! 重构：最简化的加载逻辑
     static load_all_dll_path()
     {
         ; 先设置默认的lib路径（开发环境用）
@@ -37,8 +36,8 @@
         dllcall("SetDllDirectory", "Str", A_ScriptDir)
     }
     
-    ;!!! 简化：直接从资源加载DLL到临时文件
-    ;!!! 修改：检查已有文件，避免重复写入
+    ; 直接从资源加载DLL到临时文件
+    ; 检查已有文件，避免重复写入
     static LoadDllFromResource() {
         ; 确定资源名称
         resourceName := (A_PtrSize == 4) ? "DLL32" : "DLL64"

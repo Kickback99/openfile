@@ -18,7 +18,7 @@ class ConfigManager {
         ; configsDir := scriptDir "\configs"
 
 
-        ;!!! 修改：将configs目录改为用户家目录下的openfile/configs
+        ; 将configs目录改为用户家目录下的openfile/configs
         ; 获取用户家目录
         userHome := A_MyDocuments  ; 文档目录
         SplitPath(userHome, , &userHomeDir)
@@ -56,7 +56,7 @@ class ConfigManager {
         this.fileList := this.GetFileList()
     }
 
-    ;!!! 修改：更新确保配置目录的方法，支持两级目录
+    ; 更新确保配置目录的方法，支持两级目录
     EnsureConfigDirectory(appDataDir, configsDir) {
         ; 确保应用数据目录存在
         if (!DirExist(appDataDir)) {
