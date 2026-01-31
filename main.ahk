@@ -1,8 +1,6 @@
 ;@Ahk2Exe-ExeName OpenFile.exe             ; 设置输出文件名
-;@Ahk2Exe-SetDescription 软件管理器          ; 设置文件描述
 ;@Ahk2Exe-SetCopyright Kickback枫枫         ; 设置版权信息
 ;@Ahk2Exe-SetVersion 1.1.0                 ; 设置版本号
-;@Ahk2Exe-SetCompanyName Kickback枫枫       ; 设置公司名
 ;@Ahk2Exe-SetMainIcon lib\openfile.ico     ; 设置图标
 ;@Ahk2Exe-AddResource lib\py-master\lib\dll_64\cpp2ahk.dll, DLL64
 
