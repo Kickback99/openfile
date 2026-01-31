@@ -1,8 +1,71 @@
+;@Ahk2Exe-ExeName OpenFile.exe             ; 设置输出文件名
+;@Ahk2Exe-SetDescription 软件管理器          ; 设置文件描述
+;@Ahk2Exe-SetCopyright Kickback枫枫         ; 设置版权信息
+;@Ahk2Exe-SetVersion 1.1.0                 ; 设置版本号
+;@Ahk2Exe-SetCompanyName Kickback枫枫       ; 设置公司名
+;@Ahk2Exe-SetMainIcon lib\openfile.ico     ; 设置图标
+;@Ahk2Exe-AddResource lib\py-master\lib\dll_64\cpp2ahk.dll, DLL64
+
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 #Include src\ConfigManager.ahk
 #Include src\GuiManager.ahk
 #Include "src\common\SettingsManager.ahk"
+
+; 在程序开头添加调试
+if (A_IsCompiled && WindowConstants.DEBUG_MODE) {
+    ; 检查资源是否存在 - 使用正确的名称和类型
+    if (buf := ResourceLoad("DLL64", 10)) {
+        size := buf.Size
+        MsgBox("✅ DLL资源嵌入成功！`n名称: DLL64`n类型: 10`n大小: " size " 字节", "调试信息", 0x40)
+    } else {
+        MsgBox("❌ DLL资源未找到！`n尝试查找: DLL64, 类型: 10", "错误", 0x30)
+    }
+}
+
+ResourceLoad(Key, Type := 10) {
+    if !A_IsCompiled
+        return false
+    
+    hMod := DllCall("GetModuleHandle", "Ptr", 0, "Ptr")
+    if !hMod
+        return false
+    
+    hRes := DllCall("FindResource", "Ptr", hMod, "Str", Key, "UInt", Type, "Ptr")
+    if !hRes
+        return false
+    
+    hData := DllCall("LoadResource", "Ptr", hMod, "Ptr", hRes, "Ptr")
+    if !hData
+        return false
+    
+    pData := DllCall("LockResource", "Ptr", hData, "Ptr")
+    if !pData
+        return false
+    
+    nSize := DllCall("SizeofResource", "Ptr", hMod, "Ptr", hRes)
+    if !nSize
+        return false
+    
+    buf := Buffer(nSize)
+    DllCall("RtlMoveMemory", "Ptr", buf, "Ptr", pData, "Ptr", nSize)
+    return buf
+}
+
+; 验证拼音库是否工作
+VerifyPinyin() {
+    try {
+        testResult := py.initials_muti("测试")
+        MsgBox("✅ 拼音库工作正常！`n测试结果: " testResult)
+    } catch as e {
+        MsgBox("❌ 拼音库初始化失败！`n错误: " e.Message)
+    }
+}
+
+; 程序启动时验证
+if(WindowConstants.DEBUG_MODE){
+    VerifyPinyin()
+}
 
 ; 全局热键注册函数
 RegisterMainShortcut() {

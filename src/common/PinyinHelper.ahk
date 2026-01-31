@@ -35,6 +35,18 @@ class PinyinHelper {
     ; 获取拼音匹配分数
     static GetPinyinMatchScore(chineseName, searchText) {
         try {
+
+            ;!!! 修改：添加错误处理
+            if (!chineseName || chineseName == "") {
+                return 0
+            }
+            
+            ; 检查DLL是否正常工作
+            fullPinyin := py.allspell_muti(chineseName)
+            if (fullPinyin == "") {
+                return 0 ; DLL未加载或出错
+            }
+
             ; 获取拼音全拼，去掉竖线分隔符，转小写
             fullPinyin := StrReplace(py.allspell_muti(chineseName), "|", "")
             fullPinyinLower := StrLower(fullPinyin)

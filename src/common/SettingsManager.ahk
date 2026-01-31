@@ -4,7 +4,8 @@
 ; ==============================
 class SettingsManager {
     ; 静态属性：配置文件路径
-    static ConfigPath := A_ScriptDir "\settings.ini"
+    ;!!! 修改：将配置文件路径改为用户家目录下的openfile/settings.ini
+    static ConfigPath := ""
 
     ; 配置段名称
     static SectionName := "General"
@@ -22,6 +23,34 @@ class SettingsManager {
         "Shortcuts", "#q",      ; 字符串
         "Link",   "https://github.com/Kickback99/openfile" ; 字符串
     )
+
+    ;!!! 新增：获取配置文件路径的静态方法
+    static GetConfigPath() {
+        if (this.ConfigPath = "") {
+            ; 获取用户家目录
+            userHome := A_MyDocuments  ; 文档目录
+            SplitPath(userHome, , &userHomeDir)
+            
+            ; 构建应用数据目录路径
+            appDataDir := userHomeDir "\openfile"
+            this.ConfigPath := appDataDir "\settings.ini"
+            
+            ; 确保目录存在
+            this.EnsureSettingsDirectory(appDataDir)
+        }
+        return this.ConfigPath
+    }
+    
+    ;!!! 新增：确保设置目录存在的方法
+    static EnsureSettingsDirectory(appDataDir) {
+        if (!DirExist(appDataDir)) {
+            try {
+                DirCreate(appDataDir)
+            } catch as e {
+                MsgBox("创建设置目录失败: " e.Message)
+            }
+        }
+    }
     
     ; 读取所有配置到Map中
     static ReadAllConfig() {
@@ -29,7 +58,7 @@ class SettingsManager {
         config := this.CreateDefaultConfig()
         
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
             
             if (!FileExist(settingsPath)) {
                 ; 文件不存在，返回默认配置
@@ -160,7 +189,7 @@ class SettingsManager {
     ; 写入配置值
     static SetValue(key, value) {
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
             
             ; 先读取现有配置
             config := this.ReadAllConfig()
@@ -179,7 +208,7 @@ class SettingsManager {
     ; 写入所有配置到文件
     static WriteConfig(config) {
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
             
             ; 构建文件内容，使用 SectionName 变量
             content := "[" . this.SectionName . "]`r`n"
@@ -221,7 +250,7 @@ class SettingsManager {
     ; 检查并修复配置文件
     static EnsureConfigFile() {
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
             
             if (!FileExist(settingsPath)) {
                 ; 创建默认配置文件

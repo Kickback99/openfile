@@ -15,7 +15,18 @@ class ConfigManager {
         ; 应该是：E:\release\openfile\src
         
         ; configs目录就在当前目录下
-        configsDir := scriptDir "\configs"
+        ; configsDir := scriptDir "\configs"
+
+
+        ;!!! 修改：将configs目录改为用户家目录下的openfile/configs
+        ; 获取用户家目录
+        userHome := A_MyDocuments  ; 文档目录
+        SplitPath(userHome, , &userHomeDir)
+
+        ; 构建应用数据目录路径
+        appDataDir := userHomeDir "\openfile"
+        configsDir := appDataDir "\configs"
+
 
         ; 自动构建配置文件路径：configs\{configType}.ini
         if (configType = "") {
@@ -33,9 +44,9 @@ class ConfigManager {
             this.fileList := []
             return
         } */
-
+       
         ; 确保目录存在
-        this.EnsureConfigDirectory(configsDir)
+        this.EnsureConfigDirectory(appDataDir, configsDir)
         
         ; 确保配置文件存在（如果不存在则创建空文件）
         this.EnsureConfigFileExists()
@@ -45,8 +56,18 @@ class ConfigManager {
         this.fileList := this.GetFileList()
     }
 
-    ; 确保配置目录存在
-    EnsureConfigDirectory(configsDir) {
+    ;!!! 修改：更新确保配置目录的方法，支持两级目录
+    EnsureConfigDirectory(appDataDir, configsDir) {
+        ; 确保应用数据目录存在
+        if (!DirExist(appDataDir)) {
+            try {
+                DirCreate(appDataDir)
+            } catch as e {
+                MessageManager.ShowError("创建应用数据目录失败: " e.Message)
+            }
+        }
+        
+        ; 确保配置目录存在
         if (!DirExist(configsDir)) {
             try {
                 DirCreate(configsDir)
