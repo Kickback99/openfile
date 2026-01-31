@@ -121,7 +121,7 @@ class SettingsManager {
     ; 新增：创建默认settings.ini文件
     static CreateDefaultSettingsFile() {
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
             SplitPath(settingsPath, , &configDir)
             
             if (!DirExist(configDir)) {
@@ -766,7 +766,7 @@ class SettingsManager {
     ; 新增：重命名配置段
     static RenameConfigSection(oldSectionName, newSectionName) {
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
             
             ; 读取现有所有配置
             allConfig := this.ReadAllConfig()

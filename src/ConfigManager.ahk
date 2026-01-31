@@ -344,10 +344,10 @@ class ConfigManager {
         ; 1. 如果没传参，获取所有类型
         ; 2. 如果传参了，排除指定类型
         
-        ; 获取 configs 目录
-        configManagerPath := A_LineFile
-        SplitPath(configManagerPath, , &scriptDir)
-        configsDir := scriptDir "\configs"
+        ; 获取用户家目录下的 configs 目录
+        userHome := A_MyDocuments
+        SplitPath(userHome, , &userHomeDir)
+        configsDir := userHomeDir "\openfile\configs"
         
         ; 查找所有 .ini 文件
         configTypes := []
@@ -396,18 +396,18 @@ class ConfigManager {
 
     ; 新增：获取configs目录路径
     static GetConfigsDir() {
-        configManagerPath := A_LineFile
-        SplitPath(configManagerPath, , &scriptDir)
-        return scriptDir "\configs"
+        userHome := A_MyDocuments
+        SplitPath(userHome, , &userHomeDir)
+        return userHomeDir "\openfile\configs"
     }
 
     ; 新增：重命名配置文件
     static RenameConfigFile(oldConfigType, newConfigType) {
         try {
-            ; 获取configs目录路径
-            configManagerPath := A_LineFile
-            SplitPath(configManagerPath, , &scriptDir)
-            configsDir := scriptDir "\configs"
+            ; 获取用户家目录下的 configs 目录路径
+            userHome := A_MyDocuments
+            SplitPath(userHome, , &userHomeDir)
+            configsDir := userHomeDir "\openfile\configs"
             
             ; 构建旧文件路径和新文件路径
             oldPath := configsDir "\" oldConfigType ".ini"

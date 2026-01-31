@@ -155,7 +155,12 @@ class ContextMenuManager {
         }
         
         ; 创建临时TXT文件
-        tempTxtPath := tempDir . "\" A_TickCount (isMove ? "_move" : "_copy") ".txt"
+        timestamp := A_TickCount
+        actionType := isMove ? "move" : "copy"
+        ;!!! 修改：使用时间戳和随机数确保唯一性
+        randomNum := Random(1000, 9999)
+        tempTxtPath := tempDir . "\openfile_" actionType "_" timestamp "_" randomNum ".txt"
+        
         if (!this.CreateMoveTxtFile(guiManager, selectedTexts, tempTxtPath)) {
             MessageManager.ShowError("创建" . (isMove ? "移动" : "复制") . "文件失败")
             return
@@ -188,8 +193,8 @@ class ContextMenuManager {
             MessageManager.ShowError(actionText . "到目标配置失败")
         }
 
-        ; 延迟删除整个temp文件夹（使用一次性定时器）
-        SetTimer(() => this.DeleteTempDirectory(tempDir), -500)  ; 0.5秒后删除
+        ; 延迟删除临时文件（使用一次性定时器）
+        SetTimer(() => this.DeleteTempFile(tempDir), -500)  ; 0.5秒后删除
     }
 
     ; 刷新目标配置的GUI
@@ -221,37 +226,46 @@ class ContextMenuManager {
 
     ; 确保temp目录存在的辅助方法
     static EnsureTempDirectory() {
-        scriptDir := A_ScriptDir
-        tempDir := scriptDir . "\temp"
+        ;!!! 修改：使用用户家目录下的openfile目录
+        ; 获取用户家目录
+        userHome := A_MyDocuments  ; 文档目录
+        SplitPath(userHome, , &userHomeDir)
+        
+        ; 构建应用数据目录路径
+        appTempDir := userHomeDir . "\openfile"
         
         ; 如果目录不存在，创建它
-        if (!DirExist(tempDir)) {
+        if (!DirExist(appTempDir)) {
             try {
-                DirCreate(tempDir)
-                ; MsgBox("已创建临时目录: " tempDir)  ; 调试信息，可以注释掉
+                DirCreate(appTempDir)
+                ; 可以取消下面的注释查看调试信息
+                if (WindowConstants.DEBUG_MODE) {
+                    MessageManager.ShowSuccess("已创建应用临时目录: " appTempDir, "调试信息", 0x40)
+                }
             } catch as e {
                 MessageManager.ShowError("创建临时目录失败: " e.Message)
                 return false
             }
         }
         
-        return tempDir
+        return appTempDir
     }
 
-    ; 删除temp目录及其所有内容
-    static DeleteTempDirectory(tempDir) {
+    ; 删除临时文件
+    static DeleteTempFile(filePath) {
         try {
             ; 先检查目录是否存在
-            if (!DirExist(tempDir)) {
+            if (!FileExist(filePath)) {
                 return true
             }
             
-            ; 删除目录及其所有内容
-            DirDelete(tempDir, true)
+            ; 删除文件
+            FileDelete(filePath)
             
             ; 验证是否删除成功
-            if (DirExist(tempDir)) {
-                ; 删除失败，可能是文件被占用，不显示错误避免干扰用户
+            if (FileExist(filePath)) {
+                ; 删除失败，可能是文件被占用
+                ; 静默失败，不显示错误信息
                 return false
             }
             
