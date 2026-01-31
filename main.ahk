@@ -12,7 +12,7 @@ InitConfigTypes() {
     global ConfigTypes
     
     ; 修改：直接从ConfigManager获取配置类型
-    ConfigTypes := ConfigManager.GetAllConfigTypes(false)
+    ConfigTypes := ConfigManager.GetAllConfigTypes()
     
     ; 如果获取为空，使用默认值
     if (ConfigTypes.Length = 0) {

@@ -316,13 +316,19 @@ class ConfigManager {
     }
 
     ; 获取所有可用的配置类型（排除当前类型）
-    static GetAllConfigTypes(excludeCurrent := true) {
-        ; 获取configs目录
+    ;!!! 重构：兼容 v1 和 v2 调用的 GetAllConfigTypes 方法
+    static GetAllConfigTypes(excludeType := "") {
+        ; 参数说明：
+        ; excludeType: 可选参数，要排除的配置类型名称
+        ; 1. 如果没传参，获取所有类型
+        ; 2. 如果传参了，排除指定类型
+        
+        ; 获取 configs 目录
         configManagerPath := A_LineFile
         SplitPath(configManagerPath, , &scriptDir)
         configsDir := scriptDir "\configs"
         
-        ; 查找所有.ini文件
+        ; 查找所有 .ini 文件
         configTypes := []
 
         ; 检查目录是否存在
@@ -334,9 +340,9 @@ class ConfigManager {
             ; 提取文件名（不含扩展名）
             SplitPath(A_LoopFileName, , , , &nameOnly)
             
-            ; 如果excludeCurrent为true且当前有configType，排除它
-            if (excludeCurrent && this.HasOwnProp("configType") && nameOnly = this.configType) {
-                continue
+            ;!!! 新逻辑：如果传了参数且匹配，则排除；否则都添加
+            if (excludeType != "" && nameOnly = excludeType) {
+                continue  ; 排除指定类型
             }
             
             configTypes.Push(nameOnly)

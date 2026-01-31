@@ -80,7 +80,7 @@ class SettingsManager {
             }
             
             ; 获取所有配置类型
-            configTypes := ConfigManager.GetAllConfigTypes(false)
+            configTypes := ConfigManager.GetAllConfigTypes()
             
             ;!!! 修改：直接使用GlobalConfigKeys构建内容
             ; 构建文件内容
@@ -414,7 +414,7 @@ class SettingsManager {
             
             ; 2. 写入其他section
             ; 获取所有配置类型
-            configTypes := ConfigManager.GetAllConfigTypes(false)
+            configTypes := ConfigManager.GetAllConfigTypes()
             
             ; 先写入支持的配置类型
             for configType in configTypes {
@@ -461,7 +461,7 @@ class SettingsManager {
     ; 检查是否是支持的配置类型
     ; 修改：IsSupportedType 方法也要支持动态类型
     static IsSupportedType(sectionName) {
-        configTypes := ConfigManager.GetAllConfigTypes(false)
+        configTypes := ConfigManager.GetAllConfigTypes()
         return this.HasValue(configTypes, sectionName)
     }
     
@@ -524,7 +524,7 @@ class SettingsManager {
             ; 获取配置类型
             existingTypes := []
             try {
-                existingTypes := ConfigManager.GetAllConfigTypes(false)
+                existingTypes := ConfigManager.GetAllConfigTypes()
             } catch {
                 ; 忽略错误
             }
@@ -574,7 +574,7 @@ class SettingsManager {
             ; 2. 获取实际存在的配置类型
             existingTypes := []
             try {
-                existingTypes := ConfigManager.GetAllConfigTypes(false)
+                existingTypes := ConfigManager.GetAllConfigTypes()
             } catch {
                 ; 如果获取失败，直接返回
                 return true
