@@ -166,6 +166,9 @@ MainHotkeyHandler(*) {
 InitProgram(){
     ; 启动时注册热键
     RegisterMainShortcut()
+
+    ; 自动启动应用程序
+    ShowGuiManager('openfile')
 }
 
 ; 执行初始化
