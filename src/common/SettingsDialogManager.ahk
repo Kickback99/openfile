@@ -66,8 +66,8 @@ class SettingsDialogManager {
         ; 调用 CreateRegularButtonsWithGui 方法
         this.CreateRegularButtonsWithGui(moreGui, guiManager)
 
-        ; 计算并设置窗口尺寸和位置
-        this.CalculateAndPositionWindow(moreGui, guiManager, buttonLayout.Length)
+        ; 居中显示
+        moreGui.Show("Center")
 
         return moreGui
     }
@@ -236,75 +236,6 @@ class SettingsDialogManager {
         btnExport.OnEvent("Click", (btnCtrl, info) => guiManager.HandleExport(moreGui))
         btnAppend.OnEvent("Click", (btnCtrl, info) => guiManager.HandleAppend(moreGui))
         btnLoad.OnEvent("Click", (btnCtrl, info) => guiManager.HandleLoad(moreGui))
-    }
-
-    ; 计算并定位窗口的方法
-    static CalculateAndPositionWindow(moreGui, guiManager, buttonLayoutRows) {
-        estimatedHeight := WindowConstants.CalculateEmpiricalHeight(buttonLayoutRows)
-
-        ; 检查高度模式是否应该切换
-        if (WindowConstants.MORE_GUI_HEIGHT < estimatedHeight && WindowConstants.HEIGHT_MODE != "auto") {
-            WindowConstants.HEIGHT_MODE := "auto"
-            if (WindowConstants.DEBUG_MODE) {
-                tip := "当前高度小于计算高度，已为你切换到auto模式`n"
-                tip .= "当前高度为：" . WindowConstants.MORE_GUI_HEIGHT . "`n"
-                tip .= "计算高度为：" . estimatedHeight . "`n"
-                tip .= "如果需要调整偏移：`n"
-                tip .= "请调整WindowConstants.MORE_GUI_ADJUST_LEFT和WindowConstants.MORE_GUI_ADJUST_TOP"
-                MessageManager.ShowInfo(tip)
-            }
-        }
-
-        ; 根据高度模式决定最终高度
-        switch WindowConstants.HEIGHT_MODE {
-            case "fixed":
-                WindowPositionUtils.CenterChildWindow(
-                    guiManager.gui.Hwnd,
-                    moreGui,
-                    WindowConstants.MORE_GUI_WIDTH,
-                    WindowConstants.MORE_GUI_HEIGHT,
-                    WindowConstants.MORE_GUI_ADJUST_LEFT,
-                    WindowConstants.MORE_GUI_ADJUST_TOP
-                )
-            case "auto":
-                WindowPositionUtils.CenterChildWindowWithConstants(
-                    guiManager.gui.Hwnd,
-                    moreGui,
-                    WindowConstants.MORE_GUI_WIDTH,
-                    estimatedHeight,
-                    WindowConstants.MORE_GUI_ADJUST_LEFT,
-                    WindowConstants.MORE_GUI_ADJUST_TOP
-                )
-            case "max":
-                if (WindowConstants.MORE_GUI_HEIGHT > estimatedHeight) {
-                    WindowPositionUtils.CenterChildWindow(
-                        guiManager.gui.Hwnd,
-                        moreGui,
-                        WindowConstants.MORE_GUI_WIDTH,
-                        WindowConstants.MORE_GUI_HEIGHT,
-                        WindowConstants.MORE_GUI_ADJUST_LEFT,
-                        WindowConstants.MORE_GUI_ADJUST_TOP
-                    )
-                } else {
-                    WindowPositionUtils.CenterChildWindowWithConstants(
-                        guiManager.gui.Hwnd,
-                        moreGui,
-                        WindowConstants.MORE_GUI_WIDTH,
-                        estimatedHeight,
-                        WindowConstants.MORE_GUI_ADJUST_LEFT,
-                        WindowConstants.MORE_GUI_ADJUST_TOP
-                    )
-                }
-            default:
-                WindowPositionUtils.CenterChildWindowWithConstants(
-                    guiManager.gui.Hwnd,
-                    moreGui,
-                    WindowConstants.MORE_GUI_WIDTH,
-                    WindowConstants.MORE_GUI_HEIGHT,
-                    WindowConstants.MORE_GUI_ADJUST_LEFT,
-                    WindowConstants.MORE_GUI_ADJUST_TOP
-                )
-        }
     }
 
     ; 添加高度计算辅助函数
@@ -599,16 +530,7 @@ class SettingsDialogManager {
         inputGui.OnEvent('Escape',(*) => this.HandleInputGuiClose(inputGui, parentGui))
 
         ; 居中显示
-        ; inputGui.Show("w320 h150 Center")
-
-        WindowPositionUtils.CenterChildWindowWithConstants(
-            parentGui.Hwnd,                           ; 父窗口句柄
-            inputGui,                                 ; 子窗口对象
-            WindowConstants.BATCH_THRESHOLD_WIDTH,    ; 对话框宽度
-            WindowConstants.BATCH_THRESHOLD_HEIGHT,   ; 对话框高度
-            WindowConstants.BATCH_THRESHOLD_ADJUST_LEFT,   ; 水平微调
-            WindowConstants.BATCH_THRESHOLD_ADJUST_TOP     ; 垂直微调
-        )
+        inputGui.Show("Center")
     }
 
     ; 处理批量阈值保存
@@ -733,15 +655,8 @@ class SettingsDialogManager {
         hotkeyGui.OnEvent("Close",(*) => this.handleCloseHotKeyGui(hotkeyGui,parentGui))
         hotkeyGui.OnEvent("Escape",(*) => this.handleCloseHotKeyGui(hotkeyGui,parentGui))
 
-        ; 显示窗口
-        WindowPositionUtils.CenterChildWindowWithConstants(
-            parentGui.Hwnd,                           ; 父窗口句柄
-            hotkeyGui,                                ; 子窗口对象
-            WindowConstants.HOTKEY_GUI_WIDTH,         ; 对话框宽度
-            WindowConstants.HOTKEY_GUI_HEIGHT,        ; 对话框高度
-            WindowConstants.HOTKEY_GUI_ADJUST_LEFT,   ; 水平微调
-            WindowConstants.HOTKEY_GUI_ADJUST_TOP     ; 垂直微调
-        )
+        ; 居中显示
+        hotkeyGui.Show("Center")
     }
 
     ; 工具函数：将热键转换为可读格式

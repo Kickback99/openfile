@@ -6,7 +6,6 @@
 #Include "./common/FileProcessor.ahk"
 #Include "./common/MessageManager.ahk"
 #Include "./common/WindowConstants.ahk"
-#Include "./common/WindowPositionUtils.ahk"
 #Include "./common/ListBoxHelper.ahk"
 #Include "./common/SettingsDialogManager.ahk"
 
@@ -436,18 +435,8 @@ class GuiManager {
         editGui.OnEvent("close",(*) => GuiEventHandlers.HandleEditGuiClose(this,editGui))
         editGui.OnEvent("Escape", (*) => GuiEventHandlers.HandleEditGuiClose(this, editGui))
 
-        ; 计算 EditGui 高度
-        editHeight := (this.editMode = "create" ? WindowConstants.EDIT_GUI_HEIGHT_CREATE : WindowConstants.EDIT_GUI_HEIGHT_EDIT)
-
-        ; 使用工具类居中显示窗口
-        WindowPositionUtils.CenterChildWindowWithConstants(
-            this.gui.Hwnd,
-            editGui,
-            WindowConstants.EDIT_GUI_WIDTH,
-            editHeight,
-            WindowConstants.EDIT_GUI_ADJUST_LEFT,
-            WindowConstants.EDIT_GUI_ADJUST_TOP
-        )
+        ; 居中显示
+        editGui.Show("Center")
     }
 
     ; ==================== 列表刷新与选择 ====================
