@@ -110,6 +110,9 @@ InitProgram(){
 
     ; 搜索框 ↓ / 创建按钮 ↑ 的焦点转移
     GuiEventHandlers.RegisterArrowNavHotkeys()
+
+    ; 列表滚轮滚动改走 WM_VSCROLL
+    GuiEventHandlers.RegisterWheelScrollHotkeys()
 }
 
 ; 执行初始化
