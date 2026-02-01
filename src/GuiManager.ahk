@@ -107,6 +107,7 @@ class GuiManager {
 
         ; 创建 ListBox,作为第一个可 Tab 访问的控件
         this.listBox := this.gui.Add("ListBox", "w500 r15 Center Tabstop +Multi")
+        this.InstallListWheelSubclass()
 
         ; 添加文件到 ListBox
         this.PopulateFileList()
@@ -179,6 +180,27 @@ class GuiManager {
         MessageManager.SetMainWindowHwnd(this.gui.Hwnd)
     }
 
+    ; ==================== 列表滚轮子类化 ====================
+
+    ; 直接吞掉 WM_MOUSEWHEEL，改发 WM_VSCROLL，绕开 AHK v2 的慢路径
+    InstallListWheelSubclass() {
+        this.wheelCallback := CallbackCreate(ObjBindMethod(this, "ListWheelProc"), "F", 4)
+        this.wheelOldProc := DllCall("SetWindowLongPtrW", "ptr", this.listBox.Hwnd, "int", -4, "ptr", this.wheelCallback, "ptr")
+    }
+
+    ListWheelProc(hwnd, msg, wParam, lParam) {
+        if (msg = 0x020A) {
+            delta := (wParam >> 16) & 0xFFFF
+            if (delta & 0x8000)
+                delta -= 0x10000
+            scrollMsg := delta > 0 ? 0 : 1  ; SB_LINEUP / SB_LINEDOWN
+            loop 3
+                SendMessage(0x0115, scrollMsg, 0, , hwnd)
+            return 0
+        }
+        return DllCall("CallWindowProcW", "ptr", this.wheelOldProc, "ptr", hwnd, "uint", msg, "uptr", wParam, "uptr", lParam, "ptr")
+    }
+
     ; t_openfile_settings：alwaysOnTop-get
     ; 刷新配置值的方法
     RefreshSettings() {
@@ -248,6 +270,11 @@ class GuiManager {
         if (this.gui) {
             this.gui.Destroy()
             this.gui := ""
+        }
+
+        if (this.HasProp("wheelCallback") && this.wheelCallback) {
+            CallbackFree(this.wheelCallback)
+            this.wheelCallback := 0
         }
     }
 
