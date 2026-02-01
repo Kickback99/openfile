@@ -474,7 +474,7 @@ class GuiManager {
             ; 多选状态：禁用除删除和刷新外的所有按钮
             this.buttons["create"].Enabled := true
             this.buttons["edit"].Enabled := false
-            this.buttons["locate"].Enabled := false
+            this.buttons["locate"].Enabled := true
             this.buttons["more"].Enabled := true
             
             ; 启用删除和刷新按钮
