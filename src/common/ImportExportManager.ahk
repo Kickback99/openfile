@@ -33,7 +33,7 @@ class ImportExportManager {
 
         ; 自动填充文件名
         defaultFileName := this.configType ".txt"
-        exportPath := FileSelect("S", defaultFileName, "导出配置文件", "文本文件 (*.txt)")
+        exportPath := FileSelect("S16", defaultFileName, "导出配置文件", "文本文件 (*.txt)")
 
         ; 用户取消选择
         if (exportPath = "") {
