@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 #Include src\ConfigManager.ahk
+#Include src\common\FontManager.ahk
 #Include src\GuiManager.ahk
 #Include "src\common\SettingsManager.ahk"
 
@@ -105,6 +106,9 @@ MainHotkeyHandler(*) {
 
 ; 脚本启动入口：初始化并注册热键
 InitProgram(){
+    ; 先加载私有字体，再创建任何 GUI
+    FontManager.Load()
+
     ; 启动时注册热键
     RegisterMainShortcut()
 
