@@ -63,12 +63,7 @@ class PathUtils {
             return false
         }
 
-        ; 如果是文件，使用 LocateFile 方法
-        if (FileExist(rootPath)) {
-            return this.LocateFile(rootPath)  ; 这会用 explorer /select 打开文件
-        }
-
-        ; 如果是目录，打开目录
+        ; 目录优先：FileExist 对目录同样返回属性
         if (DirExist(rootPath)) {
             try {
                 Run('explorer.exe "' rootPath '"')
@@ -76,6 +71,11 @@ class PathUtils {
             } catch {
                 return false
             }
+        }
+
+        ; 如果是文件，使用 LocateFile 方法
+        if (FileExist(rootPath)) {
+            return this.LocateFile(rootPath)  ; 这会用 explorer /select 打开文件
         }
 
         return false

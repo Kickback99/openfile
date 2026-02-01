@@ -322,8 +322,10 @@ class ConfigManager {
 
     ; 获取 Root 路径
     GetRootPath() {
-        if (this.data.Has("Root") && this.data["Root"].Has("path")) {
-            return this.data["Root"]["path"]
+        for section, sectionData in this.data {
+            if (StrLower(section) = "root" && sectionData.Has("path")) {
+                return sectionData["path"]
+            }
         }
         return ""
     }
