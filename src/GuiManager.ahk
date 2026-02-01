@@ -472,10 +472,10 @@ class GuiManager {
         ; 根据多选状态启用/禁用按钮
         if (this._isMultiSelect) {
             ; 多选状态：禁用除删除和刷新外的所有按钮
-            this.buttons["create"].Enabled := false
+            this.buttons["create"].Enabled := true
             this.buttons["edit"].Enabled := false
             this.buttons["locate"].Enabled := false
-            this.buttons["more"].Enabled := false
+            this.buttons["more"].Enabled := true
             
             ; 启用删除和刷新按钮
             this.buttons["delete"].Enabled := true
