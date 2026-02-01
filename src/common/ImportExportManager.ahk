@@ -14,7 +14,6 @@ class ImportExportManager {
     
     ; 导出配置（主方法）
     ExportConfig(moreGui,guiManager) {
-        ; moreGui.Destroy()
 
         if(guiManager.showingPrompt){
             MessageManager.ShowError("请先创建文件","提示")
@@ -23,7 +22,7 @@ class ImportExportManager {
 
         SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
-        ; 修改：保存当前选择的文本数组
+        ; 保存当前选择的文本数组
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
         ; 临时启用OwnDialogs
@@ -68,7 +67,7 @@ class ImportExportManager {
             content := FileRead(this.configPath)
             txtContent := this.IniToTxt(content)
 
-            ; 修改点：先删除文件，再写入，确保覆盖而不是追加
+            ; 先删除文件，再写入，确保覆盖而不是追加
             if (FileExist(filePath)) {
                 FileDelete(filePath)
             }
@@ -161,10 +160,10 @@ class ImportExportManager {
     
     ; 导入配置（主方法）
     ImportConfig(moreGui,guiManager) {
-        ; moreGui.Destroy()
+
         SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
-        ; 修改：保存当前选择的文本数组
+        ; 保存当前选择的文本数组
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
         ; 临时启用OwnDialogs
@@ -336,7 +335,7 @@ class ImportExportManager {
         }
     }
 
-    ; 修改Range函数，添加步长参数
+    ; Range函数，添加步长参数
     static Range(start, end, step := 1) {
         arr := []
         if (step > 0) {
@@ -355,10 +354,9 @@ class ImportExportManager {
     
     ; 追加配置（主方法）
     AppendConfig(moreGui,guiManager) {
-        ; moreGui.Destroy()
         SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
 
-        ; 修改：保存当前选择的文本数组
+        ; 保存当前选择的文本数组
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
         if (!FileExist(this.configPath)) {
@@ -547,7 +545,7 @@ class ImportExportManager {
     }
     
     ; 合并INI内容，支持Root覆盖
-    ; 修改点2: 重构MergeIniContentWithRoot函数，支持不区分大小写的匹配
+    ; 重构MergeIniContentWithRoot函数，支持不区分大小写的匹配
     static MergeIniContentWithRoot(oldContent, newData) {
         newRoot := newData["root"]
         newSections := newData["sections"]
@@ -649,7 +647,7 @@ class ImportExportManager {
         return oldContent . "`r`n"
     }
 
-    ; 新增辅助函数：按行号移除section
+    ; 按行号移除section
     static RemoveSectionByLines(content, startLine, endLine) {
         lines := StrSplit(content, "`n", "`r")
         newLines := []
@@ -668,7 +666,7 @@ class ImportExportManager {
         return result
     }
 
-    ; 修改ReplaceSection函数，支持不区分大小写的section名称
+    ; 支持不区分大小写的section名称
     static ReplaceSection(content, existingSectionName, newSectionData) {
         ; 构建正则表达式，匹配原始大小写的section
         escapedSectionName := RegExReplace(existingSectionName, "[.*+?^${}()|[\]\\]", "\$0")
@@ -695,7 +693,7 @@ class ImportExportManager {
         return content
     }
 
-    ; +++ 新增辅助函数：追加section到文件末尾
+    ; 辅助函数：追加section到文件末尾
     static AppendSection(content, sectionData) {
         ; 清理末尾多余的空行
         content := RTrim(content, "`r`n")
@@ -713,7 +711,7 @@ class ImportExportManager {
         return content
     }
     
-    ; 新增：处理用户取消选择的通用逻辑
+    ; 处理用户取消选择的通用逻辑
     static HandleUserCancel(guiManager, selectedTexts) {
         ; 恢复Owner关系
         if(guiManager.isTop){
@@ -722,10 +720,10 @@ class ImportExportManager {
 
         ; 恢复选择
         if (selectedTexts.Length > 0) {
-            ; >>> 修改：恢复选中项（只恢复第一项，因为实际是单选）
+            ; 恢复选中项（只恢复第一项，因为实际是单选）
             GuiEventHandlers.SelectItemInListBox(guiManager, selectedTexts[1])
 
-            ; !!! 修改：即使选中的是提示文本，也要恢复选中项
+            ; 即使选中的是提示文本，也要恢复选中项
             ; 检查是否为提示文本
             firstText := selectedTexts[1]
             isPrompt := guiManager.showingPrompt || 
@@ -751,7 +749,7 @@ class ImportExportManager {
             SettingsDialogManager.HandleMoreGuiClose(guiManager,moreGui)
         }
 
-        ; 修改：保存当前选择的文本数组
+        ; 保存当前选择的文本数组
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
 
         ; 临时启用OwnDialogs

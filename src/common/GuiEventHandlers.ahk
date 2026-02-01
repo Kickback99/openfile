@@ -478,7 +478,7 @@ class GuiEventHandlers {
     
     ; 定位按钮点击事件处理
     static HandleLocateClick(guiManager) {
-        ; 修改：按钮已被禁用时不会执行到这里，所以直接处理单选
+        ; 按钮已被禁用时不会执行到这里，所以直接处理单选
         ; 获取选中的文本
         selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
         
@@ -557,7 +557,7 @@ class GuiEventHandlers {
             }
         }
         
-        ; 重要：多选时不修改任何选中状态
+        ; 多选时不修改任何选中状态
         
         ; 如果有失败的情况，显示错误信息
         if (failedCount > 0) {
@@ -771,7 +771,7 @@ class GuiEventHandlers {
         } else if (guiManager.editMode = "create") {
             ; ************** 创建模式检查逻辑 **************
             
-            ; 修改：创建模式允许Root，但要检查唯一性
+            ; 创建模式允许Root，但要检查唯一性
             if (StrLower(section) = "root") {
                 ; 检查Root是否已存在
                 for displayName, file in guiManager.fileMap {
@@ -853,7 +853,7 @@ class GuiEventHandlers {
 
     ; ==================== 拖拽事件处理 ====================
 
-    ; 新增：处理拖放文件到编辑对话框的事件
+    ; 处理拖放文件到编辑对话框的事件
     ; 拖放文件回调
     static OnDropFilesCallback(guiObj, ctrlObj, filesArray, x, y) {
         try {
@@ -1029,7 +1029,7 @@ class GuiEventHandlers {
         guiManager.itemToSelectAfterRefresh := ""
     }
     
-    ; 修改：根据文本选择列表项（处理单选和多选的数据类型）
+    ; 根据文本选择列表项（处理单选和多选的数据类型）
     static SelectItemByText(guiManager, textToSelect) {
         if (textToSelect = "" || guiManager.showingPrompt) {
             return
