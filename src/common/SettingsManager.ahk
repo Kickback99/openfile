@@ -1,6 +1,6 @@
 ; ============================================================
 ; SettingsManager.ahk
-; Settings.ini 配置文件管理器
+; Settings.ini配置文件管理器
 ; ============================================================
 class SettingsManager {
 
@@ -33,40 +33,40 @@ class SettingsManager {
 
         try {
             settingsPath := this.ConfigPath
-
+            
             if (!FileExist(settingsPath)) {
                 ; 文件不存在，返回默认配置
                 return config
             }
-
+            
             ; 读取文件内容
             content := FileRead(settingsPath)
-
+            
             ; 尝试多种编码读取
             if (content = "") {
                 ; 尝试 UTF-8 读取
                 try {
                     content := FileRead(settingsPath, "UTF-8")
                 }
-
+                
                 ; 如果还是空，尝试 ANSI
                 if (content = "") {
                     content := FileRead(settingsPath, "CP0")
                 }
             }
-
+            
             ; 解析内容
             lines := StrSplit(content, "`n", "`r")
             inGeneralSection := false
-
+            
             for line in lines {
                 line := Trim(line)
-
+                
                 ; 跳过注释和空行
                 if (line = "" || SubStr(line, 1, 1) = ";") {
                     continue
                 }
-
+                
                 ; 检查是否是段
                 if (SubStr(line, 1, 1) = "[") {
                     ; 使用 SectionName 变量
@@ -77,29 +77,29 @@ class SettingsManager {
                     }
                     continue
                 }
-
+                
                 ; 如果在 [General] 段中，解析配置
                 if (inGeneralSection && InStr(line, "=")) {
                     eqPos := InStr(line, "=")
                     if (eqPos > 0) {
                         key := Trim(SubStr(line, 1, eqPos - 1))
                         value := Trim(SubStr(line, eqPos + 1))
-
+                        
                         ; 移除行末注释
                         if (InStr(value, ";")) {
                             parts := StrSplit(value, ";")
                             value := Trim(parts[1])
                         }
-
+                        
                         ; 存储配置
                         config[key] := value
                     }
                 }
             }
-
+            
         } catch as e {
             ; 出错时返回默认配置；取消下行注释可查看错误信息
-            ; MsgBox("读取配置时出错：" . e.Message)
+            ; MsgBox("读取配置时出错: " . e.Message)
         }
 
         return config
@@ -142,7 +142,7 @@ class SettingsManager {
     static GetInt(key) {
         value := this.GetValue(key)
 
-        ; 如果获取的值为空，尝试从 DefaultConfig 获取默认值
+        ; 如果获取的值为空，尝试从DefaultConfig获取默认值
         if (value = "") {
             value := this.DefaultConfig.Get(key, "0")
         }
@@ -165,16 +165,16 @@ class SettingsManager {
     static SetValue(key, value) {
         try {
             settingsPath := this.ConfigPath
-
+            
             ; 先读取现有配置
             config := this.ReadAllConfig()
-
+            
             ; 更新值
             config[key] := String(value)
-
+            
             ; 重新写入文件
             return this.WriteConfig(config)
-
+            
         } catch {
             return false
         }
@@ -186,40 +186,40 @@ class SettingsManager {
     static WriteConfig(config) {
         try {
             settingsPath := this.ConfigPath
-
+            
             ; 构建文件内容，使用 SectionName 变量
             content := "[" . this.SectionName . "]`r`n"
-
+            
             ; 按照指定顺序写入
             for key in this.ConfigOrder {
                 if (config.Has(key)) {
                     value := config[key]
-
+                    
                     ; 由于现在所有值都是字符串，直接写入
                     ; 但为了安全，确保是字符串
                     if (Type(value) != "String") {
                         value := String(value)
                     }
-
+                    
                     content .= key . "=" . value . "`r`n"
                 }
             }
-
+            
             ; 确保目录存在
             SplitPath(settingsPath, , &configDir)
             if (!DirExist(configDir)) {
                 DirCreate(configDir)
             }
-
+            
             ; 写入文件
             file := FileOpen(settingsPath, "w", "UTF-8-RAW")
             file.Write(content)
             file.Close()
-
+            
             return true
-
+            
         } catch as e {
-            ; MsgBox("写入配置时出错：" . e.Message)
+            ; MsgBox("写入配置时出错: " . e.Message)
             return false
         }
     }
@@ -230,12 +230,12 @@ class SettingsManager {
     static EnsureConfigFile() {
         try {
             settingsPath := this.ConfigPath
-
+            
             if (!FileExist(settingsPath)) {
                 ; 创建默认配置文件
                  return this.ResetToDefault()
             }
-
+            
             ; 检查文件内容是否正常
             content := ""
             try {
@@ -245,16 +245,16 @@ class SettingsManager {
                     content := FileRead(settingsPath, "CP0")
                 }
             }
-
+            
             ; 检查是否是乱码（常见的中文乱码特征）
             if (this.IsCorruptedContent(content)) {
                 ; 乱码，重新创建
                 FileDelete(settingsPath)
                 return this.ResetToDefault()
             }
-
+            
             return true
-
+            
         } catch {
             return false
         }
@@ -320,14 +320,14 @@ class SettingsManager {
     static DeleteKey(key) {
         try {
             config := this.ReadAllConfig()
-
+            
             if (config.Has(key)) {
                 config.Delete(key)
                 return this.WriteConfig(config)
             }
-
+            
             return true
-
+            
         } catch {
             return false
         }

@@ -2,7 +2,7 @@
 
 ; ============================================================
 ; ConfigManager.ahk
-; 支持动态配置文件的 INI 管理器
+; 支持动态配置文件的INI管理器
 ; ============================================================
 class ConfigManager {
 
@@ -92,10 +92,10 @@ class ConfigManager {
         sortByAlphabet := SettingsManager.GetBool("SortByAlphabet")
 
         if (sortByAlphabet) {
-            ; v1 模式：使用传统方式
+            ; v1模式：使用传统方式
             return this.LoadConfigBasic()
         } else {
-            ; v2 模式：使用顺序记录方式
+            ; v2模式：使用顺序记录方式
             return this.LoadConfigWithOrder()
         }
     }
@@ -138,7 +138,7 @@ class ConfigManager {
         return configData
     }
 
-    ; 顺序记录加载（v2 模式）
+    ; 顺序记录加载（v2模式）
     LoadConfigWithOrder() {
         configData := Map()
         ; configData["_sectionsInOrder"] := []  ; 记录 section 顺序
@@ -258,7 +258,7 @@ class ConfigManager {
         return StrCompare(lower1, lower2, "Locale")
     }
 
-    ; V2 模式：按文件顺序获取文件列表
+    ; V2模式：按文件顺序获取文件列表
     GetFileListByFileOrder() {
         fileList := []
 
@@ -266,7 +266,7 @@ class ConfigManager {
         if (this.data.Has("_sectionsInOrder")) {
             sectionOrder := this.data["_sectionsInOrder"]  ; 获取顺序数组
             for section in sectionOrder {
-                ; 跳过 Root 项和顺序标记本身
+                ; 跳过Root项和顺序标记本身
                 if (section = "Root") {
                     continue
                 }
@@ -292,10 +292,10 @@ class ConfigManager {
     GetFileList() {
         ; 检查是否启用了字母排序
         if (SettingsManager.GetBool("SortByAlphabet")) {
-            ; v1 模式：使用拼音库进行智能排序
+            ; v1模式：使用拼音库进行智能排序
             return this.GetFileListSortedByPinyin()
         } else {
-            ; v2 模式：按文件顺序
+            ; v2模式：按文件顺序
             return this.GetFileListByFileOrder()
         }
     }
@@ -320,7 +320,7 @@ class ConfigManager {
         return this.configPath
     }
 
-    ; 获取 Root 路径
+    ; 获取Root路径
     GetRootPath() {
         for section, sectionData in this.data {
             if (StrLower(section) = "root" && sectionData.Has("path")) {
@@ -328,5 +328,29 @@ class ConfigManager {
             }
         }
         return ""
+    }
+
+    ; ==================== 配置类型管理 ====================
+
+    ; >>> 新增：获取所有可用的配置类型（排除当前类型）
+    static GetAllConfigTypes(excludeType := "") {
+        ; 获取configs目录
+        configManagerPath := A_LineFile
+        SplitPath(configManagerPath, , &scriptDir)
+        configsDir := scriptDir "\configs"
+
+        ; 查找所有.ini文件
+        configTypes := []
+        Loop Files, configsDir "\*.ini" {
+            ; 提取文件名（不含扩展名）
+            SplitPath(A_LoopFileName, , , , &nameOnly)
+
+            ; 排除当前类型
+            if (nameOnly != excludeType) {
+                configTypes.Push(nameOnly)
+            }
+        }
+
+        return configTypes
     }
 }

@@ -1,6 +1,6 @@
 ; ============================================================
 ; ListBoxHelper.ahk
-; ListBox 控件工具类（处理单选/多选、文本获取等）
+; ListBox控件工具类（处理单选/多选、文本获取等）
 ; ============================================================
 class ListBoxHelper {
 
@@ -8,7 +8,7 @@ class ListBoxHelper {
     static GetSelectedTexts(listBox) {
         try {
             textValue := listBox.Text
-
+            
             if (Type(textValue) = "Array") {
                 ; 多选模式：返回数组
                 return textValue
@@ -29,7 +29,7 @@ class ListBoxHelper {
     static GetSelectedIndices(listBox) {
         try {
             value := listBox.Value
-
+            
             if (Type(value) = "Array") {
                 ; 多选模式：返回数组
                 return value
@@ -95,7 +95,7 @@ class ListBoxHelper {
     static GetListBoxText(listBox) {
         try {
             textValue := listBox.Text
-
+            
             if (Type(textValue) = "Array") {
                 ; 多选模式：返回数组中的第一个文本
                 if (textValue.Length > 0) {

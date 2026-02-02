@@ -20,7 +20,7 @@
         dllcall("SetDllDirectory", "Str", path)
         for k,v in this.DLL_USE_MAP
         {
-            for k1, v1 in v
+            for k1, v1 in v 
             {
                 this.DLL_USE_MAP[k][k1] := DllCall("GetProcAddress", "Ptr", DllCall("LoadLibrary", "Str", k, "Ptr"), "AStr", k1, "Ptr")
             }

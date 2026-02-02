@@ -1,6 +1,6 @@
 ; ============================================================
 ; GuiEventHandlers.ahk
-; GUI 事件处理工具类
+; GUI事件处理工具类
 ; ============================================================
 class GuiEventHandlers {
 
@@ -130,6 +130,181 @@ class GuiEventHandlers {
         target := ListBoxHelper.GetArrowTargetIndex(guiManager.listBox, direction)
         if (target)
             guiManager.listBox.Value := target
+    ; ==================== 主窗口右键事件处理 ====================
+
+    ; >>> 新增：处理移动到目标配置
+    static HandleMoveTo(guiManager, targetConfigType) {
+        ; 获取选中的软件
+        selectedTexts := ListBoxHelper.GetSelectedTexts(guiManager.listBox)
+
+        ; 检查是否有选中项
+        if (selectedTexts.Length = 0) {
+            MsgBox("请先选择要移动的软件")
+            return
+        }
+
+        ; 确认移动
+        moveCount := selectedTexts.Length
+        response := MsgBox("确定要将选中的 " moveCount " 个软件移动到 '" targetConfigType "' 吗？", "确认移动", "YesNo")
+        if (response != "Yes") {
+            return
+        }
+
+        ; >>> 修改：使用当前目录下的temp目录
+        ; 获取脚本所在目录（common目录的父目录）
+        tempDir := this.EnsureTempDirectory()
+        if (tempDir = false) {
+            return  ; 目录创建失败，直接返回
+        }
+
+        ; 创建临时TXT文件
+        tempTxtPath := tempDir . "\" A_TickCount "_move.txt"
+        if (!this.CreateMoveTxtFile(guiManager, selectedTexts, tempTxtPath)) {
+            MsgBox("创建移动文件失败")
+            return
+        }
+
+        ; 追加到目标配置
+        if (this.AppendToConfig(targetConfigType, tempTxtPath)) {
+            ; 复用删除逻辑删除原项
+            if (selectedTexts.Length = 1) {
+                this.HandleSingleDelete(guiManager, selectedTexts[1], true)  ; true表示是移动操作
+            } else {
+                this.HandleMultipleDelete(guiManager, selectedTexts, true)  ; true表示是移动操作
+            }
+
+            ; 显示成功消息
+            if (moveCount = 1) {
+                this.ShowToolTip(guiManager, "移动成功！", 1500)
+            } else {
+                this.ShowToolTip(guiManager, "成功移动 " moveCount " 个软件！", 1500)
+            }
+        } else {
+            MsgBox("移动到目标配置失败")
+        }
+
+        ; >>> 修改：清理临时文件但不删除目录（保留temp目录）
+        try {
+            FileDelete(tempTxtPath)
+        } catch as e {
+            ; 忽略错误，只是临时文件清理失败不影响主要功能
+            ; MsgBox("清理临时文件失败: " e.Message)  ; 可以注释掉，不显示错误
+        }
+    }
+
+    ; >>> 修改：创建移动用的TXT文件（支持temp目录）
+    static CreateMoveTxtFile(guiManager, selectedTexts, outputPath) {
+        content := ""
+
+        ; 构建TXT内容
+        for text in selectedTexts {
+            if (guiManager.softwareMap.Has(text)) {
+                software := guiManager.softwareMap[text]
+                content .= software["name"] "`r`n"
+                content .= software["path"] "`r`n"
+            }
+        }
+
+        ; 检查是否有内容
+        if (content = "") {
+            return false
+        }
+
+        ; 写入临时文件
+        try {
+            ; >>> 确保文件不存在
+            if (FileExist(outputPath)) {
+                FileDelete(outputPath)
+            }
+
+            ; 写入内容
+            FileAppend(content, outputPath, "UTF-8")
+
+            ; 验证文件是否创建成功
+            if (!FileExist(outputPath)) {
+                return false
+            }
+
+            return true
+        } catch as e {
+            ; 输出错误信息便于调试
+            ; MsgBox("创建TXT文件失败: " e.Message "`n路径: " outputPath)
+            return false
+        }
+    }
+
+    ; >>> 修改：追加到目标配置（复用ImportExportManager）
+    static AppendToConfig(targetConfigType, txtFilePath) {
+        try {
+            ; 检查文件是否存在
+            if (!FileExist(txtFilePath)) {
+                MsgBox("临时TXT文件不存在: " txtFilePath)
+                return false
+            }
+
+            ; 获取目标配置的完整路径
+            configMgr := ConfigManager(targetConfigType)
+            configPath := configMgr.GetConfigPath()
+
+            ; 检查目标配置文件是否存在
+            if (!FileExist(configPath)) {
+                ; 如果不存在，创建空文件
+                FileAppend("", configPath, "UTF-8")
+            }
+
+            ; 创建ImportExportManager实例并调用追加方法
+            importExportMgr := ImportExportManager(targetConfigType, configPath)
+
+            ; >>> 复用ImportExportManager的追加逻辑
+            ; 读取现有INI内容
+            oldContent := FileRead(configPath)
+
+            ; 读取要追加的TXT内容
+            appendContent := FileRead(txtFilePath, "UTF-8")
+
+            ; 验证追加内容
+            if (!IniTools.ValidateTxtContent(appendContent, false, false)) {
+                MsgBox("追加内容验证失败")
+                return false
+            }
+
+            ; 解析要追加的TXT内容
+            parsedData := ImportExportManager.ParseTxtContentWithRoot(appendContent)
+
+            ; 合并内容
+            mergedContent := ImportExportManager.MergeIniContentWithRoot(oldContent, parsedData)
+
+            ; 写入文件
+            FileDelete(configPath)
+            FileAppend(mergedContent, configPath, "UTF-8")
+
+            ; 格式化文件
+            IniTools.FormatAndSaveIniFile(configPath)
+
+            return true
+        } catch as e {
+            MsgBox("追加到目标配置失败: " e.Message)
+            return false
+        }
+    }
+
+    ; >>> 新增：确保temp目录存在的辅助方法
+    static EnsureTempDirectory() {
+        scriptDir := A_ScriptDir
+        tempDir := scriptDir . "\temp"
+
+        ; 如果目录不存在，创建它
+        if (!DirExist(tempDir)) {
+            try {
+                DirCreate(tempDir)
+                ; MsgBox("已创建临时目录: " tempDir)  ; 调试信息，可以注释掉
+            } catch as e {
+                MsgBox("创建临时目录失败: " e.Message)
+                return false
+            }
+        }
+
+        return tempDir
     }
 
     ; ==================== 主窗口按钮事件处理 ====================
@@ -244,12 +419,12 @@ class GuiEventHandlers {
         guiManager.ShowEditDialogGui(file["name"], file["path"])
     }
 
-    ; 处理 editGui 关闭
+    ; 处理editGui关闭
     static HandleEditGuiClose(guiManager, editGui) {
         ; 恢复主窗口
         guiManager.gui.Opt("-Disabled")
 
-        ; 销毁 moreGui
+        ; 销毁moreGui
         editGui.Destroy()
 
         ; 让搜索框进入焦点
@@ -282,11 +457,13 @@ class GuiEventHandlers {
     }
 
     ; 处理批量删除（同时处理单选和多选的数据类型）
-    static HandleMultipleDelete(guiManager, selectedTexts) {
-        ; 确认删除
-        response := MessageManager.ShowError("确定要删除选中的 " selectedTexts.Length " 个文件吗？", "确认删除", "YesNo")
-        if (response != "Yes") {
-            return
+    static HandleMultipleDelete(guiManager, selectedTexts,isMove := false) {
+        ; 如果不是移动操作，显示确认对话框
+        if (!isMove) {
+            response := MessageManager.ShowError("确定要删除选中的 " selectedTexts.Length " 个文件吗？", "确认删除", "YesNo")
+            if (response != "Yes") {
+                return
+            }
         }
 
         ; 获取要删除的 section 列表
@@ -303,14 +480,17 @@ class GuiEventHandlers {
 
         ; 边界情况：如果要删除所有项目
         if (sectionsToDelete.Length >= totalItems) {
-            ; 确认是否删除所有项目
-            ; confirmResponse := MsgBox("确定要删除所有文件吗？这将清空整个列表。", "确认删除所有", 0x24)
-            confirmResponse := MessageManager.ShowConfirm(
-                "确定要删除所有文件吗？这将清空整个列表。",
+            ; 如果不是移动操作，显示确认对话框
+            if (!isMove) {
+                ; 确认是否删除所有项目
+                ; confirmResponse := MsgBox("确定要删除所有文件吗？这将清空整个列表。", "确认删除所有", 0x24)
+                confirmResponse := MessageManager.ShowConfirm(
+                "确定要删除所有文件吗？这将清空整个列表。", 
                 "确认删除所有"
             )
             if (confirmResponse != "Yes") {
-                return
+                    return
+                }
             }
 
             ; 逐个删除选中的文件
@@ -324,9 +504,13 @@ class GuiEventHandlers {
             ; 刷新列表（此时列表会为空）
             guiManager.RefreshList()
 
-            ; 显示删除成功消息
-            if (deletedCount > 0) {
-                this.ShowToolTip(guiManager, "已清空所有文件！", 1500)
+            ; 如果不是移动操作，显示删除成功消息
+            if (!isMove && deletedCount > 0) {
+                if (deletedCount = 1) {
+                    this.ShowToolTip(guiManager, "删除成功！", 1500)
+                } else {
+                    this.ShowToolTip(guiManager, "成功删除 " deletedCount " 个文件！", 1500)
+                }
             }
 
             return  ; 不需要尝试选择任何项
@@ -413,7 +597,7 @@ class GuiEventHandlers {
     }
 
     ; 处理单个删除
-    static HandleSingleDelete(guiManager, selectedText) {
+    static HandleSingleDelete(guiManager, selectedText,isMove := false) {
         if (!guiManager.fileMap.Has(selectedText)) {
             MessageManager.ShowError("未找到选中的文件信息","提示")
             return
@@ -421,10 +605,12 @@ class GuiEventHandlers {
 
         file := guiManager.fileMap[selectedText]
 
-        ; 确认删除
-        response := MessageManager.ShowConfirm("确定要删除 '" file["name"] "' 吗？", "确认删除")
-        if (response != "Yes") {
-            return
+        ; 如果不是移动操作，显示确认对话框
+        if (!isMove) {
+            response := MessageManager.ShowConfirm("确定要删除 '" file["name"] "' 吗？", "确认删除")
+            if (response != "Yes") {
+                return
+            }
         }
 
         ; 获取选中索引（正确处理多选和单选的数据类型）
@@ -445,7 +631,7 @@ class GuiEventHandlers {
 
         ; 边界情况：如果只有一个项目
         if (totalItems == 1) {
-            ; 从 INI 文件中删除
+            ; 从INI文件中删除
             if (!IniTools.DeleteFromIniFile(guiManager, file["section"])) {
                 MessageManager.ShowError("删除失败，无法更新配置文件")
                 return
@@ -486,7 +672,7 @@ class GuiEventHandlers {
                 }
             } else {
                 ; 删除的不是最后一个项目，尝试保持当前位置
-                ; 注意：删除后列表会缩短，所以 selectedIndex 可能超出范围
+                ; 注意：删除后列表会缩短，所以selectedIndex可能超出范围
                 try {
                     ; 先尝试选择原来的位置
                     guiManager.listBox.Value := selectedIndex
@@ -504,7 +690,10 @@ class GuiEventHandlers {
             }
         }
 
-        this.ShowToolTip(guiManager, "删除成功！", 1500)
+        ; 如果不是移动操作，显示删除成功消息
+        if (!isMove) {
+            this.ShowToolTip(guiManager, "删除成功！", 1500)
+        }
     }
 
     ; 简单的冒泡排序实现
@@ -534,14 +723,14 @@ class GuiEventHandlers {
         return arr
     }
 
-    ; 在 ListBox 中选中指定文本的项
+    ; 在ListBox中选中指定文本的项
     static SelectItemInListBox(guiManager, textToSelect) {
         if (textToSelect = "" || guiManager.showingPrompt) {
             return
         }
 
         ; 简化逻辑：直接遍历查找
-        ; 从第 1 项开始查找
+        ; 从第1项开始查找
         index := 1
         found := false
 
@@ -601,6 +790,8 @@ class GuiEventHandlers {
                 ; 只有条件不满足时才清除标记
                 guiManager.userWasInSearchBox := false
             }
+            ; 重新创建右键菜单
+            guiManager.CreateContextMenu()
         }
 
     ; ==================== 定位按钮事件处理 ====================
@@ -739,7 +930,7 @@ class GuiEventHandlers {
         ; ==================== 打开文件后的业务 ====================
 
         if (guiManager.searchBox.Value != "") {
-            ; 情况 1：搜索框有值，清空并设置焦点
+            ; 情况1：搜索框有值，清空并设置焦点
             guiManager.searchBox.Value := ""
             guiManager.ShowAllFile()
             guiManager.listBox.Value := 0
@@ -755,7 +946,7 @@ class GuiEventHandlers {
                 }
             }
         } else {
-            ; 情况 2：搜索框没值，保持选中刚才打开的项
+            ; 情况2：搜索框没值，保持选中刚才打开的项
             this.SelectItemByText(guiManager, file["name"])
         }
     }
@@ -785,7 +976,7 @@ class GuiEventHandlers {
 
     ; ListBox 获得焦点事件处理
     static HandleListBoxFocus(guiManager) {
-        ; 只有当 ListBox 当前没有选中项时，才设置选中第一项
+        ; 只有当ListBox当前没有选中项时，才设置选中第一项
         if (ListBoxHelper.GetSelectedIndices(guiManager.listBox).Length = 0) {
             ; 不是提示消息，设置为选中项
             ; if(!guiManager.IsFirstItemPrompt()){
@@ -842,7 +1033,7 @@ class GuiEventHandlers {
             return
         }
 
-        ; 编辑模式下不允许创建 Root
+        ; 编辑模式下不允许创建Root
          if (guiManager.editMode = "edit") {
             if (section = "Root" || section = "root" || StrLower(section) = "root") {
                 MessageManager.ShowError(
@@ -860,12 +1051,12 @@ class GuiEventHandlers {
             ; 检查新的 section 名称是否已存在（排除自身）
             if (section != guiManager.currentEditSection) {
                 for displayName, file in guiManager.fileMap {
-                    ; 跳过自己（当前正在编辑的 section）
+                    ; 跳过自己（当前正在编辑的section）
                     if (file["section"] = guiManager.currentEditSection) {
                         continue
                     }
 
-                    ; 如果尝试编辑为 Root，不允许
+                    ; 如果尝试编辑为Root，不允许
                     if (StrLower(section) = "root" && StrLower(file["section"]) = "root") {
                         MessageManager.ShowError(
                             "Root section已存在，请使用其他名称", "提示", , editGui.Hwnd
@@ -876,7 +1067,7 @@ class GuiEventHandlers {
                     ; 检查其他文件是否有相同的 section
                     if (file["section"] = section) {
                         MessageManager.ShowError(
-                           "Section名称已存在，请使用其他名称", "提示", , editGui.Hwnd
+                           "Section名称已存在，请使用其他名称", "提示", , editGui.Hwnd 
                         )
                         return
                     }
@@ -904,7 +1095,7 @@ class GuiEventHandlers {
 
             ; 创建模式允许 Root，但要检查唯一性
             if (StrLower(section) = "root") {
-                ; 检查 Root 是否已存在
+                ; 检查Root是否已存在
                 for displayName, file in guiManager.fileMap {
                     if (StrLower(file["section"]) = "root") {
                         ; Root 已存在时允许覆盖，不在这里阻止
@@ -913,7 +1104,7 @@ class GuiEventHandlers {
                     }
                 }
             } else {
-                ; 非 Root 项的正常检查
+                ; 非Root项的正常检查
                 ; 检查文件名称是否已存在
                 for displayName, file in guiManager.fileMap {
                     if (file["name"] = name) {
@@ -1061,7 +1252,7 @@ class GuiEventHandlers {
                 }
             }
 
-            ; 手动调用 HandleNameChangeForEditGui 来处理 section 逻辑
+            ; 手动调用HandleNameChangeForEditGui来处理section逻辑
             if (editGui.ctlName) {
                 GuiEventHandlers.HandleNameChangeForEditGui(editGui)
             }
@@ -1095,7 +1286,7 @@ class GuiEventHandlers {
 
         ; 检查路径是否为空
         if (pathValue = "") {
-            ; 如果路径为空，直接使用名称作为 section
+            ; 如果路径为空，直接使用名称作为section
             editGui.ctlSection.Value := nameValue
             return
         }
