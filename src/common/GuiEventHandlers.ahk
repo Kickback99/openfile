@@ -91,7 +91,13 @@ class GuiEventHandlers {
             return
         }
 
-        ; 取第一个选中项（如果是多选，按钮会被禁用，所以这里应该是单选）
+        ; 检查是否是多选
+        if(selectedTexts.Length != 1){
+            MessageManager.ShowError("编辑功能只支持单选，请只选择一个文件进行编辑","提示")
+            return
+        }
+
+        ; 取第一个选中项
         selectedText := selectedTexts[1]
         
         if (!guiManager.fileMap.Has(selectedText)) {
@@ -634,9 +640,6 @@ class GuiEventHandlers {
         if (guiManager.searchBox.Value = "") {
             guiManager.listBox.Value := 0
         }
-
-        ; >>> 关键：立即更新按钮状态(搜索框获得焦点时已取消多选)
-        guiManager.UpdateButtonStates()
     }
     
     ; 搜索框失去焦点事件处理
