@@ -5,6 +5,9 @@
 #Include src\GuiManager.ahk
 #Include "src\common\SettingsManager.ahk"
 
+; 入口文件顶部定义支持的配置类型数组
+global SupportedConfigTypes := ["openfile", "ai", "dev"]
+
 ; 全局热键注册函数
 RegisterMainShortcut() {
     ; 从配置文件中读取快捷键
@@ -49,7 +52,7 @@ ShowGuiManager(configType) {
         }
 
         ; t_openfile_settings：alwaysOnTop-get
-        isTop := SettingsManager.GetBool("AlwaysOnTop")
+        isTop := SettingsManager.GetBool("AlwaysOnTop", configType)
 
         if(isTop){
             try{
@@ -92,15 +95,24 @@ ShowGuiManager(configType) {
 
 ; win+q事件
 MainHotkeyHandler(*) {
-    ; 检查是否有GUI窗口在前台
-    activeGuiHwnd := WinActive("ahk_class AutoHotkeyGUI")
+    ShowGuiManager(SupportedConfigTypes[1])
+}
 
-    if (activeGuiHwnd) {
-        ; 如果有GUI窗口在前台，最小化它
-        WinMinimize(activeGuiHwnd)
-    } else {
-        ; 没有 GUI 窗口在前台，显示 GUI
-        ShowGuiManager('openfile')
+!c::{
+    IB := InputBox('请输入内容','AHKScript','w440 h150')
+
+    IBv := IB.value
+
+    if(IB.Result == 'Cancel'){
+        return
+    }
+
+    ; 检查是否在支持的类型中
+    for configType in SupportedConfigTypes {
+        if (IBv = configType) {
+            ShowManager(configType)
+            return
+        }
     }
 }
 
