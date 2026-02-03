@@ -784,8 +784,21 @@ class SettingsDialogManager {
         }
         
         ; 检查名称是否有效
-        if (!this.IsValidConfigTypeName(newType)) {
-            MessageManager.ShowWarning("配置类型名称只能包含字母、数字和下划线", , , configTypesGui.Hwnd)
+        if (!IniTools.IsValidName(newType, 0, true)) {
+            MessageManager.ShowWarning(
+                "配置类型名称包含非法字符！`n`n"
+                . "名称不能包含：\ / : * ? " . Chr(34) . " < > |`n"
+                . "且不能以点开头或结尾", , , configTypesGui.Hwnd
+            )
+            return
+        }
+
+        ; 长度限制（最多15个字符）
+        if (StrLen(newType) > 15) {
+            MessageManager.ShowWarning(
+                "配置类型名称不能超过15个字符！`n`n"
+                . "当前长度：" StrLen(newType) " 个字符", , , configTypesGui.Hwnd
+            )
             return
         }
         
@@ -846,24 +859,27 @@ class SettingsDialogManager {
         
         ; 检查是否与原名相同
         if (newType = selectedType) {
+            MessageManager.ShowWarning("配置类型 '" newType "' 已存在", , , configTypesGui.Hwnd)
             return
         }
         
         ; 校验名称是否有效
-        if (!SettingsDialogManager.IsValidConfigTypeName(newType)) {
-            MessageManager.ShowWarning("配置类型名称只能包含字母、数字和下划线", , , configTypesGui.Hwnd)
+        if (!IniTools.IsValidName(newType, 0, true)) {
+            MessageManager.ShowWarning(
+                "配置类型名称包含非法字符！`n`n"
+                . "名称不能包含：\ / : * ? " . Chr(34) . " < > |`n"
+                . "且不能以点开头或结尾", , , configTypesGui.Hwnd
+            )
             return
         }
-        
-        ; 获取所有配置类型（排除当前类型）
-        allTypes := ConfigManager.GetAllConfigTypes()
-        
-        ; 检查新名称是否已存在（排除自身）
-        for type in allTypes {
-            if (type = newType) {
-                MessageManager.ShowWarning("配置类型 '" newType "' 已存在", , , configTypesGui.Hwnd)
-                return
-            }
+
+        ; 长度限制（最多15个字符）
+        if (StrLen(newType) > 15) {
+            MessageManager.ShowWarning(
+                "配置类型名称不能超过15个字符！`n`n"
+                . "当前长度：" StrLen(newType) " 个字符", , , configTypesGui.Hwnd
+            )
+            return
         }
         
         ; 执行修改
@@ -1030,26 +1046,6 @@ class SettingsDialogManager {
         
         ; 关闭配置类型管理对话框
         configTypesGui.Destroy()
-    }
-    
-    ; 新增：检查配置类型名称是否有效
-    static IsValidConfigTypeName(name) {
-        ; 名称不能为空
-        if (name = "") {
-            return false
-        }
-        
-        ; 检查是否只包含字母、数字和下划线
-        if (!RegExMatch(name, "^[a-zA-Z0-9_]+$")) {
-            return false
-        }
-        
-        ; 检查长度
-        if (StrLen(name) > 20) {
-            return false
-        }
-        
-        return true
     }
 
     ; 新增：辅助函数 - 检查数组是否包含某个值
