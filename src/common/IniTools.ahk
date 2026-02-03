@@ -63,7 +63,8 @@ class IniTools {
                     ; 已有Root，替换它
                     ; 构建正则表达式匹配Root section（不区分大小写）
                     ; 使用原始的大小写来匹配
-                    rootPattern := "\[" existingRootSectionName "\][\s\S]*?(?=\n\[|$)"
+                    escapedSection := this.RegExEscape(existingRootSectionName)
+                    rootPattern := "\[" escapedSection "\][\s\S]*?(?=\n\[|$)"
                     if (RegExMatch(iniContent, rootPattern, &match)) {
                         iniContent := StrReplace(iniContent, match[0], rootContent)
                     } else {
@@ -97,7 +98,8 @@ class IniTools {
                 if (editMode = "create") {
                     if (sectionExists) {
                         ; section已存在，编辑模式处理
-                        oldSectionPattern := "\[" existingSectionName "\][\s\S]*?(?=\n\[|$)"
+                        escapedSection := this.RegExEscape(existingSectionName)
+                        oldSectionPattern := "\[" escapedSection "\][\s\S]*?(?=\n\[|$)"
                         if (RegExMatch(iniContent, oldSectionPattern, &match)) {
                             ; 构建新的section内容
                             newSectionContent := "[" section . "]`r`n"
@@ -132,7 +134,8 @@ class IniTools {
                 } else if (editMode = "edit") {
                     ; 编辑模式：替换现有section
                     ; 查找并替换原来的section
-                    oldSectionPattern := "\[" guiManager.currentEditSection "\][\s\S]*?(?=\n\[|$)"
+                    escapedOldSection := this.RegExEscape(guiManager.currentEditSection)
+                    oldSectionPattern := "\[" escapedOldSection "\][\s\S]*?(?=\n\[|$)"
                     if (RegExMatch(iniContent, oldSectionPattern, &match)) {
                         ; 构建新的section内容
                         newSectionContent := "[" section . "]`r`n"
@@ -179,7 +182,9 @@ class IniTools {
             content := FileRead(guiManager.configPath)
             
             ; 构建正则表达式匹配要删除的section
-            pattern := "\[" sectionName "\][\s\S]*?(?=\n\[|$)"
+            escapedSectionName := this.RegExEscape(sectionName)
+            pattern := "\[" escapedSectionName "\][\s\S]*?(?=\n\[|$)"
+
             if (RegExMatch(content, pattern, &match)) {
                 ; 删除该section
                 content := StrReplace(content, match[0] "`r`n", "")
@@ -504,6 +509,36 @@ class IniTools {
         }
         
         return true
+    }
+
+    ; 正则表达式转义函数(转义4个)
+    static RegExEscape(str) {
+        ; 只转义 ^ + ( ) 这四个字符
+        specialChars := "^+()"
+        result := ""
+        Loop Parse, str {
+            if InStr(specialChars, A_LoopField) {
+                result .= "\" . A_LoopField
+            } else {
+                result .= A_LoopField
+            }
+        }
+        return result
+    }
+
+    ; 正则表达式转义函数(转义12个)
+    static RegExEscapeFull(str) {
+        ; 对正则表达式特殊字符进行转义
+        specialChars := "\.*?+[{|()^$"
+        result := ""
+        Loop Parse, str {
+            if InStr(specialChars, A_LoopField) {
+                result .= "\" . A_LoopField
+            } else {
+                result .= A_LoopField
+            }
+        }
+        return result
     }
 
 }
