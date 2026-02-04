@@ -140,7 +140,7 @@ class ImportExportManager {
         for item in allItems {
             ; 验证条目数据
             tempTxtForItem := item["name"] "`r`n" item["path"]
-            if (IniTools.ValidateTxtContent(tempTxtForItem, true,true)) {
+            if (IniTools.ValidateTxtContent(tempTxtForItem, true,true,true)) {
                 ; 导出时使用name字段
                 txtLines.Push(item["name"])
                 txtLines.Push(item["path"])
@@ -200,85 +200,117 @@ class ImportExportManager {
             ; 读取TXT文件
             content := FileRead(filePath, "UTF-8")
             
-            ; 验证TXT文件内容
-            if (!IniTools.ValidateTxtContent(content, false, false)) {
+            ; 使用增强的ValidateTxtContent（包含重复校验）
+            if (!IniTools.ValidateTxtContent(content, false, false, false)) {
                 return false
             }
             
-            ; 解析TXT内容
-            lines := StrSplit(content, "`n", "`r")
-            nonEmptyLines := []
+            ; 使用新的智能解析方法
+            parseResult := IniTools.ParseTxtContentWithSmartSections(content, 
+                objBindMethod(ImportExportManager, "GetSmartSectionName"))
             
-            ; 过滤空行
-            for line in lines {
-                trimmedLine := Trim(line)
-                if (trimmedLine != "") {
-                    nonEmptyLines.Push(trimmedLine)
+            if (!parseResult.success) {
+                ; 错误信息已经在ValidateTxtContent中显示
+                return false
+            }
+            
+            ; 获取处理后的条目
+            allItems := parseResult.items
+            txtRootItem := Map()
+            txtNormalItems := []
+            
+            ; 分离Root和其他条目
+            for item in allItems {
+                if (item.Has("isRoot") && item["isRoot"] = true) {
+                    txtRootItem := item
+                } else {
+                    txtNormalItems.Push(item)
                 }
             }
             
-            ; 解析所有条目
-            allItems := []
-            rootItem := Map()
+            ; 智能Root处理逻辑 - 读取现有INI只是为了检查Root
+            existingRootItem := Map()
             
-            ; 逐对处理（名称+路径）
-            for i in ImportExportManager.Range(1, nonEmptyLines.Length, 2) {
-                if (i + 1 <= nonEmptyLines.Length) {
-                    itemName := nonEmptyLines[i]
-                    itemPath := nonEmptyLines[i + 1]
+            if (FileExist(this.configPath)) {
+                existingContent := FileRead(this.configPath)
+                
+                ; 只解析现有INI的Root section（如果存在）
+                currentSection := ""
+                currentName := ""
+                currentPath := ""
+                
+                Loop Parse, existingContent, "`n", "`r" {
+                    line := Trim(A_LoopField)
                     
-                    ; 验证这对数据
-                    tempTxtForItem := itemName "`r`n" itemPath
-                    if (IniTools.ValidateTxtContent(tempTxtForItem, true,true)) {
-                        item := Map()
+                    if (SubStr(line, 1, 1) = "[") {
+                        ; 如果之前解析的是Root，保存它
+                        if (currentSection != "" && StrLower(currentSection) = "root") {
+                            existingRootItem["section"] := currentSection
+                            existingRootItem["name"] := currentName
+                            existingRootItem["path"] := currentPath
+                            existingRootItem["isRoot"] := true
+                        }
                         
-                        ; 如果是Root（不区分大小写）
-                        if (StrLower(itemName) = "root") {
-                            ; 保持原始大小写
-                            item["section"] := itemName
-                            item["name"] := itemName  ; name与section保持一致
-                            item["path"] := itemPath
-                            rootItem := item
-                        } else {
-                            ; 普通条目：section和name使用相同的值
-                            ; 处理section-智能去除扩展名
-                            sectionName := ImportExportManager.GetSmartSectionName(itemName, itemPath)
-                            item["section"] := sectionName
-                            item["name"] := itemName    ; name保持TXT中的原样（有扩展名）
-                            item["path"] := itemPath
-                            allItems.Push(item)
+                        currentSection := SubStr(line, 2, InStr(line, "]") - 2)
+                        currentName := ""
+                        currentPath := ""
+                    } else if (InStr(line, "=")) {
+                        pos := InStr(line, "=")
+                        key := Trim(SubStr(line, 1, pos - 1))
+                        value := Trim(SubStr(line, pos + 1))
+                        
+                        if (key = "name") {
+                            currentName := value
+                        } else if (key = "path") {
+                            currentPath := value
                         }
                     }
                 }
+                
+                ; 检查最后一个section是否是Root
+                if (currentSection != "" && StrLower(currentSection) = "root") {
+                    existingRootItem["section"] := currentSection
+                    existingRootItem["name"] := currentName
+                    existingRootItem["path"] := currentPath
+                    existingRootItem["isRoot"] := true
+                }
             }
             
-            ; 构建INI内容
+            ; 智能Root处理逻辑（不再合并现有非Root条目）
+            ; 规则：TXT有Root则用TXT的Root，否则保留现有Root
+            finalRootItem := Map()
+            
+            if (txtRootItem.Count > 0) {
+                ; 情况1：TXT有Root → 使用TXT的Root
+                finalRootItem := txtRootItem
+            } else if (existingRootItem.Count > 0) {
+                ; 情况2：TXT无Root，但原INI有Root → 保留原Root
+                finalRootItem := existingRootItem
+            }
+            
+            ; 构建INI内容 - 不再合并现有条目
             iniLines := []
             
             ; 添加Root section（如果有）
-            if (rootItem.Count > 0) {
-                ; section名使用Root的原始大小写
-                iniLines.Push("[" rootItem["section"] "]")
-                ; name值与section名保持一致
-                iniLines.Push("name=" rootItem["name"])
-                iniLines.Push("path=" rootItem["path"])
+            if (finalRootItem.Count > 0) {
+                iniLines.Push("[" finalRootItem["section"] "]")
+                iniLines.Push("name=" finalRootItem["name"])
+                iniLines.Push("path=" finalRootItem["path"])
                 
                 ; 只有在有后续内容时才添加空行
-                if (allItems.Length > 0) {
+                if (txtNormalItems.Length > 0) {
                     iniLines.Push("")  ; 空行分隔
                 }
             }
             
-            ; 添加其他section
-            for i, item in allItems {
-                ; section名使用原始大小写
+            ; 只添加TXT中的非Root条目（已处理section重复）
+            for i, item in txtNormalItems {
                 iniLines.Push("[" item["section"] "]")
-                ; name值与section名保持一致
                 iniLines.Push("name=" item["name"])
                 iniLines.Push("path=" item["path"])
                 
                 ; 如果不是最后一个，添加空行分隔
-                if (i < allItems.Length) {
+                if (i < txtNormalItems.Length) {
                     iniLines.Push("")
                 }
             }
@@ -286,6 +318,7 @@ class ImportExportManager {
             ; 写入文件
             if (iniLines.Length > 0) {
                 iniContent := IniTools.StrJoin(iniLines, "`r`n") . "`r`n"
+                ; 删除旧文件，完全重新写入
                 FileDelete(this.configPath)
                 FileAppend(iniContent, this.configPath, "UTF-8")
                 
@@ -369,13 +402,21 @@ class ImportExportManager {
             ; 读取要追加的TXT内容
             appendContent := FileRead(filePath, "UTF-8")
             
-            ; 使用ValidateTxtContent验证追加内容
-            if (!IniTools.ValidateTxtContent(appendContent,false,false)) {
+            ; 使用增强的ValidateTxtContent（包含基本重复校验）
+            ; 这里skipDuplicateCheck=false启用重复校验
+            if (!IniTools.ValidateTxtContent(appendContent, false, false, false)) {
                 return false
             }
             
-            ; 解析要追加的TXT内容（包含Root处理）
+            ; 调用ParseTxtContentWithRoot（只处理特殊重复校验）
             parsedData := ImportExportManager.ParseTxtContentWithRoot(appendContent)
+
+            ; 检查是否解析成功（空数据可能表示校验失败）
+            if (parsedData["sections"].Length = 0 && parsedData["root"].Count = 0) {
+                ; ParseTxtContentWithRoot内部已经处理了错误信息
+                    MessageManager.ShowError("TXT内容解析失败，可能存在section重复问题")
+                    return false
+            }
             
             ; 合并内容（支持Root覆盖）
             mergedContent := ImportExportManager.MergeIniContentWithRoot(oldContent, parsedData)
@@ -422,6 +463,36 @@ class ImportExportManager {
     
     ; 解析TXT中的section，支持Root
     static ParseTxtContentWithRoot(txtContent) {
+        ; 使用智能解析方法（包含特殊重复校验）
+        parseResult := IniTools.ParseTxtContentWithSmartSections(txtContent,
+            objBindMethod(ImportExportManager, "GetSmartSectionName"))
+        
+        if (!parseResult.success) {
+            ; 解析失败，返回空数据
+            return Map("root", Map(), "sections", [])
+        }
+        
+        ; 转换格式以保持向后兼容
+        result := Map()
+        rootItem := Map()
+        sections := []
+        
+        for item in parseResult.items {
+            if (item.Has("isRoot") && item["isRoot"] = true) {
+                rootItem := item
+            } else {
+                sections.Push(item)
+            }
+        }
+        
+        result["root"] := rootItem
+        result["sections"] := sections
+
+        return result
+    }
+
+    ; 用于ContextMenuManager调用
+    static ParseTxtContentWithRootLegacy(txtContent) {
         result := Map()
         sections := []
         rootItem := Map()
@@ -446,7 +517,7 @@ class ImportExportManager {
                 
                 ; 验证这对数据
                 tempTxtForItem := itemName "`r`n" itemPath
-                if (IniTools.ValidateTxtContent(tempTxtForItem, true,true)) {
+                if (IniTools.ValidateTxtContent(tempTxtForItem, true,true,true)) {
                     item := Map()
                     
                     ; 如果是Root（不区分大小写）

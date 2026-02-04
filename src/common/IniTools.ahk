@@ -323,7 +323,7 @@ class IniTools {
     }
 
     ; 智能校验TXT文件内容格式
-    static ValidateTxtContent(content, skipFirstPairCheck := false, skipMsgBox := false) {
+    static ValidateTxtContent(content, skipFirstPairCheck := false, skipMsgBox := false, skipDuplicateCheck := false) {
         ; 分割成行并过滤空行
         lines := StrSplit(content, "`n", "`r")
         nonEmptyLines := []
@@ -400,6 +400,23 @@ class IniTools {
                         return false
                     }
                 }
+            }
+        }
+
+        ; 如果不跳过重复校验，则检查名称重复
+        if (!skipDuplicateCheck && !skipFirstPairCheck) {
+            nameDuplicates := this.ValidateNameDuplicates(content)
+            if (nameDuplicates.Length > 0) {
+                if (!skipMsgBox) {
+                    duplicateList := ""
+                    for name in nameDuplicates {
+                        duplicateList .= "  • " name "`n"
+                    }
+                    MessageManager.ShowError("TXT文件中存在重复的名称行：`n`n"
+                        . duplicateList
+                        . "`n请修改TXT文件后再导入。", "重复校验失败")
+                }
+                return false
             }
         }
         
@@ -541,4 +558,131 @@ class IniTools {
         return result
     }
 
+    ; ==================== 重复和section校验 ====================
+
+    ; 检查TXT文件中的基本重复（奇数行名称重复）
+    static ValidateNameDuplicates(txtContent) {
+        lines := StrSplit(txtContent, "`n", "`r")
+        nonEmptyLines := []
+        nameMap := Map()
+        duplicates := []
+        
+        ; 过滤空行并收集奇数行（名称）
+        for i, line in lines {
+            trimmedLine := Trim(line)
+            if (trimmedLine != "") {
+                nonEmptyLines.Push(trimmedLine)
+                
+                ; 奇数行是名称行（1, 3, 5...）
+                if (Mod(nonEmptyLines.Length, 2) = 1) {
+                    name := trimmedLine
+                    
+                    ; 检查名称是否重复
+                    if (nameMap.Has(name)) {
+                        if (!duplicates.Has(name)) {
+                            duplicates.Push(name)
+                        }
+                    } else {
+                        nameMap[name] := true
+                    }
+                }
+            }
+        }
+        
+        return duplicates
+    }
+    
+    ; 智能处理条目列表，处理section重复（后来者居上）
+    static ProcessItemsWithSectionDuplicates(items) {
+        ; items: 包含section, name, path的数组
+        
+        ; 使用Map处理section重复（key: section名称, value: 条目索引）
+        sectionMap := Map()
+        result := []
+        
+        for i, item in items {
+            sectionName := item["section"]
+            
+            ; 检查是否已有相同section
+            if (sectionMap.Has(sectionName)) {
+                ; 后来者居上：用新条目替换旧条目
+                oldIndex := sectionMap[sectionName]
+                result[oldIndex] := item
+            } else {
+                ; 新section，添加到结果中
+                result.Push(item)
+                sectionMap[sectionName] := result.Length
+            }
+        }
+        
+        return result
+    }
+
+    ; 智能解析TXT内容（处理重复和智能section）
+    static ParseTxtContentWithSmartSections(txtContent, getSmartSectionNameFunc := "") {        
+        ; 解析内容
+        lines := StrSplit(txtContent, "`n", "`r")
+        nonEmptyLines := []
+        
+        ; 过滤空行
+        for line in lines {
+            trimmedLine := Trim(line)
+            if (trimmedLine != "") {
+                nonEmptyLines.Push(trimmedLine)
+            }
+        }
+        
+        ; 解析所有条目
+        allItems := []
+        
+        ; 逐对处理（名称+路径）
+        for i in this.Range(1, nonEmptyLines.Length, 2) {
+            if (i + 1 <= nonEmptyLines.Length) {
+                itemName := nonEmptyLines[i]
+                itemPath := nonEmptyLines[i + 1]
+                
+                ; 验证这对数据
+                tempTxtForItem := itemName "`r`n" itemPath
+                if (this.ValidateTxtContent(tempTxtForItem, true, true,true)) {
+                    item := Map()
+                    
+                    ; 如果是Root（不区分大小写）
+                    if (StrLower(itemName) = "root") {
+                        item["section"] := itemName
+                        item["name"] := itemName
+                        item["path"] := itemPath
+                        item["isRoot"] := true
+                        allItems.Push(item)
+                    } else {
+                        sectionName := getSmartSectionNameFunc.Call(itemName, itemPath)
+                        
+                        item["section"] := sectionName
+                        item["name"] := itemName
+                        item["path"] := itemPath
+                        item["isRoot"] := false
+                        allItems.Push(item)
+                    }
+                }
+            }
+        }
+        
+        ; 处理section重复（后来者居上）
+        processedItems := this.ProcessItemsWithSectionDuplicates(allItems)
+        
+        return {success: true, items: processedItems}
+    }
+    
+    ; 范围生成函数
+    static Range(start, end, step := 1) {
+        arr := []
+        if (step > 0) {
+            Loop (Ceil((end - start + 1) / step)) {
+                currentValue := start + (A_Index - 1) * step
+                if (currentValue <= end) {
+                    arr.Push(currentValue)
+                }
+            }
+        }
+        return arr
+    }
 }
