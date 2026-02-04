@@ -241,17 +241,8 @@ class ImportExportManager {
                             rootItem := item
                         } else {
                             ; 普通条目：section和name使用相同的值
-                            ; section使用去除扩展名的名称
-                            sectionName := itemName
-                            ; 检查是否有扩展名
-                            if (InStr(sectionName, ".")) {
-                                ; 去除最后一个扩展名
-                                dotPos := InStr(sectionName, ".", , -1)
-                                if (dotPos > 1) {
-                                    sectionName := SubStr(sectionName, 1, dotPos - 1)
-                                }
-                            }
-                            
+                            ; 处理section-智能去除扩展名
+                            sectionName := ImportExportManager.GetSmartSectionName(itemName, itemPath)
                             item["section"] := sectionName
                             item["name"] := itemName    ; name保持TXT中的原样（有扩展名）
                             item["path"] := itemPath
@@ -467,17 +458,8 @@ class ImportExportManager {
                         rootItem := item
                     } else {
                         ; 普通条目：section和name使用相同的值
-                        ; section使用去除扩展名的名称
-                        sectionName := itemName
-                        ; 检查是否有扩展名
-                        if (InStr(sectionName, ".")) {
-                            ; 去除最后一个扩展名
-                            dotPos := InStr(sectionName, ".", , -1)
-                            if (dotPos > 1) {
-                                sectionName := SubStr(sectionName, 1, dotPos - 1)
-                            }
-                        }
-                        
+                        ; 处理section-智能去除扩展名
+                        sectionName := ImportExportManager.GetSmartSectionName(itemName, itemPath)
                         item["section"] := sectionName
                         item["name"] := itemName    ; name保持TXT中的原样（有扩展名）
                         item["path"] := itemPath
@@ -746,5 +728,49 @@ class ImportExportManager {
         }
     
         return false
+    }
+
+    ; ==================== 处理section-智能去除扩展名 ====================
+
+    ; 智能判断是否去除扩展名的方法（与HandleNameChangeForEditGui逻辑一致）
+    static ShouldRemoveExtension(itemName, itemPath) {
+        ; 检查路径是否为空
+        if (itemPath = "") {
+            return false
+        }
+        
+        ; 从路径中提取文件名（包含扩展名）
+        pathFileName := ""
+        try {
+            SplitPath(itemPath, &pathFileName)
+        } catch {
+            pathFileName := ""
+        }
+        
+        ; 比较名称和路径文件名
+        if (pathFileName != "" && itemName = pathFileName) {
+            ; 名称与路径文件名完全相同（包含扩展名）
+            if (InStr(itemName, ".")) {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    ; 智能处理section名称的方法
+    static GetSmartSectionName(itemName, itemPath) {
+
+        ; 如果应该去除扩展名
+        if (ImportExportManager.ShouldRemoveExtension(itemName, itemPath)) {
+            ; 去除扩展名作为section
+            dotPos := InStr(itemName, ".", , -1)
+            if (dotPos > 1) {
+                return SubStr(itemName, 1, dotPos - 1)
+            }
+        }
+        
+        ; 其他情况：直接使用名称作为section
+        return itemName
     }
 }
