@@ -163,6 +163,9 @@ class ContextMenuManager {
         
         ; 追加到目标配置
         if (this.AppendToConfig(targetConfigType, tempTxtPath)) {
+
+            this.RefreshTargetGui(targetConfigType)
+
             ; 如果是移动操作才删除原项
             if (isMove) {
                 ; 复用删除逻辑删除原项
@@ -187,6 +190,33 @@ class ContextMenuManager {
 
         ; 延迟删除整个temp文件夹（使用一次性定时器）
         SetTimer(() => this.DeleteTempDirectory(tempDir), -500)  ; 0.5秒后删除
+    }
+
+    ; 刷新目标配置的GUI
+    static RefreshTargetGui(targetConfigType) {
+        ; 查找是否已经存在目标配置的GUI窗口
+        windowTitle := targetConfigType
+        hwnd := WinExist(windowTitle " ahk_class AutoHotkeyGUI")
+        
+        if (hwnd) {
+            ; 如果窗口存在，通过窗口句柄获取Gui对象
+            try {
+                targetGui := GuiFromHwnd(hwnd)
+                    ; 获取GuiManager实例（需要从Gui对象中获取）
+                    ; 这里假设GuiManager实例存储在Gui对象的guiManager属性中
+                    if (targetGui && targetGui.HasProp("guiManager")) {
+                        guiManager := targetGui.guiManager
+                        ; 调用刷新方法
+                        targetGui.guiManager.TriggerRefresh()
+                    }
+            } catch as e {
+                ; 如果刷新失败，可以尝试重新打开窗口
+                if (WindowConstants.DEBUG_MODE) {
+                    ToolTip("刷新目标GUI失败: " e.Message)
+                    SetTimer () => ToolTip(), -2000
+                }
+            }
+        }
     }
 
     ; 确保temp目录存在的辅助方法
