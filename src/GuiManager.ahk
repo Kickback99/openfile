@@ -173,7 +173,7 @@ class GuiManager {
         ; 显示GUI
         this.gui.Show("w550")
 
-        ; 挂到 Gui 对象上，供上下键焦点判定取实例
+        ; 将GuiManager实例存储到Gui对象中，便于外部访问
         this.gui.guiManager := this
 
         ; 使用ObjBindMethod注册窗口消息监听
@@ -191,25 +191,10 @@ class GuiManager {
 
     }
 
-    ; ==================== 列表滚轮子类化 ====================
-
-    ; 直接吞掉 WM_MOUSEWHEEL，改发 WM_VSCROLL，绕开 AHK v2 的慢路径
-    InstallListWheelSubclass() {
-        this.wheelCallback := CallbackCreate(ObjBindMethod(this, "ListWheelProc"), "F", 4)
-        this.wheelOldProc := DllCall("SetWindowLongPtrW", "ptr", this.listBox.Hwnd, "int", -4, "ptr", this.wheelCallback, "ptr")
-    }
-
-    ListWheelProc(hwnd, msg, wParam, lParam) {
-        if (msg = 0x020A) {
-            delta := (wParam >> 16) & 0xFFFF
-            if (delta & 0x8000)
-                delta -= 0x10000
-            scrollMsg := delta > 0 ? 0 : 1  ; SB_LINEUP / SB_LINEDOWN
-            loop 3
-                SendMessage(0x0115, scrollMsg, 0, , hwnd)
-            return 0
-        }
-        return DllCall("CallWindowProcW", "ptr", this.wheelOldProc, "ptr", hwnd, "uint", msg, "uptr", wParam, "uptr", lParam, "ptr")
+    ; 统一的刷新方法，供外部调用
+    TriggerRefresh() {
+        ; 直接调用刷新按钮的事件处理函数
+        GuiEventHandlers.HandleRefreshClick(this)
     }
 
     ; t_openfile_settings：alwaysOnTop-get
