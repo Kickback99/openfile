@@ -174,6 +174,9 @@ class GuiManager {
         ; 显示GUI
         this.gui.Show("w550")
 
+        ; 将GuiManager实例存储到Gui对象中，便于外部访问
+        this.gui.guiManager := this
+
         ; 使用ObjBindMethod注册窗口消息监听
         this.messageListener := ObjBindMethod(this, "HandleWindowMessage", this.gui.Hwnd)
         OnMessage(0x47, this.messageListener)   ; WM_WINDOWPOSCHANGED
@@ -187,6 +190,12 @@ class GuiManager {
         ; t_openfile_settings：alwaysOnTop
         MessageManager.SetMainWindowHwnd(this.gui.Hwnd,this.configType)
         
+    }
+
+    ; 统一的刷新方法，供外部调用
+    TriggerRefresh() {
+        ; 直接调用刷新按钮的事件处理函数
+        GuiEventHandlers.HandleRefreshClick(this)
     }
     
     ; t_openfile_settings：alwaysOnTop-get
