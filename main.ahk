@@ -65,6 +65,12 @@ if(WindowConstants.DEBUG_MODE){
     VerifyPinyin()
 }
 
+; 初始化版本配置
+InitVersionConfig(){
+    ; 检查配置版本，如果需要则重置
+    SettingsManager.CheckAndResetConfig()
+}
+
 ; 全局热键注册函数
 RegisterMainShortcut() {
     ; 从配置文件中读取快捷键
@@ -164,6 +170,9 @@ MainHotkeyHandler(*) {
 }
 
 InitProgram(){
+    ; 初始化版本配置
+    InitVersionConfig()
+
     ; 启动时注册热键
     RegisterMainShortcut()
 

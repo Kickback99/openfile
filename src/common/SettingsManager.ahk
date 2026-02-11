@@ -7,11 +7,15 @@ class SettingsManager {
     ;!!! 修改：将配置文件路径改为用户家目录下的openfile/settings.ini
     static ConfigPath := ""
 
+    ; 配置版本常量
+    static CONFIG_VERSION := "lite-1.1.0"
+    static CONFIG_VERSION_KEY := "ConfigVersion"
+
     ; 配置段名称
     static SectionName := "General"
 
     ; 配置键的顺序（保持原有顺序）
-    static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg","Shortcuts","Link"]
+    static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg","Shortcuts","Link",this.CONFIG_VERSION_KEY]
 
     ; t_openfile_settings：default
     static DefaultConfig := Map(
@@ -21,8 +25,25 @@ class SettingsManager {
         "BatchThreshold", "5",      ; 字符串
         "ShowSuccessMsg", "true",    ; 字符串
         "Shortcuts", "#q",      ; 字符串
-        "Link",   "https://github.com/Kickback99/openfile" ; 字符串
+        "Link",   "https://github.com/Kickback99/openfile", ; 字符串
+        this.CONFIG_VERSION_KEY, this.CONFIG_VERSION
     )
+
+    ; 添加版本检查和重置方法
+    static CheckAndResetConfig() {
+        try {
+            ; 检查配置版本
+            currentVersion := this.GetValue(this.CONFIG_VERSION_KEY)
+            
+            ; 如果版本不匹配或为空，重置配置
+            if (currentVersion != this.CONFIG_VERSION) {
+                return this.WriteConfig(this.CreateDefaultConfig())
+            }
+            return false  ; 未重置
+        } catch {
+            return this.WriteConfig(this.CreateDefaultConfig())
+        }
+    }
 
     ;!!! 新增：获取配置文件路径的静态方法
     static GetConfigPath() {
