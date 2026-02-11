@@ -24,7 +24,8 @@ class SettingsManager {
         this.ACTIVE_CONFIG_KEY, this.DEFAULT_CONFIG_TYPE,
         "MainHotkey", "#q",
         "TypeHotkey", "!c",
-        "Link", "https://github.com/Kickback99/openfile"
+        "Link", "https://github.com/Kickback99/openfile",
+        this.CONFIG_VERSION_KEY, this.CONFIG_VERSION
         ; 未来扩展示例:
         ; "DebugMode", "false",
         ; "AutoStart", "true"
@@ -49,15 +50,24 @@ class SettingsManager {
     static CheckAndResetConfig() {
         try {
             ; 检查配置版本
-            currentVersion := this.GetValue(this.CONFIG_VERSION_KEY)
+            currentVersion := this.GetValue(this.CONFIG_VERSION_KEY, this.CONFIG_MANAGER_SECTION)
             
             ; 如果版本不匹配或为空，重置配置
             if (currentVersion != this.CONFIG_VERSION) {
-                return this.WriteConfig(this.CreateDefaultConfig())
+                ; 创建新的默认配置文件
+                this.CreateDefaultSettingsFile()
+                
+                ; 重置自启动（确保注册表状态与配置文件一致）
+                ; 注意：这里不能直接调用 DisableAutoStart，因为这是静态方法
+                ; 可以在 main.ahk 中处理
+                
+                return true  ; 表示已重置
             }
             return false  ; 未重置
         } catch {
-            return this.WriteConfig(this.CreateDefaultConfig())
+            ; 出错时也创建默认配置
+            this.CreateDefaultSettingsFile()
+            return true
         }
     }
 
