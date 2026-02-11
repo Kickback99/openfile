@@ -15,7 +15,7 @@ class SettingsManager {
     static SectionName := "General"
 
     ; 配置键的顺序（保持原有顺序）
-    static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg","Shortcuts","Link",this.CONFIG_VERSION_KEY]
+    static ConfigOrder := ["AlwaysOnTop", "SortByAlphabet", "EnableExtension", "BatchThreshold", "ShowSuccessMsg","Shortcuts","Link","AutoStartEnabled",this.CONFIG_VERSION_KEY]
 
     ; t_openfile_settings：default
     static DefaultConfig := Map(
@@ -26,6 +26,7 @@ class SettingsManager {
         "ShowSuccessMsg", "true",    ; 字符串
         "Shortcuts", "#q",      ; 字符串
         "Link",   "https://github.com/Kickback99/openfile", ; 字符串
+        "AutoStartEnabled", "false",
         this.CONFIG_VERSION_KEY, this.CONFIG_VERSION
     )
 

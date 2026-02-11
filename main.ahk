@@ -65,10 +65,136 @@ if(WindowConstants.DEBUG_MODE){
     VerifyPinyin()
 }
 
+; 初始化托盘菜单
+InitTrayMenu() {
+    ; 创建托盘菜单
+    A_TrayMenu.Delete()  ; 删除默认菜单
+    A_TrayMenu.Add("开机自启", ToggleAutoStart)
+    A_TrayMenu.Add("退出", (*) => ExitApp())
+    A_TrayMenu.Default := "开机自启"
+
+    ; 设置托盘图标消息处理
+    OnMessage(0x404, TrayIconHandler)
+
+    TrayIconHandler(wParam, lParam, msg, hwnd) {
+        switch lParam {
+            case 0x201:  ; WM_LBUTTONDOWN - 左键单击
+                ShowGuiManager('openfile')
+            case 0x203:  ; WM_LBUTTONDBLCLK - 左键双击
+                ShowGuiManager('openfile')
+                
+            case 0x205:  ; WM_RBUTTONUP - 右键释放（显示菜单）
+                ; 默认行为已经会显示菜单，这里不需要额外处理
+        }
+    }
+}
+
+; 启用自启动
+EnableAutoStart() {
+    appName := "OpenFile"  ; 你的应用名称
+    exePath := A_ScriptFullPath
+    
+    ; 如果是未编译的脚本，需要包含解释器路径
+    if !A_IsCompiled {
+        exePath := A_AhkPath ' "' A_ScriptFullPath '"'
+    }
+    
+    try {
+        RegWrite(exePath, "REG_SZ", "HKCU\Software\Microsoft\Windows\CurrentVersion\Run", appName)
+    }
+}
+
+; 禁用自启动
+DisableAutoStart() {
+    appName := "OpenFile"
+    try {
+        RegDelete("HKCU\Software\Microsoft\Windows\CurrentVersion\Run", appName)
+    }
+}
+
+; 检查自启动状态
+IsAutoStartEnabled() {
+    appName := "OpenFile"
+    try {
+        value := RegRead("HKCU\Software\Microsoft\Windows\CurrentVersion\Run", appName)
+        return value != ""
+    }
+    return false
+}
+
+; 切换自启动状态
+ToggleAutoStart(*) {
+    configAutoStart := SettingsManager.GetBool("AutoStartEnabled")
+    
+    if (configAutoStart) {
+        ; 当前是开启状态，切换为关闭
+        DisableAutoStart()
+        SettingsManager.SetValue("AutoStartEnabled", "false")
+        A_TrayMenu.Uncheck("开机自启")
+        ; MsgBox("已关闭开机自启", "提示", "T2")
+    } else {
+        ; 当前是关闭状态，切换为开启
+        EnableAutoStart()
+        SettingsManager.SetValue("AutoStartEnabled", "true")
+        A_TrayMenu.Check("开机自启")
+        ; MsgBox("已开启开机自启", "提示", "T2")
+    }
+}
+
+
+; 检查并设置自启动（现在主要用于最终验证）
+CheckAndSetAutoStart() {
+    ; 这里只做最终的验证和确保一致
+    configAutoStart := SettingsManager.GetBool("AutoStartEnabled")
+    registryAutoStart := IsAutoStartEnabled()
+    
+    ; 确保两者一致（以配置文件为准）
+    if (configAutoStart && !registryAutoStart) {
+        EnableAutoStart()
+    } else if (!configAutoStart && registryAutoStart) {
+        DisableAutoStart()
+    }
+}
+
 ; 初始化版本配置
 InitVersionConfig(){
-    ; 检查配置版本，如果需要则重置
-    SettingsManager.CheckAndResetConfig()
+    ; 1. 检查配置版本，如果需要则重置
+    configReset := SettingsManager.CheckAndResetConfig()
+    
+    ; 2. 读取配置文件的设置
+    configAutoStart := SettingsManager.GetBool("AutoStartEnabled")
+    
+    ; 3. 检查注册表状态
+    registryAutoStart := IsAutoStartEnabled()
+    
+    ; 4. 以配置文件为准，确保两者一致
+    if (configAutoStart && !registryAutoStart) {
+        ; 配置文件说启用，但注册表没有，启用它
+        EnableAutoStart()
+        registryAutoStart := true
+    } else if (!configAutoStart && registryAutoStart) {
+        ; 配置文件说禁用，但注册表有，禁用它
+        DisableAutoStart()
+        registryAutoStart := false
+    }
+    
+    ; 5. 更新托盘菜单状态
+    if (configAutoStart) {
+        A_TrayMenu.Check("开机自启")
+    } else {
+        A_TrayMenu.Uncheck("开机自启")
+    }
+    
+    ; 6. 显示重置提示（如果需要）
+    if (configReset && WindowConstants.DEBUG_MODE) {
+        MsgBox("配置已更新到新版本，自启动设置已应用。", "提示", "T2")
+    }
+    
+    ; 7. 记录日志（调试用）
+    if (WindowConstants.DEBUG_MODE) {
+        MsgBox("自启动初始化完成`n配置文件: " (configAutoStart ? "启用" : "禁用") 
+            . "`n注册表: " (registryAutoStart ? "启用" : "禁用"), "调试信息", "T2")
+    }
 }
 
 ; 全局热键注册函数
@@ -112,6 +238,8 @@ ShowGuiManager(configType) {
         if (WinGetMinMax(hwnd) = -1) {  ; -1 表示最小化
             WinRestore(hwnd)
         }
+
+        WinActivate(hwnd)
 
         ; t_openfile_settings：alwaysOnTop-get
         isTop := SettingsManager.GetBool("AlwaysOnTop")
@@ -170,11 +298,17 @@ MainHotkeyHandler(*) {
 }
 
 InitProgram(){
+    ; 初始化托盘菜单
+    InitTrayMenu()
+
     ; 初始化版本配置
     InitVersionConfig()
 
     ; 启动时注册热键
     RegisterMainShortcut()
+
+    ; 最终验证自启动状态
+    CheckAndSetAutoStart()
 
     ; 自动启动应用程序
     ShowGuiManager('openfile')
