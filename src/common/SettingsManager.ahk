@@ -8,7 +8,7 @@ class SettingsManager {
     static ConfigPath := ""
 
     ; 配置版本常量
-    static CONFIG_VERSION := "lite-1.1.0"
+    static CONFIG_VERSION := "complete-1.1.0"
     static CONFIG_VERSION_KEY := "ConfigVersion"
 
     ; 配置段名称
@@ -25,6 +25,7 @@ class SettingsManager {
         "MainHotkey", "#q",
         "TypeHotkey", "!c",
         "Link", "https://github.com/Kickback99/openfile",
+        "AutoStartEnabled", "false",
         this.CONFIG_VERSION_KEY, this.CONFIG_VERSION
         ; 未来扩展示例:
         ; "DebugMode", "false",

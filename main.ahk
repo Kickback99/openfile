@@ -106,9 +106,11 @@ InitTrayMenu() {
     TrayIconHandler(wParam, lParam, msg, hwnd) {
         switch lParam {
             case 0x201:  ; WM_LBUTTONDOWN - 左键单击
-                ShowGuiManager('openfile')
+                activeType := SettingsManager.GetValue("ActiveConfig", "Global")
+                ShowGuiManager(activeType)
             case 0x203:  ; WM_LBUTTONDBLCLK - 左键双击
-                ShowGuiManager('openfile')
+                activeType := SettingsManager.GetValue("ActiveConfig", "Global")
+                ShowGuiManager(activeType)
                 
             case 0x205:  ; WM_RBUTTONUP - 右键释放（显示菜单）
                 ; 默认行为已经会显示菜单，这里不需要额外处理
@@ -151,18 +153,18 @@ IsAutoStartEnabled() {
 
 ; 切换自启动状态
 ToggleAutoStart(*) {
-    configAutoStart := SettingsManager.GetBool("AutoStartEnabled")
+    configAutoStart := SettingsManager.GetBool("AutoStartEnabled", "Global")
     
     if (configAutoStart) {
         ; 当前是开启状态，切换为关闭
         DisableAutoStart()
-        SettingsManager.SetValue("AutoStartEnabled", "false")
+        SettingsManager.SetValue("AutoStartEnabled", "false", "Global")
         A_TrayMenu.Uncheck("开机自启")
         ; MsgBox("已关闭开机自启", "提示", "T2")
     } else {
         ; 当前是关闭状态，切换为开启
         EnableAutoStart()
-        SettingsManager.SetValue("AutoStartEnabled", "true")
+        SettingsManager.SetValue("AutoStartEnabled", "true", "Global")
         A_TrayMenu.Check("开机自启")
         ; MsgBox("已开启开机自启", "提示", "T2")
     }
@@ -172,7 +174,7 @@ ToggleAutoStart(*) {
 ; 检查并设置自启动（现在主要用于最终验证）
 CheckAndSetAutoStart() {
     ; 这里只做最终的验证和确保一致
-    configAutoStart := SettingsManager.GetBool("AutoStartEnabled")
+    configAutoStart := SettingsManager.GetBool("AutoStartEnabled", "Global")
     registryAutoStart := IsAutoStartEnabled()
     
     ; 确保两者一致（以配置文件为准）
@@ -189,7 +191,7 @@ InitVersionConfig(){
     configReset := SettingsManager.CheckAndResetConfig()
     
     ; 2. 读取配置文件的设置
-    configAutoStart := SettingsManager.GetBool("AutoStartEnabled")
+    configAutoStart := SettingsManager.GetBool("AutoStartEnabled", "Global")
     
     ; 3. 检查注册表状态
     registryAutoStart := IsAutoStartEnabled()
