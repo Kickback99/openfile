@@ -77,5 +77,10 @@ MainHotkeyHandler(*) {
     ShowGuiManager('openfile')
 }
 
-; 启动时注册热键
-RegisterMainShortcut()
+InitProgram(){
+    ; 启动时注册热键
+    RegisterMainShortcut()
+}
+
+; 执行初始化
+InitProgram()
