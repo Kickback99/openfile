@@ -121,7 +121,9 @@ MainHotkeyHandler(*) {
         }
     }
 
-    IB := InputBox('请输入内容','AHKScript','w440 h150')
+    activeType := SettingsManager.GetValue("ActiveConfig", "Global")
+
+    IB := InputBox('请输入配置类型', ConfigManager.GetDisplayType(activeType) ,'w440 h150')
 
     ; 如果设置了+OwnDialogs，恢复原状
     if(parentGui){
