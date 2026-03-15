@@ -308,24 +308,33 @@ ShowGuiManager(configType) {
             }
         }
         
-        ; 强制设置焦点到搜索框
+        ; 获取该窗口对应的GuiManager实例
         try {
-            WinWaitActive(hwnd)
-            Sleep(50)
-            
-            ; 方法1：使用ControlFocus通过类名
-            ; 搜索框通常是第一个Edit控件
-            ControlFocus("Edit1", hwnd)
-            
-            ; 方法2：如果ControlFocus不够，发送Tab键
-            ; Sleep(10)
-            ; ControlSend("{Tab}", , hwnd)
-            
+            ; 通过窗口句柄获取Gui对象
+            guiObj := GuiFromHwnd(hwnd)
+            if (guiObj && guiObj.HasProp("guiManager")) {
+                ; 等待窗口完全激活
+                WinWaitActive(hwnd)
+                Sleep(50)  ; 短暂等待确保窗口状态稳定
+                
+                ; 获取GuiManager实例并设置焦点到搜索框
+                guiMgr := guiObj.guiManager
+                if (guiMgr.HasProp("searchBox") && guiMgr.searchBox) {
+                    ; 方法1：直接调用Focus方法
+                    guiMgr.searchBox.Focus()
+                    
+                    ; 方法2：如果Focus方法不够稳定，可以发送一个空字符来确保焦点
+                    ; guiMgr.searchBox.Value := guiMgr.searchBox.Value  ; 触发更新
+                    
+                    ; 方法3：发送Tab键两次确保焦点在正确的控件
+                    ; ControlSend("{Tab}{Tab}", , hwnd)
+                }
+            }
         } catch as e {
             ; 忽略焦点设置错误
         }
-        return
-    }
+         return
+     }
 
     ; 创建对应类型的配置管理器
     configMgr := ConfigManager(configType)
@@ -339,9 +348,101 @@ ShowGuiManager(configType) {
 
 ; win+q事件
 MainHotkeyHandler(*) {
-    ; 修改：从SettingsManager获取激活的配置类型
+    ; 获取所有GUI窗口列表
+    guiWindows := WinGetList("ahk_class AutoHotkeyGUI")
+    
+    ; 获取当前前台窗口
+    activeHwnd := WinActive("A")
+    activeClass := WinGetClass(activeHwnd)
+    activeTitle := WinGetTitle(activeHwnd)
+    
+    ; 检查是否有任何未最小化的GUI窗口
+    hasVisibleGui := false
+    for hwnd in guiWindows {
+        if (WinGetMinMax(hwnd) != -1) {
+            hasVisibleGui := true
+            break
+        }
+    }
+    
+    ; 检查前台窗口是否是GUI窗口
+    isGuiActive := (activeClass = "AutoHotkeyGUI")
+    
+    ; 获取激活的配置类型
     activeType := SettingsManager.GetValue("ActiveConfig", "Global")
-    ShowGuiManager(activeType)
+    
+    ; 检查ActiveConfig窗口是否存在
+    activeConfigHwnd := 0
+    for hwnd in guiWindows {
+        if (WinGetTitle(hwnd) = activeType) {
+            activeConfigHwnd := hwnd
+            break
+        }
+    }
+    
+    ; 检查前台窗口是否是ActiveConfig的GUI窗口
+    isActiveConfigGuiActive := (isGuiActive && activeTitle = activeType)
+    
+    if (hasVisibleGui) {
+        if (isActiveConfigGuiActive) {
+            ; 情况1：前台是ActiveConfig的GUI窗口，最小化所有GUI窗口
+            for hwnd in guiWindows {
+                if (WinGetMinMax(hwnd) != -1) {  ; 如果窗口未最小化
+                    WinMinimize(hwnd)
+                }
+            }
+            return
+        } else if (isGuiActive) {
+            ; 情况2：前台是其他GUI窗口（如dev）
+            ; 先检查ActiveConfig窗口是否存在
+            if (activeConfigHwnd) {                
+                ; 先最小化其他非ActiveConfig的GUI窗口
+                for hwnd in guiWindows {
+                    if (hwnd != activeConfigHwnd && WinGetMinMax(hwnd) != -1) {
+                        WinMinimize(hwnd)
+                    }
+                }
+
+                ; 然后激活ActiveConfig窗口
+                if (WinGetMinMax(activeConfigHwnd) = -1) {
+                    WinRestore(activeConfigHwnd)
+                }
+                WinActivate(activeConfigHwnd)
+            } else {
+                ; ActiveConfig窗口不存在，先最小化所有窗口，再创建新窗口
+                for hwnd in guiWindows {
+                    if (WinGetMinMax(hwnd) != -1) {
+                        WinMinimize(hwnd)
+                    }
+                }
+                ShowGuiManager(activeType)
+            }
+            return
+        } else {
+            ; 情况3：有未最小化的GUI窗口，但没有GUI在前台
+            if (activeConfigHwnd) {                
+                ; 最小化其他GUI窗口
+                for hwnd in guiWindows {
+                    if (hwnd != activeConfigHwnd && WinGetMinMax(hwnd) != -1) {
+                        WinMinimize(hwnd)
+                    }
+                }
+
+                ; 激活ActiveConfig窗口
+                if (WinGetMinMax(activeConfigHwnd) = -1) {
+                    WinRestore(activeConfigHwnd)
+                }
+                WinActivate(activeConfigHwnd)
+
+            } else {
+                ; ActiveConfig窗口不存在，创建并显示
+                ShowGuiManager(activeType)
+            }
+            return
+        }
+    }
+    ; 情况4：没有未最小化的GUI窗口（全部最小化或没有窗口），显示ActiveConfig窗口
+     ShowGuiManager(activeType)
 }
 
 TypeHotkeyHandler(*){
