@@ -752,7 +752,7 @@ class SettingsDialogManager {
         btnAdd.OnEvent("Click", (*) => this.HandleAddConfigType(configTypesGui, inputBox, comboBox, guiManager))
         btnModify.OnEvent("Click", (*) => this.HandleModifyConfigType(configTypesGui, inputBox, comboBox, guiManager)) 
         btnDelete.OnEvent("Click", (*) => this.HandleDeleteConfigType(configTypesGui, comboBox, guiManager))
-        btnActivate.OnEvent("Click", (*) => this.HandleActivateConfigType(configTypesGui, comboBox, guiManager))
+        btnActivate.OnEvent("Click", (*) => this.HandleActivateConfigType(configTypesGui, comboBox, guiManager,moreGui))
         configTypesGui.OnEvent("Close", (*) => this.HandleConfigTypesGuiClose(configTypesGui, moreGui))
         configTypesGui.OnEvent("Escape", (*) => this.HandleConfigTypesGuiClose(configTypesGui, moreGui))
         
@@ -1002,7 +1002,7 @@ class SettingsDialogManager {
     }
 
     ; 新增：处理激活配置类型
-    static HandleActivateConfigType(configTypesGui, comboBox, guiManager) {
+    static HandleActivateConfigType(configTypesGui, comboBox, guiManager,moreGui) {
         selectedType := Trim(comboBox.Text)
         
         if (selectedType = "") {
@@ -1023,6 +1023,12 @@ class SettingsDialogManager {
             )
             return
         } */
+
+        ; 关闭配置类型Gui
+        this.HandleConfigTypesGuiClose(configTypesGui,moreGui)
+
+        ; 关闭设置Gui
+        this.HandleMoreGuiClose(guiManager,moreGui)
         
         ; 设置激活配置
         if (SettingsManager.SetValue("ActiveConfig", selectedType, "Global")) {
@@ -1030,12 +1036,10 @@ class SettingsDialogManager {
             MessageManager.ShowInfo(
                 "已将 '" selectedType "' 设置为激活配置`n`n" 
                 "重启软件后生效",
-                "激活成功",
-                , 
-                configTypesGui.Hwnd
+                "激活成功"
             )
         } else {
-            MessageManager.ShowError("设置激活配置失败", , , configTypesGui.Hwnd)
+            MessageManager.ShowError("设置激活配置失败")
         }
     }
 
