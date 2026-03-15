@@ -59,6 +59,22 @@ ShowGuiManager(configType) {
             }
         }
         
+        ; 强制设置焦点到搜索框
+        try {
+            WinWaitActive(hwnd)
+            Sleep(50)
+            
+            ; 方法1：使用ControlFocus通过类名
+            ; 搜索框通常是第一个Edit控件
+            ControlFocus("Edit1", hwnd)
+            
+            ; 方法2：如果ControlFocus不够，发送Tab键
+            ; Sleep(10)
+            ; ControlSend("{Tab}", , hwnd)
+            
+        } catch as e {
+            ; 忽略焦点设置错误
+        }
         return
     }
 
@@ -74,7 +90,16 @@ ShowGuiManager(configType) {
 
 ; win+q事件
 MainHotkeyHandler(*) {
-    ShowGuiManager('openfile')
+    ; 检查是否有GUI窗口在前台
+    activeGuiHwnd := WinActive("ahk_class AutoHotkeyGUI")
+    
+    if (activeGuiHwnd) {
+        ; 如果有GUI窗口在前台，最小化它
+        WinMinimize(activeGuiHwnd)
+    } else {
+        ; 没有GUI窗口在前台，显示GUI
+        ShowGuiManager('openfile')
+    }
 }
 
 InitProgram(){
