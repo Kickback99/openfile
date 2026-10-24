@@ -90,6 +90,12 @@ RefreshConfigTypes() {
     InitConfigTypes()
 }
 
+; 初始化版本配置
+InitVersionConfig(){
+    ; 检查配置版本，如果需要则重置
+    SettingsManager.CheckAndResetConfig()
+}
+
 ; 全局热键注册函数
 RegisterMainShortcut() {
     ; 从配置文件中读取快捷键
@@ -361,6 +367,9 @@ InitProgram(){
 
     ; 初始化配置类型
     InitConfigTypes()
+
+    ; 初始化版本配置
+    InitVersionConfig()
 
     ; 在脚本启动时注册两个热键
     RegisterMainShortcut()

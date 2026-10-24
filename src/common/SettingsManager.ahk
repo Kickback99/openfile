@@ -8,6 +8,10 @@ class SettingsManager {
     ; 将配置文件路径改为用户家目录下的OpenFile/settings.ini
     static ConfigPath := ""
 
+    ; 配置版本常量
+    static CONFIG_VERSION := "complete-1.0.0"
+    static CONFIG_VERSION_KEY := "ConfigVersion"
+
     ; 配置段名称
     static SectionName := "General"
 
@@ -21,7 +25,8 @@ class SettingsManager {
         this.ACTIVE_CONFIG_KEY, this.DEFAULT_CONFIG_TYPE,
         "MainHotkey", "#q",
         "TypeHotkey", "!c",
-        "Link", "https://github.com/Kickback99/openfile"
+        "Link", "https://github.com/Kickback99/openfile",
+        this.CONFIG_VERSION_KEY, this.CONFIG_VERSION
         ; 未来扩展示例：
         ; "DebugMode", "false",
         ; "AutoStart", "true"
@@ -41,6 +46,31 @@ class SettingsManager {
             "ShowSuccessMsg", "true"    ; 字符串
         )
     )
+
+    ; 添加版本检查和重置方法
+    static CheckAndResetConfig() {
+        try {
+            ; 检查配置版本
+            currentVersion := this.GetValue(this.CONFIG_VERSION_KEY, this.CONFIG_MANAGER_SECTION)
+
+            ; 如果版本不匹配或为空，重置配置
+            if (currentVersion != this.CONFIG_VERSION) {
+                ; 创建新的默认配置文件
+                this.CreateDefaultSettingsFile()
+
+                ; 重置自启动（确保注册表状态与配置文件一致）
+                ; 注意：这里不能直接调用 DisableAutoStart，因为这是静态方法
+                ; 可以在 main.ahk 中处理
+
+                return true  ; 表示已重置
+            }
+            return false  ; 未重置
+        } catch {
+            ; 出错时也创建默认配置
+            this.CreateDefaultSettingsFile()
+            return true
+        }
+    }
 
     ; 获取配置文件路径的静态方法
     static GetConfigPath() {
