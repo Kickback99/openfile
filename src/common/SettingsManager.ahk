@@ -26,6 +26,7 @@ class SettingsManager {
         "MainHotkey", "#q",
         "TypeHotkey", "!c",
         "Link", "https://github.com/Kickback99/openfile",
+        "AutoStartEnabled", "false",
         this.CONFIG_VERSION_KEY, this.CONFIG_VERSION
         ; 未来扩展示例：
         ; "DebugMode", "false",
