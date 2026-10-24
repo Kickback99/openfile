@@ -5,7 +5,8 @@
 class SettingsManager {
 
     ; 静态属性：配置文件路径
-    static ConfigPath := A_ScriptDir "\settings.ini"
+    ; 将配置文件路径改为用户家目录下的OpenFile/settings.ini
+    static ConfigPath := ""
 
     ; 配置段名称
     static SectionName := "General"
@@ -41,6 +42,34 @@ class SettingsManager {
         )
     )
 
+    ; 获取配置文件路径的静态方法
+    static GetConfigPath() {
+        if (this.ConfigPath = "") {
+            ; 获取用户家目录
+            userHome := A_MyDocuments  ; 文档目录
+            SplitPath(userHome, , &userHomeDir)
+
+            ; 构建应用数据目录路径
+            appDataDir := userHomeDir "\OpenFile"
+            this.ConfigPath := appDataDir "\settings.ini"
+
+            ; 确保目录存在
+            this.EnsureSettingsDirectory(appDataDir)
+        }
+        return this.ConfigPath
+    }
+
+    ; 确保设置目录存在的方法
+    static EnsureSettingsDirectory(appDataDir) {
+        if (!DirExist(appDataDir)) {
+            try {
+                DirCreate(appDataDir)
+            } catch as e {
+                MsgBox("创建设置目录失败: " e.Message)
+            }
+        }
+    }
+
     ; ==================== 默认配置 ====================
 
     ; 获取指定 section 的默认配置
@@ -75,7 +104,7 @@ class SettingsManager {
     ; 创建默认 settings.ini 文件
     static CreateDefaultSettingsFile() {
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
             SplitPath(settingsPath, , &configDir)
 
             if (!DirExist(configDir)) {
@@ -145,7 +174,7 @@ class SettingsManager {
         }
 
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
 
             if (!FileExist(settingsPath)) {
                 ; 文件不存在，返回默认配置
@@ -221,7 +250,7 @@ class SettingsManager {
     ; 写入指定 section 的配置
     static WriteSectionConfig(sectionName, config) {
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
 
             ; 读取现有所有配置
             allConfig := this.ReadAllConfig()
@@ -243,7 +272,7 @@ class SettingsManager {
         allConfig := Map()
 
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
 
             if (!FileExist(settingsPath)) {
                 ; 文件不存在，返回空的 Map
@@ -397,7 +426,7 @@ class SettingsManager {
     ; 简化版实现，避免递归
     static WriteAllConfig(allConfig) {
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
 
             ; 构建文件内容
             content := ""
@@ -496,7 +525,7 @@ class SettingsManager {
 
     static EnsureConfigManagerSection() {
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
 
             ; 如果文件不存在，调用 CreateDefaultSettingsFile
             if (!FileExist(settingsPath)) {
@@ -731,7 +760,7 @@ class SettingsManager {
     ; 重命名配置段
     static RenameConfigSection(oldSectionName, newSectionName) {
         try {
-            settingsPath := this.ConfigPath
+            settingsPath := this.GetConfigPath()
 
             ; 读取现有所有配置
             allConfig := this.ReadAllConfig()
