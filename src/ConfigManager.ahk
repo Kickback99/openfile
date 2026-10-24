@@ -19,7 +19,16 @@ class ConfigManager {
         ; L:\openfile\openfile\src
 
         ; configs 目录就在当前目录下
-        configsDir := scriptDir "\configs"
+        ; configsDir := scriptDir "\configs"
+
+        ; 将 configs 目录改为用户家目录下的 OpenFile/configs
+        ; 获取用户家目录
+        userHome := A_MyDocuments  ; 文档目录
+        SplitPath(userHome, , &userHomeDir)
+
+        ; 构建应用数据目录路径
+        appDataDir := userHomeDir "\OpenFile"
+        configsDir := appDataDir "\configs"
 
         ; 自动构建配置文件路径：configs\{configType}.ini
         if (configType = "") {
@@ -38,7 +47,7 @@ class ConfigManager {
         } */
 
         ; 确保目录存在
-        this.EnsureConfigDirectory(configsDir)
+        this.EnsureConfigDirectory(appDataDir, configsDir)
 
         ; 确保配置文件存在（如果不存在则创建空文件）
         this.EnsureConfigFileExists()
@@ -48,8 +57,18 @@ class ConfigManager {
         this.fileList := this.GetFileList()
     }
 
-    ; 确保配置目录存在
-    EnsureConfigDirectory(configsDir) {
+    ; 更新确保配置目录的方法，支持两级目录
+    EnsureConfigDirectory(appDataDir, configsDir) {
+        ; 确保应用数据目录存在
+        if (!DirExist(appDataDir)) {
+            try {
+                DirCreate(appDataDir)
+            } catch as e {
+                MessageManager.ShowError("创建应用数据目录失败: " e.Message)
+            }
+        }
+
+        ; 确保配置目录存在
         if (!DirExist(configsDir)) {
             try {
                 DirCreate(configsDir)
@@ -341,10 +360,10 @@ class ConfigManager {
         ; 1. 如果没传参，获取所有类型
         ; 2. 如果传参了，排除指定类型
 
-        ; 获取 configs 目录
-        configManagerPath := A_LineFile
-        SplitPath(configManagerPath, , &scriptDir)
-        configsDir := scriptDir "\configs"
+        ; 获取用户家目录下的 configs 目录
+        userHome := A_MyDocuments
+        SplitPath(userHome, , &userHomeDir)
+        configsDir := userHomeDir "\OpenFile\configs"
 
         ; 查找所有 .ini 文件
         configTypes := []
@@ -393,18 +412,18 @@ class ConfigManager {
 
     ; 获取 configs 目录路径
     static GetConfigsDir() {
-        configManagerPath := A_LineFile
-        SplitPath(configManagerPath, , &scriptDir)
-        return scriptDir "\configs"
+        userHome := A_MyDocuments
+        SplitPath(userHome, , &userHomeDir)
+        return userHomeDir "\OpenFile\configs"
     }
 
     ; 重命名配置文件
     static RenameConfigFile(oldConfigType, newConfigType) {
         try {
-            ; 获取 configs 目录路径
-            configManagerPath := A_LineFile
-            SplitPath(configManagerPath, , &scriptDir)
-            configsDir := scriptDir "\configs"
+            ; 获取用户家目录下的 configs 目录路径
+            userHome := A_MyDocuments
+            SplitPath(userHome, , &userHomeDir)
+            configsDir := userHomeDir "\OpenFile\configs"
 
             ; 构建旧文件路径和新文件路径
             oldPath := configsDir "\" oldConfigType ".ini"
