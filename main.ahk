@@ -368,6 +368,9 @@ InitProgram(){
 
     ; 搜索框 ↓ / 创建按钮 ↑ 的焦点转移
     GuiEventHandlers.RegisterArrowNavHotkeys()
+
+    ; 自动启动应用程序
+    ShowGuiManager('openfile')
 }
 
 ; 执行初始化
