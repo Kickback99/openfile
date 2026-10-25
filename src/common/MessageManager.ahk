@@ -183,9 +183,8 @@ class MessageManager {
 
     ; ==================== 内部实现 ====================
 
-    ; 内部方法：智能选择所有者的消息框（备选方法）
-    ; 注意：此方法使用智能所有者判断，不处理置顶/取消置顶逻辑
-    ; 主要用于内部调用，或需要精确控制选项的场景
+    ; 内部消息框：使用智能所有者判断，不处理置顶/取消置顶
+    ; 供需要精确控制选项的场景调用
     static ShowMessageBoxInternal(message, title := "", options := "", icon := 0, ownerHwnd := 0) {
         ; 获取智能判断的所有者窗口
         actualOwner := this.GetOwnerHwnd(ownerHwnd)

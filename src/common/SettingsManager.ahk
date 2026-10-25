@@ -98,8 +98,7 @@ class SettingsManager {
             }
 
         } catch as e {
-            ; 出错时返回默认配置
-            ; 可以取消下面的注释查看错误信息
+            ; 出错时返回默认配置；取消下行注释可查看错误信息
             ; MsgBox("读取配置时出错：" . e.Message)
         }
 

@@ -102,6 +102,7 @@ MainHotkeyHandler(*) {
     }
 }
 
+; 脚本启动入口：初始化并注册热键
 InitProgram(){
     ; 启动时注册热键
     RegisterMainShortcut()

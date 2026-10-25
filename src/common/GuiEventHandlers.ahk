@@ -660,9 +660,9 @@ class GuiEventHandlers {
         ; 只有当 ListBox 当前没有选中项时，才设置选中第一项
         if (ListBoxHelper.GetSelectedIndices(guiManager.listBox).Length = 0) {
             ; 不是提示消息，设置为选中项
-        ; if(!guiManager.IsFirstItemPrompt()){
+            ; if(!guiManager.IsFirstItemPrompt()){
                 guiManager.listBox.Value := 1
-        ; }
+            ; }
         }
     }
 
@@ -727,7 +727,7 @@ class GuiEventHandlers {
         ; ==================== 重名检查逻辑 ====================
 
         if (guiManager.editMode = "edit") {
-            ; ************** 编辑模式检查逻辑 **************
+            ; 编辑模式检查逻辑
 
             ; 检查新的 section 名称是否已存在（排除自身）
             if (section != guiManager.currentEditSection) {
@@ -772,16 +772,15 @@ class GuiEventHandlers {
             }
 
         } else if (guiManager.editMode = "create") {
-            ; ************** 创建模式检查逻辑 **************
+            ; 创建模式检查逻辑
 
             ; 创建模式允许 Root，但要检查唯一性
             if (StrLower(section) = "root") {
                 ; 检查 Root 是否已存在
                 for displayName, file in guiManager.fileMap {
                     if (StrLower(file["section"]) = "root") {
-                        ; Root 已存在，覆盖是允许的
-                        ; 这里不阻止，因为用户可能想要覆盖现有的 Root
-                        ; 只需要在更新 INI 时特殊处理
+                        ; Root 已存在时允许覆盖，不在这里阻止
+                        ; 更新 INI 时再特殊处理
                         break
                     }
                 }

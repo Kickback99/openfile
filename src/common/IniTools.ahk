@@ -61,9 +61,7 @@ class IniTools {
                 }
 
                 if (hasExistingRoot) {
-                    ; 已有 Root，替换它
-                    ; 构建正则表达式匹配 Root section（不区分大小写）
-                    ; 使用原始的大小写来匹配
+                    ; 已有 Root 则替换；正则用原始大小写匹配 section，不区分大小写
                     escapedSection := this.RegExEscape(existingRootSectionName)
                     rootPattern := "\[" escapedSection "\][\s\S]*?(?=\n\[|$)"
                     if (RegExMatch(iniContent, rootPattern, &match)) {
