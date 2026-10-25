@@ -4,7 +4,7 @@
 ; ============================================================
 class SettingsDialogManager {
 
-    ; ==================== 设置按钮事件处理 ====================
+    ; ==================== 设置对话框 ====================
 
     ; 设置按钮点击事件处理
     ; t_openfile_settings：get&set
@@ -71,6 +71,8 @@ class SettingsDialogManager {
 
         return moreGui
     }
+
+    ; ==================== 对话框布局 ====================
 
     ; 根据布局创建设置按钮的方法
     static CreateSettingButtonsWithLayout(moreGui, buttonLayout) {
@@ -465,6 +467,8 @@ class SettingsDialogManager {
         MessageManager.ShowInfo(debugMsg, "布局调试")
     }
 
+    ; ==================== 按钮文本 ====================
+
     ; 获取置顶按钮文本
     static GetAlwaysOnTopButtonText() {
         isOnTop := SettingsManager.GetBool("AlwaysOnTop")
@@ -494,6 +498,8 @@ class SettingsDialogManager {
         showMsg := SettingsManager.GetBool("ShowSuccessMsg")
         return "成功消息: " . (showMsg ? "✅" : "❌")
     }
+
+    ; ==================== 设置项处理 ====================
 
     ; 处理设置切换
     static HandleSettingToggle(settingKey, buttonCtrl, guiManager,moreGui) {
@@ -679,6 +685,8 @@ class SettingsDialogManager {
             }
         }
     }
+
+    ; ==================== 快捷键管理 ====================
 
     ; 处理快捷键按钮点击
     static HandleShortcutsClick(guiManager, parentGui) {
