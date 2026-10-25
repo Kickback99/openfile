@@ -106,6 +106,9 @@ MainHotkeyHandler(*) {
 InitProgram(){
     ; 启动时注册热键
     RegisterMainShortcut()
+
+    ; 搜索框 ↓ / 创建按钮 ↑ 的焦点转移
+    GuiEventHandlers.RegisterArrowNavHotkeys()
 }
 
 ; 执行初始化

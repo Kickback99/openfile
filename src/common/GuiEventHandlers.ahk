@@ -4,6 +4,113 @@
 ; ============================================================
 class GuiEventHandlers {
 
+    ; ==================== 上下键焦点转移 ====================
+
+    ; 同一个键只能挂一处，所以按“需要接管”的条件合并，再在回调里分流
+    static RegisterArrowNavHotkeys() {
+        HotIf(GuiEventHandlers.IsDownKeyHandled)
+        Hotkey("Down", GuiEventHandlers.OnDownKey, "On")
+        HotIf(GuiEventHandlers.IsUpKeyHandled)
+        Hotkey("Up", GuiEventHandlers.OnUpKey, "On")
+        HotIf()
+    }
+
+    static IsDownKeyHandled(*) {
+        return GuiEventHandlers.IsSearchBoxActive() || GuiEventHandlers.IsListBoxAtBottom()
+    }
+
+    static IsUpKeyHandled(*) {
+        return GuiEventHandlers.IsCreateButtonActive() || GuiEventHandlers.IsListBoxAtTop()
+    }
+
+    static OnDownKey(*) {
+        if (GuiEventHandlers.IsSearchBoxActive()) {
+            GuiEventHandlers.MoveFocusIntoList(1)
+            return
+        }
+        GuiEventHandlers.ActiveGuiManager().buttons["create"].Focus()
+    }
+
+    static OnUpKey(*) {
+        if (GuiEventHandlers.IsCreateButtonActive()) {
+            GuiEventHandlers.MoveFocusIntoList(-1)
+            return
+        }
+        GuiEventHandlers.ActiveGuiManager().searchBox.Focus()
+    }
+
+    ; 取当前活动窗口的 GuiManager，弹窗和其它程序都返回空
+    static ActiveGuiManager(*) {
+        hwnd := WinActive("A")
+        if (!hwnd)
+            return ""
+        try guiObj := GuiFromHwnd(hwnd)
+        catch
+            return ""
+        if (!guiObj || !guiObj.HasProp("guiManager"))
+            return ""
+        return guiObj.guiManager
+    }
+
+    ; ControlGetFocus 可能返回 ClassNN 也可能返回 HWND，统一成 HWND
+    static FocusedControlHwnd(guiManager) {
+        focused := ControlGetFocus(guiManager.gui.Hwnd)
+        if (IsInteger(focused))
+            return focused
+        return focused ? ControlGetHwnd(focused, guiManager.gui.Hwnd) : 0
+    }
+
+    static IsSearchBoxActive(*) {
+        guiManager := GuiEventHandlers.ActiveGuiManager()
+        return guiManager && GuiEventHandlers.FocusedControlHwnd(guiManager) = guiManager.searchBox.Hwnd
+    }
+
+    static IsCreateButtonActive(*) {
+        guiManager := GuiEventHandlers.ActiveGuiManager()
+        if (!guiManager || !guiManager.buttons.Has("create"))
+            return false
+        return GuiEventHandlers.FocusedControlHwnd(guiManager) = guiManager.buttons["create"].Hwnd
+    }
+
+    ; 列表已在首项/末项时，上下键交给相邻控件；提示行不参与
+    static IsListBoxAtTop(*) {
+        return GuiEventHandlers.IsListBoxAtBoundary(true)
+    }
+
+    static IsListBoxAtBottom(*) {
+        return GuiEventHandlers.IsListBoxAtBoundary(false)
+    }
+
+    static IsListBoxAtBoundary(isTop) {
+        guiManager := GuiEventHandlers.ActiveGuiManager()
+        if (!guiManager || GuiEventHandlers.FocusedControlHwnd(guiManager) != guiManager.listBox.Hwnd)
+            return false
+        if (guiManager.IsFirstItemPrompt())
+            return false
+
+        range := ListBoxHelper.GetSelectionRange(guiManager.listBox)
+        if (!range["first"])
+            return false
+        if (isTop)
+            return range["first"] = 1
+        return range["last"] = ListBoxHelper.GetItemCount(guiManager.listBox)
+    }
+
+    ; 焦点交给列表后调索引；提示行和只有一项时只移焦点不改选中
+    static MoveFocusIntoList(direction) {
+        guiManager := GuiEventHandlers.ActiveGuiManager()
+        if (!guiManager)
+            return
+
+        guiManager.listBox.Focus()
+        if (guiManager.IsFirstItemPrompt())
+            return
+
+        target := ListBoxHelper.GetArrowTargetIndex(guiManager.listBox, direction)
+        if (target)
+            guiManager.listBox.Value := target
+    }
+
     ; ==================== 主窗口按钮事件处理 ====================
 
     ; 创建按钮点击事件处理

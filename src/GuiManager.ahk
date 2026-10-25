@@ -163,6 +163,9 @@ class GuiManager {
         ; 显示 GUI
         this.gui.Show("w550")
 
+        ; 挂到 Gui 对象上，供上下键焦点判定取实例
+        this.gui.guiManager := this
+
         ; 使用 ObjBindMethod 注册窗口消息监听
         this.messageListener := ObjBindMethod(this, "HandleWindowMessage", this.gui.Hwnd)
         OnMessage(0x47, this.messageListener)   ; WM_WINDOWPOSCHANGED
