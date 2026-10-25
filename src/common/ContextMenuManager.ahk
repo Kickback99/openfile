@@ -50,6 +50,8 @@ class ContextMenuManager {
         this.ExecuteCopyOrMove(guiManager, selectedTexts, targetConfigType, true)  ; true 表示移动操作
     }
 
+    ; ==================== 复制移动流程 ====================
+
     ; 创建移动用的 TXT 文件（支持 temp 目录）
     static CreateMoveTxtFile(guiManager, selectedTexts, outputPath) {
         content := ""
@@ -219,6 +221,8 @@ class ContextMenuManager {
             }
         }
     }
+
+    ; ==================== 临时目录 ====================
 
     ; 确保 temp 目录存在的辅助方法
     static EnsureTempDirectory() {
