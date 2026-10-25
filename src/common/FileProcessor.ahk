@@ -52,21 +52,21 @@ class FileProcessor {
                 } else {
                     GuiEventHandlers.ShowToolTip(guiManager, "已添加: " . displayName, 1500)
                 }
-                
+
                 return displayName
             }
 
         } catch as e {
             ; 静默失败
         }
-        
+
         return ""
     }
 
     ; 获取资源管理器中选中的所有文件（支持多选）
     static GetSelectedFilesInExplorer(explorerHwnd) {
         selectedFiles := []
-        
+
         try {
             shell := ComObject("Shell.Application")
             windows := shell.Windows
@@ -99,7 +99,7 @@ class FileProcessor {
         } catch as e {
             ; 静默失败
         }
-        
+
         return selectedFiles
     }
 
@@ -118,7 +118,7 @@ class FileProcessor {
                 return ""
             }
         }
-        
+
         if (validFiles.Length = 0) {
             MessageManager.ShowError("没有有效的文件可以处理")
             return ""
@@ -131,7 +131,7 @@ class FileProcessor {
 
         ; 创建中止标志变量
         isCancelled := false
-        
+
         ; 显示批量操作进度
         progressGui := Gui()
         progressGui.Title := "批量创建中..."
@@ -144,24 +144,24 @@ class FileProcessor {
 
         ; 中止按钮点击事件
         cancelBtn.OnEvent("Click", (*) => isCancelled := true)
-        
+
         ; 计算窗口位置：屏幕顶部居中
         screenWidth := A_ScreenWidth
         screenHeight := A_ScreenHeight
-        
+
         ; 设置窗口大小
         windowWidth := 320
-        
+
         ; 计算位置：屏幕顶部居中，尽量靠上
         windowX := (screenWidth - windowWidth) // 2
         windowY := 20
-        
+
         ; 显示窗口在指定位置
         progressGui.Show("x" . windowX . " y" . windowY . " w" . windowWidth)
-        
+
         ; 添加延迟确保窗口完全显示
         Sleep(100)
-        
+
         try {
             for i, filePath in validFiles {
                 ; 检查中止标志
@@ -195,7 +195,7 @@ class FileProcessor {
                     for existingName, file in guiManager.fileMap {
                         if (file["name"] = displayName) {
                             duplicateFound := true
-                            
+
                             ; 批量模式下，如果已存在同名文件，询问是否覆盖
                             response := MessageManager.ShowConfirm("已存在同名文件 '" . displayName . "'。是否覆盖？", "确认覆盖", "YesNo")
                             if (response != "Yes") {
@@ -255,7 +255,7 @@ class FileProcessor {
             progressGui.Destroy()
             MessageManager.ShowError("批量创建过程中出错：`n" . e.Message)
         }
-        
+
         return lastAddedName
     }
 }

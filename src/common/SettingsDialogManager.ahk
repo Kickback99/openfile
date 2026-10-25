@@ -5,7 +5,7 @@
 class SettingsDialogManager {
 
     ; ==================== 设置对话框 ====================
-    
+
     ; 设置按钮点击事件处理
     ; t_openfile_settings：get&set
     static ShowSettingsDialog(guiManager) {
@@ -59,7 +59,7 @@ class SettingsDialogManager {
         if (WindowConstants.SHOW_DIVIDER_LINE) {
             this.AddDividerLine(moreGui)
         }
-                
+
         ; 调用 CreateRegularButtonsWithGui 方法
         this.CreateRegularButtonsWithGui(moreGui, guiManager)
 
@@ -103,7 +103,7 @@ class SettingsDialogManager {
             for btnIndex, btnName in rowButtons {
                 btnWidth := WindowConstants.GetButtonWidth(btnName)
                 btnText := this.GetButtonTextInternal(btnName,guiManager)
-                
+
                 ; 确定按钮位置参数
                 positionParams := ""
                 if (rowIndex = 1 && btnIndex = 1) {
@@ -113,11 +113,11 @@ class SettingsDialogManager {
                 } else {
                     positionParams := "x+" btnSpacing
                 }
-                
+
                 ; 创建按钮
                 btn := moreGui.Add("Button", positionParams " w" btnWidth, btnText)
                 btnRefs[btnName] := btn
-                
+
                 currentX += btnWidth + btnSpacing
             }
         }
@@ -140,7 +140,7 @@ class SettingsDialogManager {
                 currentRowWidth := btnWidth
             } else {
                 neededWidth := currentRowWidth + WindowConstants.BUTTON_SPACING + btnWidth
-                
+
                 if (neededWidth <= maxRowWidth) {
                     currentRow.Push(btnName)
                     currentRowWidth := neededWidth
@@ -234,7 +234,7 @@ class SettingsDialogManager {
         btnAppend.OnEvent("Click", (btnCtrl, info) => guiManager.HandleAppend(moreGui))
         btnLoad.OnEvent("Click", (btnCtrl, info) => guiManager.HandleLoad(moreGui))
     }
-    
+
     ; 计算并定位窗口的方法
     static CalculateAndPositionWindow(moreGui, guiManager, buttonLayoutRows) {
         estimatedHeight := WindowConstants.CalculateEmpiricalHeight(buttonLayoutRows)
@@ -318,7 +318,7 @@ class SettingsDialogManager {
         if (dialogWidth >= 300) {
             buttonAreaHeight := 35  ; 水平布局
         } else {
-            buttonAreaHeight := 35 + 30 * 3  ; 垂直布局：第一个按钮高度 + 3个按钮*30像素间距
+            buttonAreaHeight := 35 + 30 * 3  ; 垂直布局：第一个按钮高度 + 3 个按钮*30 像素间距
         }
 
         ; 边距
@@ -398,7 +398,7 @@ class SettingsDialogManager {
                 return btnName
         }
     }
-    
+
     ; 调试方法
     static DebugLayoutInfo(buttonLayout, dialogWidth) {
         debugMsg := "=== 布局调试信息 ===`n"
@@ -421,10 +421,10 @@ class SettingsDialogManager {
                 } else {
                     rowWidth += WindowConstants.BUTTON_SPACING + btnWidth
                 }
-                
+
                 ; 显示按钮信息
                 debugMsg .= "  " btnIndex ". " btnName " (" btnWidth "px)"
-                
+
                 ; 如果是窄按钮或宽按钮
                 if (btnName = "AlwaysOnTop" || btnName = "ResetSettings") {
                     debugMsg .= " [窄按钮]"
@@ -454,7 +454,7 @@ class SettingsDialogManager {
         debugMsg .= "=== 常规按钮信息 ===`n"
         normalBtnWidth := WindowConstants.BUTTON_WIDTH
         normalBtnCount := WindowConstants.MORE_GUI_BUTTON_COUNT
-        normalTotalWidth := (normalBtnWidth * normalBtnCount) + 
+        normalTotalWidth := (normalBtnWidth * normalBtnCount) +
                         (WindowConstants.BUTTON_SPACING * (normalBtnCount - 1))
 
         debugMsg .= "按钮宽度：" normalBtnWidth "px`n"
@@ -479,13 +479,13 @@ class SettingsDialogManager {
         isOnTop := SettingsManager.GetBool("AlwaysOnTop",guiManager.configType)
         return "置顶: " . (isOnTop ? "✅" : "❌")
     }
-    
+
     ; 获取字母排序按钮文本
     static GetSortAlphabetButtonText(guiManager) {
         isSorted := SettingsManager.GetBool("SortByAlphabet",guiManager.configType)
         return "字母排序: " . (isSorted ? "✅" : "❌")
     }
-    
+
     ; 获取扩展名按钮文本
     static GetShowExtensionButtonText(guiManager) {
         showExt := SettingsManager.GetBool("EnableExtension",guiManager.configType)
@@ -497,13 +497,13 @@ class SettingsDialogManager {
         threshold := SettingsManager.GetInt("BatchThreshold",guiManager.configType)
         return "批量阈值: " . threshold
     }
-    
+
     ; 获取成功消息按钮文本
     static GetShowSuccessMsgButtonText(guiManager) {
         showMsg := SettingsManager.GetBool("ShowSuccessMsg",guiManager.configType)
         return "成功消息: " . (showMsg ? "✅" : "❌")
     }
-    
+
     ; ==================== 设置项处理 ====================
 
     ; 处理设置切换
@@ -525,12 +525,12 @@ class SettingsDialogManager {
                     } else {
                         guiManager.gui.Opt("-AlwaysOnTop")
                     }
-                    
+
                 case "SortByAlphabet":
                     buttonCtrl.Text := this.GetSortAlphabetButtonText(guiManager)
                     ; 刷新列表以应用新的排序方式
                     SetTimer(() => guiManager.RefreshList(), -100)
-                    
+
                 case "EnableExtension":
                     buttonCtrl.Text := this.GetShowExtensionButtonText(guiManager)
                     ; 扩展名设置可能在显示时用到，需要时可以刷新
@@ -538,7 +538,7 @@ class SettingsDialogManager {
 
                 case "ShowSuccessMsg":
                     buttonCtrl.Text := this.GetShowSuccessMsgButtonText(guiManager)
-                    ; 成功消息设置影响MessageManager，但不需要立即刷新界面
+                    ; 成功消息设置影响 MessageManager，但不需要立即刷新界面
 
             }
 
@@ -558,7 +558,7 @@ class SettingsDialogManager {
         if (guiManager.isTop) {
             inputGui.Opt("+AlwaysOnTop")
         }
-        ;  关键：禁用主窗口（灰色不可操作）
+        ; 关键：禁用主窗口（灰色不可操作）
         parentGui.Opt("+Disabled")
 
         ; 移除最小化按钮
@@ -602,7 +602,7 @@ class SettingsDialogManager {
         ; 居中显示
         inputGui.Show("Center")
     }
-    
+
     ; 处理批量阈值保存
     static HandleBatchThresholdSave(ctlUpDown, btnBatchThreshold,inputGui,parentGui,guiManager) {
         ; 直接从 UpDown 控件获取值（确保在范围内）
@@ -618,7 +618,7 @@ class SettingsDialogManager {
         if (SettingsManager.SetValue("BatchThreshold", value,guiManager.configType)) {
             MessageManager.ShowSuccessDelayed("批量阈值已更新: " . value,,parentGui.Hwnd)
             btnBatchThreshold.Text := this.GetBatchThresholdButtonText(guiManager)
-            ;  统一恢复和关闭
+            ; 统一恢复和关闭
             this.HandleInputGuiClose(inputGui, parentGui)
         } else {
             MessageManager.ShowError("更新失败",,,parentGui.Hwnd)
@@ -630,7 +630,7 @@ class SettingsDialogManager {
         ; 从 UpDown 获取当前值并同步到 Edit 控件
         editCtrl.Value := updownCtrl.Value
     }
-    
+
     ; 简单的关闭处理
     static HandleInputGuiClose(inputGui, parentGui) {
         ; 恢复主窗口
@@ -640,7 +640,7 @@ class SettingsDialogManager {
         inputGui.Destroy()
     }
 
-    ; 处理moreGui关闭
+    ; 处理 moreGui 关闭
     static HandleMoreGuiClose(guiManager, moreGui) {
         ; 恢复主窗口
         guiManager.gui.Opt("-Disabled")
@@ -663,15 +663,15 @@ class SettingsDialogManager {
                 btnShowExtension.Text := this.GetShowExtensionButtonText(guiManager)
                 btnBatchThreshold.Text := this.GetBatchThresholdButtonText(guiManager)
                 btnShowSuccessMsg.Text := this.GetShowSuccessMsgButtonText(guiManager)
-                
+
                 ; 置顶状态会自动通过 GetBool 读取
                 newAlwaysOnTop := SettingsManager.GetBool("AlwaysOnTop",guiManager.configType)
                 guiManager.isTop := newAlwaysOnTop
                 guiManager.gui.Opt((newAlwaysOnTop ? "+" : "-") . "AlwaysOnTop")
-                
+
                 ; 刷新列表
                 SetTimer(() => guiManager.RefreshList(), -100)
-                
+
                 MessageManager.ShowSuccessDelayed("所有设置已重置到默认值",,moreGui.Hwnd)
             } else {
                 MessageManager.ShowError("重置设置失败",,,moreGui.Hwnd)
@@ -687,7 +687,7 @@ class SettingsDialogManager {
         configTypesGui := Gui()
         configTypesGui.Title := "配置类型管理 - " ConfigManager.GetDisplayType(guiManager.configType)
 
-        ; 设置Owner关系
+        ; 设置 Owner 关系
         configTypesGui.Opt("+Owner" moreGui.Hwnd)
 
         ; 根据配置决定是否置顶
@@ -706,7 +706,7 @@ class SettingsDialogManager {
         ; 设置字体
         configTypesGui.SetFont("s9")  ; 先重置为默认字体
         configTypesGui.SetFont("s10", "Microsoft YaHei")  ; 最低优先级
-        configTypesGui.SetFont("s10", "Consolas")         ; 中等优先级  
+        configTypesGui.SetFont("s10", "Consolas")         ; 中等优先级
         configTypesGui.SetFont("s9", "JetBrains Mono")   ; 最高优先级（最后设置）
 
         ; 设置边距
@@ -745,13 +745,13 @@ class SettingsDialogManager {
 
         ; 事件处理函数
         btnAdd.OnEvent("Click", (*) => this.HandleAddConfigType(configTypesGui, inputBox, comboBox, guiManager))
-        btnModify.OnEvent("Click", (*) => this.HandleModifyConfigType(configTypesGui, inputBox, comboBox, guiManager)) 
+        btnModify.OnEvent("Click", (*) => this.HandleModifyConfigType(configTypesGui, inputBox, comboBox, guiManager))
         btnDelete.OnEvent("Click", (*) => this.HandleDeleteConfigType(configTypesGui, comboBox, guiManager))
         btnActivate.OnEvent("Click", (*) => this.HandleActivateConfigType(configTypesGui, comboBox, guiManager,moreGui))
         configTypesGui.OnEvent("Close", (*) => this.HandleConfigTypesGuiClose(configTypesGui, moreGui))
         configTypesGui.OnEvent("Escape", (*) => this.HandleConfigTypesGuiClose(configTypesGui, moreGui))
 
-        ; 使用WindowPositionUtils居中显示
+        ; 使用 WindowPositionUtils 居中显示
         WindowPositionUtils.CenterChildWindowWithConstants(
             moreGui.Hwnd,
             configTypesGui,
@@ -794,7 +794,7 @@ class SettingsDialogManager {
             return
         }
 
-        ; 长度限制（最多15个字符）
+        ; 长度限制（最多 15 个字符）
         if (StrLen(newType) > 15) {
             MessageManager.ShowWarning(
                 "配置类型名称不能超过15个字符！`n`n"
@@ -803,13 +803,13 @@ class SettingsDialogManager {
             return
         }
 
-        ; 创建对应的INI文件
+        ; 创建对应的 INI 文件
         try {
 
-            ; 直接创建ConfigManager实例来自动创建配置文件
+            ; 直接创建 ConfigManager 实例来自动创建配置文件
             configMgr := ConfigManager(newType)  ; 这会自动创建配置文件和目录
 
-            ; 在settings.ini中添加对应的配置段
+            ; 在 settings.ini 中添加对应的配置段
             SettingsManager.EnsureConfigFile()
 
             ; 刷新下拉列表框
@@ -821,7 +821,7 @@ class SettingsDialogManager {
             ; 清空输入框
             inputBox.Value := ""
 
-            ; 更新全局ConfigTypes数组（通过main.ahk的函数）
+            ; 更新全局 ConfigTypes 数组（通过 main.ahk 的函数）
             RefreshConfigTypes()
 
             MessageManager.ShowSuccessDelayed("配置类型 '" newType "' 创建成功", , configTypesGui.Hwnd)
@@ -874,7 +874,7 @@ class SettingsDialogManager {
             return
         }
 
-        ; 长度限制（最多15个字符）
+        ; 长度限制（最多 15 个字符）
         if (StrLen(newType) > 15) {
             MessageManager.ShowWarning(
                 "配置类型名称不能超过15个字符！`n`n"
@@ -888,7 +888,7 @@ class SettingsDialogManager {
             ; 1. 重命名配置文件
             ConfigManager.RenameConfigFile(selectedType, newType)
 
-            ; 2. 重命名settings.ini中的配置段
+            ; 2. 重命名 settings.ini 中的配置段
             SettingsManager.RenameConfigSection(selectedType, newType)
 
             ; 3. 更新下拉列表框
@@ -932,8 +932,8 @@ class SettingsDialogManager {
 
         ; 显示确认对话框
         result := MessageManager.ShowConfirm(
-            "确定要删除配置类型 '" selectedType "' 吗？`n`n" 
-            "这将会删除以下文件：`n" 
+            "确定要删除配置类型 '" selectedType "' 吗？`n`n"
+            "这将会删除以下文件：`n"
             "1. configs\" selectedType ".ini`n"
             "2. settings.ini中的[" selectedType "]配置段",
             "删除确认", , configTypesGui.Hwnd)
@@ -960,12 +960,12 @@ class SettingsDialogManager {
                 throw Error("未找到要删除的配置类型")
             }
 
-            ; 1. 删除配置文件（复用ConfigManager的方法）
+            ; 1. 删除配置文件（复用 ConfigManager 的方法）
             ConfigManager.DeleteConfigFile(selectedType)
 
-            ; 2. 同步settings.ini
+            ; 2. 同步 settings.ini
             SettingsManager.EnsureConfigFile()
-                
+
             ; 3. 获取新的配置类型列表
             newTypes := ConfigManager.GetAllConfigTypes()
 
@@ -1019,16 +1019,16 @@ class SettingsDialogManager {
             MessageManager.ShowInfo(
                 "配置类型 '" selectedType "' 已经是激活配置",
                 "提示",
-                , 
+                ,
                 configTypesGui.Hwnd
             )
             return
         } */
 
-        ; 关闭配置类型Gui
+        ; 关闭配置类型 Gui
         this.HandleConfigTypesGuiClose(configTypesGui,moreGui)
 
-        ; 关闭设置Gui
+        ; 关闭设置 Gui
         this.HandleMoreGuiClose(guiManager,moreGui)
 
         ; 设置激活配置
@@ -1066,7 +1066,7 @@ class SettingsDialogManager {
 
     ; 处理快捷键按钮点击
     static HandleShortcutsClick(guiManager, parentGui) {
-        ; 创建设置快捷键的GUI
+        ; 创建设置快捷键的 GUI
         hotkeyGui := Gui()
         hotkeyGui.Opt("+Owner" parentGui.Hwnd) ; 设置为模态窗口
         if (guiManager.isTop) {
@@ -1100,7 +1100,7 @@ class SettingsDialogManager {
         typeHotkeyTextCtrl := hotkeyGui.AddText("wp y+2 cGray", "当前热键: " readableTypeHotkey)
         typeHotkeyInput := hotkeyGui.AddHotkey("wp vTypeHotkeyInput", currentTypeHotkey)
 
-        ; 存储控件引用到GUI对象中
+        ; 存储控件引用到 GUI 对象中
         hotkeyGui.mainHotkeyTextCtrl := mainHotkeyTextCtrl  ; 存储主热键文本控件
         hotkeyGui.typeHotkeyTextCtrl := typeHotkeyTextCtrl  ; 存储类型热键文本控件
 
@@ -1246,11 +1246,11 @@ class SettingsDialogManager {
                 readableTypeHotkey := this.ConvertHotkeyToReadable(newTypeHotkey)
                 hotkeyGui.mainHotkeyTextCtrl.Value := "当前热键: " readableMainHotkey
                 hotkeyGui.typeHotkeyTextCtrl.Value := "当前热键: " readableTypeHotkey
-                
+
                 ; 重新注册热键
                 RegisterMainShortcut()
                 RegisterTypeHotkey()
-                
+
                 MessageManager.ShowInfo("热键设置已更新", "成功", "OK 0x40", hotkeyGui.Hwnd)
             } catch as e {
                 ; 如果注册失败，恢复原来的热键
@@ -1264,7 +1264,7 @@ class SettingsDialogManager {
             MessageManager.ShowError("保存热键失败！", "错误", "OK 0x10", hotkeyGui.Hwnd)
         }
     }
-    
+
     ; 检查热键冲突
     static CheckHotkeyConflict(hotkey) {
         ; 检查常见系统快捷键

@@ -2,7 +2,7 @@
 
 ; ============================================================
 ; ConfigManager.ahk
-; 支持动态配置文件的INI管理器
+; 支持动态配置文件的 INI 管理器
 ; ============================================================
 class ConfigManager {
 
@@ -89,14 +89,14 @@ class ConfigManager {
         configData := Map()
 
         ; 读取排序配置
-        ; 使用当前configType作为section读取排序配置
+        ; 使用当前 configType 作为 section 读取排序配置
         sortByAlphabet := SettingsManager.GetBool("SortByAlphabet", this.configType)
 
         if (sortByAlphabet) {
-            ; v1模式：使用传统方式
+            ; v1 模式：使用传统方式
             return this.LoadConfigBasic()
         } else {
-            ; v2模式：使用顺序记录方式
+            ; v2 模式：使用顺序记录方式
             return this.LoadConfigWithOrder()
         }
     }
@@ -139,7 +139,7 @@ class ConfigManager {
         return configData
     }
 
-    ; 顺序记录加载（v2模式）
+    ; 顺序记录加载（v2 模式）
     LoadConfigWithOrder() {
         configData := Map()
         ; configData["_sectionsInOrder"] := []  ; 记录 section 顺序
@@ -259,7 +259,7 @@ class ConfigManager {
         return StrCompare(lower1, lower2, "Locale")
     }
 
-    ; V2模式：按文件顺序获取文件列表
+    ; V2 模式：按文件顺序获取文件列表
     GetFileListByFileOrder() {
         fileList := []
 
@@ -267,7 +267,7 @@ class ConfigManager {
         if (this.data.Has("_sectionsInOrder")) {
             sectionOrder := this.data["_sectionsInOrder"]  ; 获取顺序数组
             for section in sectionOrder {
-                ; 跳过Root项和顺序标记本身
+                ; 跳过 Root 项和顺序标记本身
                 if (section = "Root") {
                     continue
                 }
@@ -293,10 +293,10 @@ class ConfigManager {
     GetFileList() {
         ; 检查是否启用了字母排序
         if (SettingsManager.GetBool("SortByAlphabet", this.configType)) {
-            ; v1模式：使用拼音库进行智能排序
+            ; v1 模式：使用拼音库进行智能排序
             return this.GetFileListSortedByPinyin()
         } else {
-            ; v2模式：按文件顺序
+            ; v2 模式：按文件顺序
             return this.GetFileListByFileOrder()
         }
     }
@@ -321,7 +321,7 @@ class ConfigManager {
         return this.configPath
     }
 
-    ; 获取Root路径
+    ; 获取 Root 路径
     GetRootPath() {
         for section, sectionData in this.data {
             if (StrLower(section) = "root" && sectionData.Has("path")) {
@@ -372,7 +372,7 @@ class ConfigManager {
     ; 删除配置文件
     static DeleteConfigFile(configType) {
         try {
-            ; 获取configs目录路径（复用现有逻辑）
+            ; 获取 configs 目录路径（复用现有逻辑）
             configManagerPath := A_LineFile
             SplitPath(configManagerPath, , &scriptDir)
             configsDir := scriptDir "\configs"
@@ -391,7 +391,7 @@ class ConfigManager {
         }
     }
 
-    ; 获取configs目录路径
+    ; 获取 configs 目录路径
     static GetConfigsDir() {
         configManagerPath := A_LineFile
         SplitPath(configManagerPath, , &scriptDir)
@@ -401,7 +401,7 @@ class ConfigManager {
     ; 重命名配置文件
     static RenameConfigFile(oldConfigType, newConfigType) {
         try {
-            ; 获取configs目录路径
+            ; 获取 configs 目录路径
             configManagerPath := A_LineFile
             SplitPath(configManagerPath, , &scriptDir)
             configsDir := scriptDir "\configs"
@@ -420,16 +420,16 @@ class ConfigManager {
                 throw Error("目标配置文件已存在: " newConfigType)
             }
 
-            ; 读取原始文件（UTF-8编码）
+            ; 读取原始文件（UTF-8 编码）
             fileContent := FileRead(oldPath, "UTF-8")
 
             ; 替换路径中的文件名部分
-            ; 方法1：简单替换（处理大多数情况）
+            ; 方法 1：简单替换（处理大多数情况）
             oldFileName := oldConfigType ".ini"
             newFileName := newConfigType ".ini"
             updatedContent := StrReplace(fileContent, oldFileName, newFileName)
 
-            ; 方法2：如果简单替换没生效，使用正则表达式
+            ; 方法 2：如果简单替换没生效，使用正则表达式
             /* if (updatedContent = fileContent) {
                 ; 匹配格式：path=[任意字符]oldConfigType.ini
                 pattern := "path=.*\K\Q" . oldConfigType . "\E\.ini"
@@ -444,7 +444,7 @@ class ConfigManager {
                 updatedContent := StrReplace(fileContent, oldFullPath, newFullPath)
             } */
 
-            ; 写入新文件（UTF-8编码）
+            ; 写入新文件（UTF-8 编码）
             FileAppend(updatedContent, newPath, "UTF-8")
 
             ; 删除旧文件（操作已完成，可以安全删除）

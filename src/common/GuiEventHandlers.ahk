@@ -1,6 +1,6 @@
 ; ============================================================
 ; GuiEventHandlers.ahk
-; GUI事件处理工具类
+; GUI 事件处理工具类
 ; ============================================================
 class GuiEventHandlers {
 
@@ -244,12 +244,12 @@ class GuiEventHandlers {
         guiManager.ShowEditDialogGui(file["name"], file["path"])
     }
 
-    ; 处理editGui关闭
+    ; 处理 editGui 关闭
     static HandleEditGuiClose(guiManager, editGui) {
         ; 恢复主窗口
         guiManager.gui.Opt("-Disabled")
 
-        ; 销毁moreGui
+        ; 销毁 moreGui
         editGui.Destroy()
 
         ; 让搜索框进入焦点
@@ -310,7 +310,7 @@ class GuiEventHandlers {
                 ; 确认是否删除所有项目
                 ; confirmResponse := MsgBox("确定要删除所有文件吗？这将清空整个列表。", "确认删除所有", 0x24)
                 confirmResponse := MessageManager.ShowConfirm(
-                            "确定要删除所有文件吗？这将清空整个列表。", 
+                            "确定要删除所有文件吗？这将清空整个列表。",
                             "确认删除所有"
                 )
                 if (confirmResponse != "Yes") {
@@ -456,7 +456,7 @@ class GuiEventHandlers {
 
         ; 边界情况：如果只有一个项目
         if (totalItems == 1) {
-            ; 从INI文件中删除
+            ; 从 INI 文件中删除
             if (!IniTools.DeleteFromIniFile(guiManager, file["section"])) {
                 MessageManager.ShowError("删除失败，无法更新配置文件")
                 return
@@ -497,7 +497,7 @@ class GuiEventHandlers {
                 }
             } else {
                 ; 删除的不是最后一个项目，尝试保持当前位置
-                ; 注意：删除后列表会缩短，所以selectedIndex可能超出范围
+                ; 注意：删除后列表会缩短，所以 selectedIndex 可能超出范围
                 try {
                     ; 先尝试选择原来的位置
                     guiManager.listBox.Value := selectedIndex
@@ -548,14 +548,14 @@ class GuiEventHandlers {
         return arr
     }
 
-    ; 在ListBox中选中指定文本的项
+    ; 在 ListBox 中选中指定文本的项
     static SelectItemInListBox(guiManager, textToSelect) {
         if (textToSelect = "" || guiManager.showingPrompt) {
             return
         }
 
         ; 简化逻辑：直接遍历查找
-        ; 从第1项开始查找
+        ; 从第 1 项开始查找
         index := 1
         found := false
 
@@ -755,7 +755,7 @@ class GuiEventHandlers {
         ; ==================== 打开文件后的业务 ====================
 
         if (guiManager.searchBox.Value != "") {
-            ; 情况1：搜索框有值，清空并设置焦点
+            ; 情况 1：搜索框有值，清空并设置焦点
             guiManager.searchBox.Value := ""
             guiManager.ShowAllFile()
             guiManager.listBox.Value := 0
@@ -771,7 +771,7 @@ class GuiEventHandlers {
                 }
             }
         } else {
-            ; 情况2：搜索框没值，保持选中刚才打开的项
+            ; 情况 2：搜索框没值，保持选中刚才打开的项
             this.SelectItemByText(guiManager, file["name"])
         }
     }
@@ -801,7 +801,7 @@ class GuiEventHandlers {
 
     ; ListBox 获得焦点事件处理
     static HandleListBoxFocus(guiManager) {
-        ; 只有当ListBox当前没有选中项时，才设置选中第一项
+        ; 只有当 ListBox 当前没有选中项时，才设置选中第一项
         if (ListBoxHelper.GetSelectedIndices(guiManager.listBox).Length = 0) {
             ; 不是提示消息，设置为选中项
             ; if(!guiManager.IsFirstItemPrompt()){
@@ -858,7 +858,7 @@ class GuiEventHandlers {
             return
         }
 
-        ; 编辑模式下不允许创建Root
+        ; 编辑模式下不允许创建 Root
          if (guiManager.editMode = "edit") {
             if (section = "Root" || section = "root" || StrLower(section) = "root") {
                 MessageManager.ShowError(
@@ -876,12 +876,12 @@ class GuiEventHandlers {
             ; 检查新的 section 名称是否已存在（排除自身）
             if (section != guiManager.currentEditSection) {
                 for displayName, file in guiManager.fileMap {
-                    ; 跳过自己（当前正在编辑的section）
+                    ; 跳过自己（当前正在编辑的 section）
                     if (file["section"] = guiManager.currentEditSection) {
                         continue
                     }
 
-                    ; 如果尝试编辑为Root，不允许
+                    ; 如果尝试编辑为 Root，不允许
                     if (StrLower(section) = "root" && StrLower(file["section"]) = "root") {
                         MessageManager.ShowError(
                             "Root section已存在，请使用其他名称", "提示", , editGui.Hwnd
@@ -892,7 +892,7 @@ class GuiEventHandlers {
                     ; 检查其他文件是否有相同的 section
                     if (file["section"] = section) {
                         MessageManager.ShowError(
-                           "Section名称已存在，请使用其他名称", "提示", , editGui.Hwnd 
+                           "Section名称已存在，请使用其他名称", "提示", , editGui.Hwnd
                         )
                         return
                     }
@@ -920,7 +920,7 @@ class GuiEventHandlers {
 
             ; 创建模式允许 Root，但要检查唯一性
             if (StrLower(section) = "root") {
-                ; 检查Root是否已存在
+                ; 检查 Root 是否已存在
                 for displayName, file in guiManager.fileMap {
                     if (StrLower(file["section"]) = "root") {
                         ; Root 已存在时允许覆盖，不在这里阻止
@@ -929,7 +929,7 @@ class GuiEventHandlers {
                     }
                 }
             } else {
-                ; 非Root项的正常检查
+                ; 非 Root 项的正常检查
                 ; 检查文件名称是否已存在
                 for displayName, file in guiManager.fileMap {
                     if (file["name"] = name) {
@@ -1077,7 +1077,7 @@ class GuiEventHandlers {
                 }
             }
 
-            ; 手动调用HandleNameChangeForEditGui来处理section逻辑
+            ; 手动调用 HandleNameChangeForEditGui 来处理 section 逻辑
             if (editGui.ctlName) {
                 GuiEventHandlers.HandleNameChangeForEditGui(editGui)
             }
@@ -1111,7 +1111,7 @@ class GuiEventHandlers {
 
         ; 检查路径是否为空
         if (pathValue = "") {
-            ; 如果路径为空，直接使用名称作为section
+            ; 如果路径为空，直接使用名称作为 section
             editGui.ctlSection.Value := nameValue
             return
         }

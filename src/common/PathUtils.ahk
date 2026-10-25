@@ -18,7 +18,7 @@ class PathUtils {
             return "打开失败: " e.Message
         }
     }
-    
+
     ; 静态方法：在资源管理器中定位文件
     static LocateFile(filePath) {
         if (filePath = "") {
@@ -56,7 +56,7 @@ class PathUtils {
             return false
         }
     }
-    
+
     ; 静态方法：定位根目录
     static LocateRootPath(rootPath) {
         if (rootPath = "") {
@@ -75,12 +75,12 @@ class PathUtils {
 
         ; 如果是文件，使用 LocateFile 方法
         if (FileExist(rootPath)) {
-            return this.LocateFile(rootPath)  ; 这会用explorer /select打开文件
+            return this.LocateFile(rootPath)  ; 这会用 explorer /select 打开文件
         }
 
         return false
     }
-    
+
     ; 静态方法：打开此电脑
     static OpenThisPC() {
         try {
@@ -95,11 +95,11 @@ class PathUtils {
             }
         }
     }
-    
+
     ; 静态方法：浏览选择文件
     ; t_openfile_settings：alwaysOnTop
     static BrowseForExecutable(currentPath := "",ownerGui := "",isTop := "") {
-        ; 如果有父窗口，临时启用OwnDialogs
+        ; 如果有父窗口，临时启用 OwnDialogs
         if (IsObject(ownerGui) && isTop) {
             ownerGui.Opt("+OwnDialogs")
         }else {
@@ -119,18 +119,18 @@ class PathUtils {
 
         return selectedFile
     }
-    
+
     ; 静态方法：检查文件是否存在并返回结果
     static CheckFileExists(filePath) {
         return FileExist(filePath)
     }
-    
+
     ; 静态方法：获取文件所在目录
     static GetFileDirectory(filePath) {
         SplitPath(filePath, , &dir)
         return dir
     }
-    
+
     ; 静态方法：智能定位（根据路径选择最优方式）
     static SmartLocate(filePath, rootPath := "") {
         if (filePath != "") {
