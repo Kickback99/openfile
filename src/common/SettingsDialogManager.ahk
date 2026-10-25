@@ -721,7 +721,7 @@ class SettingsDialogManager {
         configTypesGui.Add("Text", "w300 Center cGray", "管理不同类型的配置文件") */
 
         ; 获取所有配置类型（包括当前类型）
-        allConfigTypes := ConfigManager.GetAllConfigTypes(false)
+        allConfigTypes := ConfigManager.GetAllConfigTypes()
 
         ; 创建下拉列表框
         configTypesGui.Add("Text", "w" contentWidth, "可用的配置类型:")
@@ -778,7 +778,7 @@ class SettingsDialogManager {
         }
 
         ; 检查是否已存在
-        allConfigTypes := ConfigManager.GetAllConfigTypes(false)
+        allConfigTypes := ConfigManager.GetAllConfigTypes()
         if (this.HasValue(allConfigTypes, newType)) {
             MessageManager.ShowWarning("配置类型 '" newType "' 已存在", , , configTypesGui.Hwnd)
             return
@@ -800,7 +800,7 @@ class SettingsDialogManager {
             SettingsManager.EnsureConfigFile()
 
             ; 刷新下拉列表框
-            allConfigTypes := ConfigManager.GetAllConfigTypes(false)
+            allConfigTypes := ConfigManager.GetAllConfigTypes()
             comboBox.Delete()
             comboBox.Add(allConfigTypes)
             comboBox.Text := newType  ; 选中新增的类型
@@ -812,6 +812,9 @@ class SettingsDialogManager {
             RefreshConfigTypes()
 
             MessageManager.ShowSuccessDelayed("配置类型 '" newType "' 创建成功", , configTypesGui.Hwnd)
+
+            ;!!! 更新主窗口的上下文菜单
+            guiManager.CreateContextMenu()
 
         } catch as e {
             MessageManager.ShowError("创建配置类型失败: " e.Message, , , configTypesGui.Hwnd)
@@ -854,7 +857,7 @@ class SettingsDialogManager {
         }
 
         ; 获取所有配置类型（排除当前类型）
-        allTypes := ConfigManager.GetAllConfigTypes(false)
+        allTypes := ConfigManager.GetAllConfigTypes()
 
         ; 检查新名称是否已存在（排除自身）
         for type in allTypes {
@@ -873,7 +876,7 @@ class SettingsDialogManager {
             SettingsManager.RenameConfigSection(selectedType, newType)
 
             ; 3. 更新下拉列表框
-            newTypes := ConfigManager.GetAllConfigTypes(false)
+            newTypes := ConfigManager.GetAllConfigTypes()
             comboBox.Delete()
             comboBox.Add(newTypes)
             comboBox.Text := newType  ; 选中修改后的类型
@@ -887,6 +890,9 @@ class SettingsDialogManager {
             inputBox.Value := ""
 
             MessageManager.ShowSuccessDelayed("配置类型修改成功: " selectedType " -> " newType, ,configTypesGui.Hwnd)
+
+            ;!!! 更新主窗口的上下文菜单
+            guiManager.CreateContextMenu()
 
         } catch as e {
             MessageManager.ShowError("修改配置类型失败: " e.Message, , , configTypesGui.Hwnd)
@@ -923,7 +929,7 @@ class SettingsDialogManager {
         try {
 
             ; 获取当前所有配置类型
-            oldTypes := ConfigManager.GetAllConfigTypes(false)  ; 直接重新获取
+            oldTypes := ConfigManager.GetAllConfigTypes()  ; 直接重新获取
 
             ; 查找当前选中项的索引
             currentIndex := 0
@@ -945,7 +951,7 @@ class SettingsDialogManager {
             SettingsManager.EnsureConfigFile()
                 
             ; 3. 获取新的配置类型列表
-            newTypes := ConfigManager.GetAllConfigTypes(false)
+            newTypes := ConfigManager.GetAllConfigTypes()
 
             ; 4. 智能选择新选项
             newSelectedType := ""
@@ -971,6 +977,9 @@ class SettingsDialogManager {
                 RefreshConfigTypes()
             }
             MessageManager.ShowSuccessDelayed("配置类型 '" selectedType "' 删除成功", , configTypesGui.Hwnd)
+
+            ;!!! 更新主窗口的上下文菜单
+            guiManager.CreateContextMenu()
 
         } catch as e {
             MessageManager.ShowError("删除配置类型失败: " e.Message, , , configTypesGui.Hwnd)
