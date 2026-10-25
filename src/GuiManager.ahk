@@ -61,11 +61,6 @@ class GuiManager {
 
         this.listEmptyPrompt := false  ; 标记列表是否完全为空
 
-        ; 防抖定时器相关属性
-        this.debounceTimer := 0
-        this.pendingFoundCount := 0
-        this.pendingSearchText := ""
-
         ; 存储按钮引用，用于启用/禁用
         this.buttons := Map()
         ; 标记是否为多选状态
@@ -265,12 +260,6 @@ class GuiManager {
 
     ; 统一关闭函数
     CloseGui() {
-        ; 清理防抖定时器
-        if (this.debounceTimer) {
-            SetTimer(this.debounceTimer, 0)
-            this.debounceTimer := 0
-        }
-
         ; 取消消息监听
         if (this.messageListener) {
             OnMessage(0x47, this.messageListener, 0)  ; 取消监听
@@ -683,36 +672,12 @@ class GuiManager {
         GuiEventHandlers.SelectItemByText(this, textToSelect)
     }
 
-    ; 执行实际的焦点转移（由防抖定时器调用）
-    ExecuteFocusTransfer() {
-        ; 检查条件：待转移的 foundCount 满足阈值，且搜索框文本没有变化
-        if (this.pendingFoundCount > 0 &&
-            WindowConstants.ShouldFocusListBox(this.pendingFoundCount) &&
-            this.searchBox.Value = this.pendingSearchText) {
-            this.listBox.Focus()
-        }
-        ; 清理待处理数据
-        this.pendingFoundCount := 0
-        this.pendingSearchText := ""
-        this.debounceTimer := 0
-    }
-
     ; 处理搜索框变化（简化且高效）
     ; 搜索框变化时也更新按钮状态
     HandleSearchChange(*) {
         ; 用户正在搜索框中操作，设置标记
         this.userWasInSearchBox := true
         searchText := Trim(this.searchBox.Value)
-
-        ; 清除之前的防抖定时器
-        if (this.debounceTimer) {
-            SetTimer(this.debounceTimer, 0)
-            this.debounceTimer := 0
-        }
-
-        ; 同时清除待处理数据，防止过期定时器执行
-        this.pendingFoundCount := 0
-        this.pendingSearchText := ""
 
         ; 如果搜索文本为空
         if (searchText = "") {
@@ -771,21 +736,12 @@ class GuiManager {
             ; 有匹配项，选择第一项
             this.listBox.Value := 1
             this.showingPrompt := false
-
-            ; 保存待处理数据，启动防抖定时器
-            this.pendingFoundCount := foundCount
-            this.pendingSearchText := searchText
-
-            ; 创建防抖定时器（1 秒后执行焦点转移）
-            this.debounceTimer := ObjBindMethod(this, "ExecuteFocusTransfer")
-            SetTimer(this.debounceTimer, -WindowConstants.SEARCH_DEBOUNCE_DELAY)
         } else {
             ; 没有匹配项，显示提示
             this.listBox.Add([">>> 未找到匹配项 <<<"])
             this.showingPrompt := true
             this.listEmptyPrompt := false  ; 这不是列表为空的情况
-            this.pendingFoundCount := 0
-            this.pendingSearchText := ""
+            ; 不设置选中项
         }
     }
 
