@@ -1293,9 +1293,9 @@ class SettingsDialogManager {
 
     ; 处理联系按钮点击
     static HandleContactClick(guiManager, moreGui) {
-        contactUrl := SettingsManager.GetValue("Link")
+        contactUrl := SettingsManager.GetValue("Link","Global")
         if (!contactUrl || contactUrl = "") {
-            contactUrl := SettingsManager.DefaultConfig.Get("Link")
+            contactUrl := SettingsManager.GlobalConfigKeys.Get("Link")
         }
         Run(contactUrl)
     }
