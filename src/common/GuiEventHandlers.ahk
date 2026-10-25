@@ -107,9 +107,8 @@ class GuiEventHandlers {
         guiManager := GuiEventHandlers.ActiveGuiManager()
         if (!guiManager || GuiEventHandlers.FocusedControlHwnd(guiManager) != guiManager.listBox.Hwnd)
             return false
-        if (guiManager.IsFirstItemPrompt())
-            return false
 
+        ; 提示行也算边界：上下键要能离开列表，只是不参与索引计算
         range := ListBoxHelper.GetSelectionRange(guiManager.listBox)
         if (!range["first"])
             return false
