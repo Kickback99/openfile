@@ -9,11 +9,13 @@
 #Include "./common/WindowPositionUtils.ahk"
 #Include "./common/ListBoxHelper.ahk"
 #Include "./common/SettingsDialogManager.ahk"
-; ==============================
+
+; ============================================================
 ; GuiManager.ahk
 ; GUI 管理类（支持增删改查）
-; ==============================
+; ============================================================
 class GuiManager {
+
     ; 构造函数
     __New(configManager) {
         ; 保存 ConfigManager 实例

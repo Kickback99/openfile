@@ -1,8 +1,9 @@
-; ==============================
+; ============================================================
 ; GuiEventHandlers.ahk
 ; GUI 事件处理工具类
-; ==============================
+; ============================================================
 class GuiEventHandlers {
+
     ; ==================== 主窗口按钮事件处理 ====================
 
     ; 创建按钮点击事件处理
@@ -608,6 +609,7 @@ class GuiEventHandlers {
         this.ShowToolTip(guiManager, "已打开 " file["name"], 1500)
 
         ; ==================== 打开文件后的业务 ====================
+
         if (guiManager.searchBox.Value != "") {
             ; 情况 1：搜索框有值，清空并设置焦点
             guiManager.searchBox.Value := ""
@@ -629,6 +631,7 @@ class GuiEventHandlers {
             this.SelectItemByText(guiManager, file["name"])
         }
     }
+
     ; ==================== 搜索框事件处理 ====================
 
     ; 搜索框获得焦点事件处理
