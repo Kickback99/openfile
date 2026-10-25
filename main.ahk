@@ -8,7 +8,7 @@
 RegisterMainShortcut() {
     ; 从配置文件中读取快捷键
     shortcut := SettingsManager.GetValue("Shortcuts")
-    
+
     ; 如果没有设置或为空，使用默认值
     if (!shortcut || shortcut = "" || shortcut = "#q") {
         shortcut := "#q"
@@ -19,7 +19,7 @@ RegisterMainShortcut() {
     try {
         Hotkey(shortcut, MainHotkeyHandler, "Off")
     }
-    
+
     ; 注册热键
     try {
         Hotkey(shortcut, MainHotkeyHandler, "On")
@@ -33,14 +33,14 @@ RegisterMainShortcut() {
 ; 显示管理器函数
 ShowGuiManager(configType) {
 
-   ; 检查是否已有同名的且是gui类型的窗口
+   ; 检查是否已有同名的且是 gui 类型的窗口
     windowTitle := configType
     hwnd := WinExist(windowTitle " ahk_class AutoHotkeyGUI")
-    
+
     if (hwnd) {
         ; 如果窗口存在，激活它
         WinActivate(hwnd)
-        
+
         ; 如果窗口是最小化状态，恢复它
         if (WinGetMinMax(hwnd) = -1) {  ; -1 表示最小化
             WinRestore(hwnd)
@@ -51,27 +51,27 @@ ShowGuiManager(configType) {
 
         if(isTop){
             try{
-                GuiManager.gui.Opt("+AlwaysOnTop") ; 置顶 
+                GuiManager.gui.Opt("+AlwaysOnTop") ; 置顶
             }
         }else{
             try{
                 GuiManager.gui.Opt("-AlwaysOnTop") ; 取消置顶
             }
         }
-        
+
         ; 强制设置焦点到搜索框
         try {
             WinWaitActive(hwnd)
             Sleep(50)
-            
-            ; 方法1：使用ControlFocus通过类名
-            ; 搜索框通常是第一个Edit控件
+
+            ; 方法 1：使用 ControlFocus 通过类名
+            ; 搜索框通常是第一个 Edit 控件
             ControlFocus("Edit1", hwnd)
-            
-            ; 方法2：如果ControlFocus不够，发送Tab键
+
+            ; 方法 2：如果 ControlFocus 不够，发送 Tab 键
             ; Sleep(10)
             ; ControlSend("{Tab}", , hwnd)
-            
+
         } catch as e {
             ; 忽略焦点设置错误
         }
@@ -80,24 +80,24 @@ ShowGuiManager(configType) {
 
     ; 创建对应类型的配置管理器
     configMgr := ConfigManager(configType)
-    
-    ; 创建GUI管理器
+
+    ; 创建 GUI 管理器
     guiMgr := GuiManager(configMgr)
-    
+
     ; 显示文件列表
     guiMgr.ShowFileList()
 }
 
-; win+q事件
+; win+q 事件
 MainHotkeyHandler(*) {
-    ; 检查是否有GUI窗口在前台
+    ; 检查是否有 GUI 窗口在前台
     activeGuiHwnd := WinActive("ahk_class AutoHotkeyGUI")
-    
+
     if (activeGuiHwnd) {
-        ; 如果有GUI窗口在前台，最小化它
+        ; 如果有 GUI 窗口在前台，最小化它
         WinMinimize(activeGuiHwnd)
     } else {
-        ; 没有GUI窗口在前台，显示GUI
+        ; 没有 GUI 窗口在前台，显示 GUI
         ShowGuiManager('openfile')
     }
 }

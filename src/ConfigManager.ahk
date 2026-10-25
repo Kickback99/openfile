@@ -1,31 +1,30 @@
 #Include "../lib/py-master/lib/py.ahk"
 ; ==============================
 ; ConfigManager.ahk
-; 支持动态配置文件的INI管理器
+; 支持动态配置文件的 INI 管理器
 ; ==============================
 class ConfigManager {
     __New(configType := "") {
-        ; 使用 A_LineFile 获取ConfigManager.ahk的完整路径
-        configManagerPath := A_LineFile  ; 这是ConfigManager.ahk的完整路径
-        
+        ; 使用 A_LineFile 获取 ConfigManager.ahk 的完整路径
+        configManagerPath := A_LineFile  ; 这是 ConfigManager.ahk 的完整路径
+
         ; 从完整路径提取目录
         SplitPath(configManagerPath, , &scriptDir)
-        
+
         ; 现在 scriptDir 是 ConfigManager.ahk 所在的目录
         ; 应该是：E:\release\openfile\src
-        
-        ; configs目录就在当前目录下
+
+        ; configs 目录就在当前目录下
         configsDir := scriptDir "\configs"
 
         ; 自动构建配置文件路径：configs\{configType}.ini
         if (configType = "") {
-            configType := "openfile"  ; 默认使用openfile
+            configType := "openfile"  ; 默认使用 openfile
         }
 
         this.configPath := configsDir "\" configType ".ini"
         this.configType := configType
 
-        
         ; 检查配置文件是否存在
         /* if (!FileExist(this.configPath)) {
             MsgBox("❌ 配置文件不存在：`n" this.configPath)
@@ -36,10 +35,10 @@ class ConfigManager {
 
         ; 确保目录存在
         this.EnsureConfigDirectory(configsDir)
-        
+
         ; 确保配置文件存在（如果不存在则创建空文件）
         this.EnsureConfigFileExists()
-        
+
         ; 加载配置
         this.data := this.LoadConfig()
         this.fileList := this.GetFileList()
@@ -61,54 +60,54 @@ class ConfigManager {
         ; 如果文件不存在，创建空文件
         if (!FileExist(this.configPath)) {
             try {
-                ; 创建一个基本的INI文件结构 - 使用字符串连接
-                basicContent := "[Root]`r`n" 
-                    . "name=root`r`n" 
-                    . "path=" this.configPath "`r`n`r`n" 
-                    . "; 在此处添加你的文件配置`r`n" 
-                    . "; 示例：`r`n" 
-                    . "; [FileName]`r`n" 
-                    . "; name=文件显示名称`r`n" 
+                ; 创建一个基本的 INI 文件结构 - 使用字符串连接
+                basicContent := "[Root]`r`n"
+                    . "name=root`r`n"
+                    . "path=" this.configPath "`r`n`r`n"
+                    . "; 在此处添加你的文件配置`r`n"
+                    . "; 示例：`r`n"
+                    . "; [FileName]`r`n"
+                    . "; name=文件显示名称`r`n"
                     . "; path=C:\path\to\file.exe`r`n"
-                
+
                 FileAppend(basicContent, this.configPath,"UTF-8")
             } catch as e {
                 MessageManager.ShowError("创建配置文件失败: " e.Message)
             }
         }
     }
-    
+
     ; 加载配置文件（支持两种模式）
     ; t_openfile_settings：sortByAlphabet-get
     LoadConfig() {
         configData := Map()
-        
+
         ; 读取排序配置
         sortByAlphabet := SettingsManager.GetBool("SortByAlphabet")
-        
+
         if (sortByAlphabet) {
-            ; v1模式：使用传统方式
+            ; v1 模式：使用传统方式
             return this.LoadConfigBasic()
         } else {
-            ; v2模式：使用顺序记录方式
+            ; v2 模式：使用顺序记录方式
             return this.LoadConfigWithOrder()
         }
     }
-    
+
     ; 基础加载（不记录顺序）
     LoadConfigBasic() {
         configData := Map()
         currentSection := ""
-        
+
         Loop Read, this.configPath
         {
             line := Trim(A_LoopReadLine)
-            
+
             ; 跳过注释和空行
             if (line == "" || SubStr(line, 1, 1) == ";")
                 continue
-            
-            ; 解析section
+
+            ; 解析 section
             if (SubStr(line, 1, 1) == "[") {
                 endPos := InStr(line, "]")
                 if (endPos > 1) {
@@ -117,39 +116,39 @@ class ConfigManager {
                 }
                 continue
             }
-            
-            ; 解析key=value
+
+            ; 解析 key=value
             if (currentSection != "" && InStr(line, "=")) {
                 eqPos := InStr(line, "=")
                 key := Trim(SubStr(line, 1, eqPos - 1))
                 value := Trim(SubStr(line, eqPos + 1))
-                
+
                 if (key != "") {
                     configData[currentSection][key] := value
                 }
             }
         }
-        
+
         return configData
     }
 
-    ; 顺序记录加载（v2模式）
+    ; 顺序记录加载（v2 模式）
     LoadConfigWithOrder() {
         configData := Map()
-        ; configData["_sectionsInOrder"] := []  ; 记录section顺序
-        sectionOrder := []  ; 使用简化的变量名 记录section顺序
-        
+        ; configData["_sectionsInOrder"] := []  ; 记录 section 顺序
+        sectionOrder := []  ; 使用简化的变量名 记录 section 顺序
+
         currentSection := ""
-        
+
         Loop Read, this.configPath
         {
             line := Trim(A_LoopReadLine)
-            
+
             ; 跳过注释和空行
             if (line == "" || SubStr(line, 1, 1) == ";")
                 continue
-            
-            ; 解析section
+
+            ; 解析 section
             if (SubStr(line, 1, 1) == "[") {
                 endPos := InStr(line, "]")
                 if (endPos > 1) {
@@ -159,13 +158,13 @@ class ConfigManager {
                 }
                 continue
             }
-            
-            ; 解析key=value
+
+            ; 解析 key=value
             if (currentSection != "" && InStr(line, "=")) {
                 eqPos := InStr(line, "=")
                 key := Trim(SubStr(line, 1, eqPos - 1))
                 value := Trim(SubStr(line, eqPos + 1))
-                
+
                 if (key != "") {
                     configData[currentSection][key] := value
                 }
@@ -175,17 +174,17 @@ class ConfigManager {
         configData["_sectionsInOrder"] := sectionOrder
         return configData
     }
-    
-    ; V1模式：获取文件列表并按拼音智能排序
+
+    ; V1 模式：获取文件列表并按拼音智能排序
     GetFileListSortedByPinyin() {
         fileList := []
-        
+
         ; 收集所有文件
         for section, sectionData in this.data {
             if (section = "Root") {
                 continue
             }
-            
+
             if (sectionData.Has("name") && sectionData.Has("path")) {
                 fileList.Push(Map(
                     "name", sectionData["name"],
@@ -194,29 +193,29 @@ class ConfigManager {
                 ))
             }
         }
-        
-        ; 如果文件数量大于1才需要排序
+
+        ; 如果文件数量大于 1 才需要排序
         if (fileList.Length > 1) {
             fileList := this.SimpleBubbleSort(fileList)
         }
-        
+
         return fileList
     }
-    
+
     ; 简化版冒泡排序
     SimpleBubbleSort(arr) {
         count := arr.Length
-        
+
         Loop count {  ; 外层循环
             outer := A_Index
             Loop count - outer {  ; 内层循环
                 current := A_Index
                 next := current + 1
-                
-                ; 修正：Map访问应该使用中括号，不是点号
+
+                ; 修正：Map 访问应该使用中括号，不是点号
                 name1 := arr[current]["name"]
                 name2 := arr[next]["name"]
-                
+
                 if (this.CompareNames(name1, name2) > 0) {
                     ; 交换位置
                     temp := arr[current]
@@ -225,45 +224,45 @@ class ConfigManager {
                 }
             }
         }
-        
+
         return arr
     }
-    
+
     ; 简化版名称比较函数
     CompareNames(name1, name2) {
         ; 转换为小写进行不区分大小写比较
         lower1 := StrLower(name1)
         lower2 := StrLower(name2)
-        
+
         ; 尝试获取拼音首字母进行比较
         try {
             py1 := py.initials_muti(lower1)
             py2 := py.initials_muti(lower2)
-            
+
             ; 比较拼音首字母
             result := StrCompare(py1, py2, "Locale")
             if (result != 0) {
                 return result
             }
         }
-        
+
         ; 拼音相同或拼音库失败，比较整个名称
         return StrCompare(lower1, lower2, "Locale")
     }
 
-    ; V2模式：按文件顺序获取文件列表
+    ; V2 模式：按文件顺序获取文件列表
     GetFileListByFileOrder() {
         fileList := []
-        
-        ; 按照文件中的顺序遍历sections
+
+        ; 按照文件中的顺序遍历 sections
         if (this.data.Has("_sectionsInOrder")) {
             sectionOrder := this.data["_sectionsInOrder"]  ; 获取顺序数组
             for section in sectionOrder {
-                ; 跳过Root项和顺序标记本身
+                ; 跳过 Root 项和顺序标记本身
                 if (section = "Root") {
                     continue
                 }
-                
+
                 sectionData := this.data[section]
                 if (sectionData.Has("name") && sectionData.Has("path")) {
                     fileInfo := Map()
@@ -274,43 +273,43 @@ class ConfigManager {
                 }
             }
         }
-        
+
         return fileList
     }
-    
+
     ; 获取所有文件列表（根据配置选择排序方式）
     ; t_openfile_settings：sortByAlphabet-get
     GetFileList() {
         ; 检查是否启用了字母排序
         if (SettingsManager.GetBool("SortByAlphabet")) {
-            ; v1模式：使用拼音库进行智能排序
+            ; v1 模式：使用拼音库进行智能排序
             return this.GetFileListSortedByPinyin()
         } else {
-            ; v2模式：按文件顺序
+            ; v2 模式：按文件顺序
             return this.GetFileListByFileOrder()
         }
     }
-    
+
     ; 获取文件列表（供外部调用）
     GetFileListArray() {
         return this.fileList
     }
-    
+
     ; 获取配置类型
     GetConfigType() {
         return this.configType
     }
-    
+
     ; 获取配置文件路径
     GetConfigPath() {
         return this.configPath
     }
 
-    ; 获取Root路径
+    ; 获取 Root 路径
     GetRootPath() {
         if (this.data.Has("Root") && this.data["Root"].Has("path")) {
             return this.data["Root"]["path"]
         }
         return ""
-    }   
+    }
 }
