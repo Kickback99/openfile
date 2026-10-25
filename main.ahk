@@ -64,7 +64,7 @@ RegisterTypeHotkey() {
     shortcut := SettingsManager.GetValue("TypeHotkey", "Global")
 
     ; 如果没有设置或为空，使用默认值
-    if (shortcut = "") {
+    if (!shortcut || shortcut = "" || shortcut = "!c" ) {
         shortcut := "!c"
         SettingsManager.SetValue("TypeHotkey", shortcut, "Global")
     }
