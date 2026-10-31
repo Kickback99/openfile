@@ -634,11 +634,8 @@ class SettingsDialogManager {
             WinSetStyle("-0x00020000", configTypesGui.Hwnd)
         }
 
-        ; 设置字体
-        configTypesGui.SetFont("s9")  ; 先重置为默认字体
-        configTypesGui.SetFont("s10", "Microsoft YaHei")  ; 最低优先级
-        configTypesGui.SetFont("s10", "Consolas")         ; 中等优先级
-        configTypesGui.SetFont("s9", "JetBrains Mono")   ; 最高优先级（最后设置）
+        ; 字体回退链统一由 FontManager 设置
+        FontManager.ApplyTo(configTypesGui)
 
         ; 设置边距
         configTypesGui.MarginX := 20
