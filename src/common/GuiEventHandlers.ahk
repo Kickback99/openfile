@@ -132,42 +132,6 @@ class GuiEventHandlers {
             guiManager.listBox.Value := target
     }
 
-    ; ==================== 列表滚轮滚动 ====================
-
-    ; AHK v2 的 ListBox 滚轮路径很慢，改走 WM_VSCROLL
-    static RegisterWheelScrollHotkeys() {
-        HotIf(GuiEventHandlers.IsWheelOverList)
-        Hotkey("WheelUp", GuiEventHandlers.OnWheelUp, "On")
-        Hotkey("WheelDown", GuiEventHandlers.OnWheelDown, "On")
-        HotIf()
-    }
-
-    ; 只在鼠标位于列表上时接管，保留其它区域的原生滚动
-    static IsWheelOverList(*) {
-        guiManager := GuiEventHandlers.ActiveGuiManager()
-        if (!guiManager)
-            return false
-        MouseGetPos(, , , &mouseCtrl)
-        return mouseCtrl = guiManager.listBox.ClassNN
-    }
-
-    static OnWheelUp(*) {
-        GuiEventHandlers.ScrollListBy(-3)
-    }
-
-    static OnWheelDown(*) {
-        GuiEventHandlers.ScrollListBy(3)
-    }
-
-    static ScrollListBy(lines) {
-        guiManager := GuiEventHandlers.ActiveGuiManager()
-        if (!guiManager)
-            return
-        msg := lines < 0 ? 0 : 1  ; SB_LINEUP / SB_LINEDOWN
-        loop Abs(lines)
-            SendMessage(0x0115, msg, 0, , guiManager.listBox.Hwnd)
-    }
-
     ; ==================== 主窗口按钮事件处理 ====================
 
     ; 创建按钮点击事件处理
