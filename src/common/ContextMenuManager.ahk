@@ -198,7 +198,8 @@ class ContextMenuManager {
     ; 刷新目标配置的 GUI
     static RefreshTargetGui(targetConfigType) {
         ; 查找是否已经存在目标配置的 GUI 窗口
-        windowTitle := targetConfigType
+        ; WinExist 标题匹配区分大小写，须用显示名
+        windowTitle := ConfigManager.GetDisplayType(targetConfigType)
         hwnd := WinExist(windowTitle " ahk_class AutoHotkeyGUI")
 
         if (hwnd) {
