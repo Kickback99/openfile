@@ -72,7 +72,7 @@ class GuiManager {
     ShowFileList() {
         ; 创建 GUI
         this.gui := Gui()
-        this.gui.Title := (this.configType)
+        this.gui.Title := ConfigManager.GetDisplayType(this.configType)
 
         ; t_openfile_settings：alwaysOnTop
         ; 按配置设置窗口置顶
