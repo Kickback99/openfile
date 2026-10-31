@@ -12,16 +12,16 @@
 
 ; ============================================================
 ; GuiManager.ahk
-; GUI管理类（支持增删改查）
+; GUI 管理类（支持增删改查）
 ; ============================================================
 class GuiManager {
 
     ; 构造函数
     __New(configManager) {
-        ; 保存ConfigManager实例
+        ; 保存 ConfigManager 实例
         this.configManager := configManager
 
-        ; 保存配置类型和路径，用于修改INI文件
+        ; 保存配置类型和路径，用于修改 INI 文件
         this.configType := configManager.GetConfigType()
         this.configPath := configManager.GetConfigPath()
 
@@ -32,7 +32,7 @@ class GuiManager {
         ; 获取文件列表
         this.fileList := configManager.GetFileListArray()
 
-        ; 获取Root路径
+        ; 获取 Root 路径
         this.rootPath := configManager.GetRootPath()
 
         ; 保存导入导出管理器实例
@@ -48,7 +48,7 @@ class GuiManager {
 
         ; 当前编辑的模式：create 或 edit
         this.editMode := ""
-        ; 当前编辑的原始section名称（编辑模式时使用）
+        ; 当前编辑的原始 section 名称（编辑模式时使用）
         this.currentEditSection := ""
 
         ; 焦点状态跟踪
@@ -80,13 +80,12 @@ class GuiManager {
 
     ; 显示文件列表 GUI
     ShowFileList() {
-        ; 创建GUI
+        ; 创建 GUI
         this.gui := Gui()
         this.gui.Title := ConfigManager.GetDisplayType(this.configType)
 
-        ; 添加AlwaysOnTop选项确保窗口置顶
         ; t_openfile_settings：alwaysOnTop
-        ; 根据配置动态设置窗口置顶
+        ; 按配置设置窗口置顶
         if(this.isTop){
             this.gui.Opt("+AlwaysOnTop")
         } else {
@@ -124,7 +123,7 @@ class GuiManager {
         ; 创建右键菜单
         this.CreateContextMenu()
 
-        ; 绑定ListBox右键事件
+        ; 绑定 ListBox 右键事件
         this.listBox.OnEvent("ContextMenu", (*) => this.ShowContextMenu())
 
         ; 添加按钮区域
@@ -135,7 +134,7 @@ class GuiManager {
         buttonSpacing := 10
         totalWidth := (buttonWidth * 6) + (buttonSpacing * 5)
 
-        ; GUI宽度是550，所以要居中在550宽度内
+        ; GUI 宽度是 550，所以要居中在 550 宽度内
         startX := (550 - totalWidth) // 2
 
         ; 创建按钮 - 调整顺序和位置
@@ -167,7 +166,7 @@ class GuiManager {
         ; 双击 ListBox 事件 - 打开文件
         this.listBox.OnEvent("DoubleClick", (*) => GuiEventHandlers.HandleOpenFile(this))
 
-        ; 为ListBox添加Tab键事件
+        ; 为 ListBox 添加 Tab 键事件
         this.listBox.OnEvent("Focus", (*) => GuiEventHandlers.HandleListBoxFocus(this))
         ; this.listBox.OnEvent("LoseFocus", this.HandleListBoxLoseFocus.Bind(this))
 
@@ -175,22 +174,22 @@ class GuiManager {
         this.gui.OnEvent("Escape", (*) => this.CloseGui())  ; ESC 关闭窗口
         this.gui.OnEvent("Close", (*) => this.CloseGui())   ; 窗口关闭按钮
 
-        ; 显示GUI
+        ; 显示 GUI
         this.gui.Show("w550")
 
-        ; 将GuiManager实例存储到Gui对象中，便于外部访问
+        ; 将 GuiManager 实例存储到 Gui 对象中，便于外部访问
         this.gui.guiManager := this
 
-        ; 使用ObjBindMethod注册窗口消息监听
+        ; 使用 ObjBindMethod 注册窗口消息监听
         this.messageListener := ObjBindMethod(this, "HandleWindowMessage", this.gui.Hwnd)
         OnMessage(0x47, this.messageListener)   ; WM_WINDOWPOSCHANGED
 
         this.lastTopState := false
 
-        ; 使用一次性定时器启用搜索框Tabstop
+        ; 使用一次性定时器启用搜索框 Tabstop
         ; SetTimer(ObjBindMethod(this, "EnableSearchBoxTab"), -50)
 
-        ; 设置主窗口句柄给MessageManager
+        ; 设置主窗口句柄给 MessageManager
         ; t_openfile_settings：alwaysOnTop
         MessageManager.SetMainWindowHwnd(this.gui.Hwnd,this.configType)
 
@@ -203,10 +202,10 @@ class GuiManager {
     }
 
     ; t_openfile_settings：alwaysOnTop-get
-    ;  刷新配置值的方法
+    ; 刷新配置值的方法
     RefreshSettings() {
         ; 重新读取所有相关配置
-        ; 使用configType作为section名称
+        ; 使用 configType 作为 section 名称
         this.isTop := SettingsManager.GetBool("AlwaysOnTop", this.configType)
         this.sortByAlphabet := SettingsManager.GetBool("SortByAlphabet", this.configType)
         this.enableExtension := SettingsManager.GetBool("EnableExtension", this.configType)
@@ -242,15 +241,15 @@ class GuiManager {
             ; 只有置顶状态改变时才处理
             if (isCurrentlyTop != this.lastTopState) {
                 this.lastTopState := isCurrentlyTop
-                
+
                 ; 获取当前的配置状态
                 currentConfigValue := SettingsManager.GetBool("AlwaysOnTop", this.configType)
-                
+
                 ; 如果当前实际状态与配置不一致，更新配置
                 if (isCurrentlyTop != currentConfigValue) {
                     SettingsManager.SetValue("AlwaysOnTop", isCurrentlyTop ? "true" : "false", this.configType)
                     this.RefreshSettings()
-                    
+
                     ; 显示提示（可选）
                     if(WindowConstants.DEBUG_MODE){
                         ToolTip("窗口置顶状态已更新: " (isCurrentlyTop ? "已置顶" : "取消置顶"))
@@ -291,7 +290,7 @@ class GuiManager {
     }
 
     /* EnableSearchBoxTab() {
-        ; 启用搜索框的Tabstop
+        ; 启用搜索框的 Tabstop
         ; this.searchBox.Opt("+Tabstop")
 
         ; 确保 ListBox 有选中项（再次确认）
@@ -388,18 +387,18 @@ class GuiManager {
         ; 添加"移动到..."子菜单
         this.moveMenu := Menu()
 
-        ; 创建"复制到"子菜单  
+        ; 创建"复制到"子菜单
         this.copyMenu := Menu()  ; 复制菜单
 
         ; 获取所有可用的配置类型（排除当前类型）
         this.targetConfigs := ConfigManager.GetAllConfigTypes(this.configType)
-       
+
         ; 只有在有可移动目标时才添加"移动到..."菜单
         if (this.targetConfigs.Length > 0) {
 
             ; 为每个目标配置创建子菜单项
             for index, configType in this.targetConfigs {
-                ; 创建一个闭包来捕获当前configType
+                ; 创建一个闭包来捕获当前 configType
                 ; 使用闭包确保参数正确传递
                 this.moveMenu.Add(configType, ((currentType) => (*) => ContextMenuManager.HandleMoveTo(this, currentType))(configType))
 
@@ -484,7 +483,7 @@ class GuiManager {
 
         ; 根据模式设置 Section 初始值
         if (this.editMode = "create") {
-            ; 创建模式：使用文件名称作为section
+            ; 创建模式：使用文件名称作为 section
             ctlSection.Value := defaultName
 
             ; 绑定名称变化事件（自动更新 Section）
@@ -497,7 +496,7 @@ class GuiManager {
             editGui.Add("Text", "w400 cGray", "勾选后，保存后不清空表单，可继续添加")
 
         } else {
-            ; 编辑模式：显示当前section
+            ; 编辑模式：显示当前 section
             ctlSection.Value := this.currentEditSection
 
             ; 绑定名称变化事件（自动更新 Section）
@@ -515,7 +514,7 @@ class GuiManager {
 
         ; 绑定保存事件
         btnSave.OnEvent("Click", (*) => GuiEventHandlers.HandleSaveClick(
-            editGui, 
+            editGui,
             this,
             ctlName.Value,
             ctlPath.Value,
@@ -613,7 +612,7 @@ class GuiManager {
 
         ; 多个选中项：尝试按文本查找
         for text in selectedTexts {
-            ; 从第1项开始查找
+            ; 从第 1 项开始查找
             index := 1
             found := false
 
@@ -621,17 +620,17 @@ class GuiManager {
                 try {
                     ; 临时选中该项
                     this.listBox.Value := index
-                    
+
                     ; 获取选中文本（使用 ListBoxHelper，简化类型处理）
                     currentText := ListBoxHelper.GetListBoxText(this.listBox)
-                    
+
                     ; 检查是否匹配（现在直接比较字符串，不再需要类型检查）
                     if (currentText = text) {
                         foundIndices.Push(index)
                         found := true
                         break
                     }
-                    
+
                     index++
                 } catch {
                     ; 超出范围
@@ -750,7 +749,7 @@ class GuiManager {
 
             ; 使用 GuiTools 进行匹配
             directMatch := InStr(StrLower(name), searchTextLower)
-            pinyinScore := PinyinHelper.HasChinese(name) && PinyinHelper.LooksLikePinyin(searchTextLower) 
+            pinyinScore := PinyinHelper.HasChinese(name) && PinyinHelper.LooksLikePinyin(searchTextLower)
                 ? PinyinHelper.GetPinyinMatchScore(name, searchText)
                 : 0
 
@@ -777,7 +776,7 @@ class GuiManager {
             this.pendingFoundCount := foundCount
             this.pendingSearchText := searchText
 
-            ; 创建防抖定时器（1秒后执行焦点转移）
+            ; 创建防抖定时器（1 秒后执行焦点转移）
             this.debounceTimer := ObjBindMethod(this, "ExecuteFocusTransfer")
             SetTimer(this.debounceTimer, -WindowConstants.SEARCH_DEBOUNCE_DELAY)
         } else {

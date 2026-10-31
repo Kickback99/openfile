@@ -58,7 +58,7 @@ class WindowPositionUtils {
 
         ; 调试信息 - 添加这个
         if (WindowConstants.DEBUG_MODE) {
-            MessageManager.ShowInfo("父窗口位置: X=" parentX " Y=" parentY " W=" parentW " H=" parentH "`n" 
+            MessageManager.ShowInfo("父窗口位置: X=" parentX " Y=" parentY " W=" parentW " H=" parentH "`n"
                 "父窗口中心: X=" windowCenterX " Y=" windowCenterY "`n"
                 "子窗口计算位置: X=" childX " Y=" childY " W=" width " H=" height "`n"
                 "微调: Left=" adjustLeft " Top=" adjustTop, "CenterChildWindowWithConstants")

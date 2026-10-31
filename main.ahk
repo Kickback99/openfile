@@ -5,14 +5,14 @@
 #Include src\GuiManager.ahk
 #Include "src\common\SettingsManager.ahk"
 
-; 支持的配置类型数组（从ConfigManager动态获取）
+; 支持的配置类型数组（从 ConfigManager 动态获取）
 global ConfigTypes := []
 
 ; 初始化时加载配置类型
 InitConfigTypes() {
     global ConfigTypes
 
-    ; 直接从ConfigManager获取配置类型
+    ; 直接从 ConfigManager 获取配置类型
     ConfigTypes := ConfigManager.GetAllConfigTypes()
 
     ; 如果获取为空，使用默认值
@@ -20,7 +20,7 @@ InitConfigTypes() {
         ConfigTypes := [SettingsManager.DEFAULT_CONFIG_TYPE]
     }
 
-    ; 确保ConfigManager section存在
+    ; 确保 ConfigManager section 存在
     SettingsManager.EnsureConfigFile()
 }
 
@@ -57,7 +57,7 @@ RegisterMainShortcut() {
 
 ; 全局类型热键注册函数
 RegisterTypeHotkey() {
-    ; 使用GetValue读取TypeHotkey
+    ; 使用 GetValue 读取 TypeHotkey
     shortcut := SettingsManager.GetValue("TypeHotkey", "Global")
 
     ; 如果没有设置或为空，使用默认值
@@ -69,7 +69,7 @@ RegisterTypeHotkey() {
     try {
         ; 先尝试移除已注册的热键
         Hotkey(shortcut, TypeHotkeyHandler, "Off")
-        
+
         ; 注册新的热键
         Hotkey(shortcut, TypeHotkeyHandler, "On")
     } catch as e {
@@ -85,7 +85,7 @@ ShowGuiManager(configType) {
     ; 管理器加载时清理一次配置
     SettingsManager.EnsureConfigFile()
 
-   ; 检查是否已有同名的且是gui类型的窗口
+   ; 检查是否已有同名的且是 gui 类型的窗口
     ; WinExist 标题匹配区分大小写，须用显示名
     windowTitle := ConfigManager.GetDisplayType(configType)
     hwnd := WinExist(windowTitle " ahk_class AutoHotkeyGUI")
@@ -93,7 +93,7 @@ ShowGuiManager(configType) {
     if (hwnd) {
         ; 如果窗口存在，激活它
         WinActivate(hwnd)
-        
+
         ; 如果窗口是最小化状态，恢复它
         if (WinGetMinMax(hwnd) = -1) {  ; -1 表示最小化
             WinRestore(hwnd)
@@ -104,33 +104,33 @@ ShowGuiManager(configType) {
 
         if(isTop){
             try{
-                GuiManager.gui.Opt("+AlwaysOnTop") ; 置顶 
+                GuiManager.gui.Opt("+AlwaysOnTop") ; 置顶
             }
         }else{
             try{
                 GuiManager.gui.Opt("-AlwaysOnTop") ; 取消置顶
             }
         }
-        
-        ; 获取该窗口对应的GuiManager实例
+
+        ; 获取该窗口对应的 GuiManager 实例
         try {
-            ; 通过窗口句柄获取Gui对象
+            ; 通过窗口句柄获取 Gui 对象
             guiObj := GuiFromHwnd(hwnd)
             if (guiObj && guiObj.HasProp("guiManager")) {
                 ; 等待窗口完全激活
                 WinWaitActive(hwnd)
                 Sleep(50)  ; 短暂等待确保窗口状态稳定
-                
-                ; 获取GuiManager实例并设置焦点到搜索框
+
+                ; 获取 GuiManager 实例并设置焦点到搜索框
                 guiMgr := guiObj.guiManager
                 if (guiMgr.HasProp("searchBox") && guiMgr.searchBox) {
-                    ; 方法1：直接调用Focus方法
+                    ; 方法 1：直接调用 Focus 方法
                     guiMgr.searchBox.Focus()
-                    
-                    ; 方法2：如果Focus方法不够稳定，可以发送一个空字符来确保焦点
+
+                    ; 方法 2：如果 Focus 方法不够稳定，可以发送一个空字符来确保焦点
                     ; guiMgr.searchBox.Value := guiMgr.searchBox.Value  ; 触发更新
-                    
-                    ; 方法3：发送Tab键两次确保焦点在正确的控件
+
+                    ; 方法 3：发送 Tab 键两次确保焦点在正确的控件
                     ; ControlSend("{Tab}{Tab}", , hwnd)
                 }
             }
@@ -150,9 +150,9 @@ ShowGuiManager(configType) {
     guiMgr.ShowFileList()
 }
 
-; win+q事件
+; win+q 事件
 MainHotkeyHandler(*) {
-    ; 获取所有GUI窗口列表
+    ; 获取所有 GUI 窗口列表
     guiWindows := WinGetList("ahk_class AutoHotkeyGUI")
 
     ; 获取当前前台窗口
@@ -160,7 +160,7 @@ MainHotkeyHandler(*) {
     activeClass := WinGetClass(activeHwnd)
     activeTitle := WinGetTitle(activeHwnd)
 
-    ; 检查是否有任何未最小化的GUI窗口
+    ; 检查是否有任何未最小化的 GUI 窗口
     hasVisibleGui := false
     for hwnd in guiWindows {
         if (WinGetMinMax(hwnd) != -1) {
@@ -169,13 +169,13 @@ MainHotkeyHandler(*) {
         }
     }
 
-    ; 检查前台窗口是否是GUI窗口
+    ; 检查前台窗口是否是 GUI 窗口
     isGuiActive := (activeClass = "AutoHotkeyGUI")
 
     ; 获取激活的配置类型
     activeType := SettingsManager.GetValue("ActiveConfig", "Global")
 
-    ; 检查ActiveConfig窗口是否存在
+    ; 检查 ActiveConfig 窗口是否存在
     activeConfigHwnd := 0
     for hwnd in guiWindows {
         if (WinGetTitle(hwnd) = activeType) {
@@ -184,12 +184,12 @@ MainHotkeyHandler(*) {
         }
     }
 
-    ; 检查前台窗口是否是ActiveConfig的GUI窗口
+    ; 检查前台窗口是否是 ActiveConfig 的 GUI 窗口
     isActiveConfigGuiActive := (isGuiActive && activeTitle = activeType)
 
     if (hasVisibleGui) {
         if (isActiveConfigGuiActive) {
-            ; 情况1：前台是ActiveConfig的GUI窗口，最小化所有GUI窗口
+            ; 情况 1：前台是 ActiveConfig 的 GUI 窗口，最小化所有 GUI 窗口
             for hwnd in guiWindows {
                 if (WinGetMinMax(hwnd) != -1) {  ; 如果窗口未最小化
                     WinMinimize(hwnd)
@@ -197,23 +197,23 @@ MainHotkeyHandler(*) {
             }
             return
         } else if (isGuiActive) {
-            ; 情况2：前台是其他GUI窗口（如dev）
-            ; 先检查ActiveConfig窗口是否存在
-            if (activeConfigHwnd) {                
-                ; 先最小化其他非ActiveConfig的GUI窗口
+            ; 情况 2：前台是其他 GUI 窗口（如 dev）
+            ; 先检查 ActiveConfig 窗口是否存在
+            if (activeConfigHwnd) {
+                ; 先最小化其他非 ActiveConfig 的 GUI 窗口
                 for hwnd in guiWindows {
                     if (hwnd != activeConfigHwnd && WinGetMinMax(hwnd) != -1) {
                         WinMinimize(hwnd)
                     }
                 }
 
-                ; 然后激活ActiveConfig窗口
+                ; 然后激活 ActiveConfig 窗口
                 if (WinGetMinMax(activeConfigHwnd) = -1) {
                     WinRestore(activeConfigHwnd)
                 }
                 WinActivate(activeConfigHwnd)
             } else {
-                ; ActiveConfig窗口不存在，先最小化所有窗口，再创建新窗口
+                ; ActiveConfig 窗口不存在，先最小化所有窗口，再创建新窗口
                 for hwnd in guiWindows {
                     if (WinGetMinMax(hwnd) != -1) {
                         WinMinimize(hwnd)
@@ -223,33 +223,33 @@ MainHotkeyHandler(*) {
             }
             return
         } else {
-            ; 情况3：有未最小化的GUI窗口，但没有GUI在前台
-            if (activeConfigHwnd) {                
-                ; 最小化其他GUI窗口
+            ; 情况 3：有未最小化的 GUI 窗口，但没有 GUI 在前台
+            if (activeConfigHwnd) {
+                ; 最小化其他 GUI 窗口
                 for hwnd in guiWindows {
                     if (hwnd != activeConfigHwnd && WinGetMinMax(hwnd) != -1) {
                         WinMinimize(hwnd)
                     }
                 }
 
-                ; 激活ActiveConfig窗口
+                ; 激活 ActiveConfig 窗口
                 if (WinGetMinMax(activeConfigHwnd) = -1) {
                     WinRestore(activeConfigHwnd)
                 }
                 WinActivate(activeConfigHwnd)
 
             } else {
-                ; ActiveConfig窗口不存在，创建并显示
+                ; ActiveConfig 窗口不存在，创建并显示
                 ShowGuiManager(activeType)
             }
             return
         }
     }
-    ; 情况4：没有未最小化的GUI窗口（全部最小化或没有窗口），显示ActiveConfig窗口
+    ; 情况 4：没有未最小化的 GUI 窗口（全部最小化或没有窗口），显示 ActiveConfig 窗口
      ShowGuiManager(activeType)
 }
 
-; alt+c事件
+; alt+c 事件
 TypeHotkeyHandler(*){
     isManagerActive := WinActive("ahk_class AutoHotkeyGUI")
 
@@ -257,12 +257,12 @@ TypeHotkeyHandler(*){
     parentGui := ""
 
     if(isManagerActive){
-        ; 获取当前激活的GUI对象
+        ; 获取当前激活的 GUI 对象
         parentHwnd := WinGetID("A")
         parentGui := GuiFromHwnd(parentHwnd)
-        
+
         if(parentGui){
-            ; 临时为该GUI设置+OwnDialogs
+            ; 临时为该 GUI 设置+OwnDialogs
             parentGui.Opt("+OwnDialogs")
         }
     }
