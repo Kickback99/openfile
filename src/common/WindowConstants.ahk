@@ -12,38 +12,6 @@ class WindowConstants {
     ; MoreGui 宽度
     static MORE_GUI_WIDTH := 420
 
-    ; MoreGui 高度
-    static MORE_GUI_HEIGHT := 200
-
-    ; 高度控制模式：
-    ; "fixed" - 固定使用 MORE_GUI_HEIGHT
-    ; "auto" - 自动计算高度
-    ; "max" - 使用固定高度和自动计算高度的较大值
-    static HEIGHT_MODE := "auto"
-
-    ; MoreGui 水平微调量（向左偏移）
-    static MORE_GUI_ADJUST_LEFT := 78
-
-    ; MoreGui 垂直微调量（向上偏移）
-    static MORE_GUI_ADJUST_TOP := 50
-
-    ; ==================== EditGui 窗口常量 ====================
-
-    ; EditGui 宽度
-    static EDIT_GUI_WIDTH := 400
-
-    ; EditGui 高度 - 创建模式（包含批量添加复选框）
-    static EDIT_GUI_HEIGHT_CREATE := 300
-
-    ; EditGui 高度 - 编辑模式（不包含批量添加复选框）
-    static EDIT_GUI_HEIGHT_EDIT := 240
-
-    ; EditGui 水平微调量（向左偏移）
-    static EDIT_GUI_ADJUST_LEFT := 70
-
-    ; EditGui 垂直微调量（向上偏移）
-    static EDIT_GUI_ADJUST_TOP := 43
-
     ; ==================== 按钮布局常量 ====================
 
     ; 按钮宽度
@@ -127,41 +95,8 @@ class WindowConstants {
     ; 配置类型管理对话框宽度
     static CONFIG_TYPES_GUI_WIDTH := 300
 
-    ; 配置类型管理对话框高度
-    static CONFIG_TYPES_GUI_HEIGHT := 200
-
-    ; 配置类型管理对话框水平偏移量（向左偏移）
-    static CONFIG_TYPES_ADJUST_LEFT := 105
-
-    ; 配置类型管理对话框垂直偏移量（向上偏移）
-    static CONFIG_TYPES_ADJUST_TOP := 25
-
     ; ==================== HotkeyGui 窗口常量 ====================
 
     ; HotkeyGui 宽度
     static HOTKEY_GUI_WIDTH := 200
-
-    ; HotkeyGui 高度
-    static HOTKEY_GUI_HEIGHT := 155
-
-    ; HotkeyGui 水平微调量（向左偏移）
-    static HOTKEY_GUI_ADJUST_LEFT := 55
-
-    ; HotkeyGui 垂直微调量（向上偏移）
-    static HOTKEY_GUI_ADJUST_TOP := 65
-
-    ; ==================== 经验高度常量 ====================
-
-    ; 一行设置按钮的基础高度
-    static BASE_HEIGHT_ONE_ROW := 135
-
-    ; 每增加一行设置按钮增加的高度
-    static EXTRA_HEIGHT_PER_ROW := 32
-
-    ; 基于经验的高度计算
-    static CalculateEmpiricalHeight(buttonLayoutRows) {
-        ; 简单经验公式
-        return this.BASE_HEIGHT_ONE_ROW +
-               (this.EXTRA_HEIGHT_PER_ROW * (buttonLayoutRows - 1))
-    }
 }
