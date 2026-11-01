@@ -174,6 +174,40 @@ class IniTools {
         }
     }
 
+    ; 更新配置文件 Root 段的 path，保留其余内容
+    static UpdateRootPath(configPath, rootPath) {
+        try {
+            content := FileExist(configPath) ? FileRead(configPath) : ""
+
+            ; 匹配 Root 段（大小写不敏感）
+            if (RegExMatch(content, "i)\[root\][\s\S]*?(?=\n\[|$)", &match)) {
+                sectionText := match[0]
+
+                ; 段内只替换 path 行
+                if (RegExMatch(sectionText, "im)^path=[^\r\n]*", &pathMatch)) {
+                    newSection := StrReplace(sectionText, pathMatch[0], "path=" rootPath)
+                } else {
+                    newSection := RTrim(sectionText, "`r`n") . "`r`npath=" rootPath
+                }
+
+                content := StrReplace(content, sectionText, newSection)
+            } else {
+                ; 没有 Root 段则补到文件顶部
+                content := "[Root]`r`nname=root`r`npath=" rootPath . (content != "" ? "`r`n`r`n" : "") . content
+            }
+
+            if (FileExist(configPath)) {
+                FileDelete(configPath)
+            }
+            FileAppend(content, configPath, "UTF-8")
+            this.FormatAndSaveIniFile(configPath)
+            return true
+        } catch as e {
+            MessageManager.ShowError("保存 Root 路径失败：`n" e.Message)
+            return false
+        }
+    }
+
     ; 从 INI 文件中删除 section
     static DeleteFromIniFile(guiManager, sectionName) {
         try {

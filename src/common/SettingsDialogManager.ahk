@@ -665,26 +665,66 @@ class SettingsDialogManager {
         configTypesGui.Add("Text", "w" contentWidth " y+10", "新增/修改配置类型:")
         inputBox := configTypesGui.Add("Edit", "w" contentWidth, "")
 
+        ; Root 路径，右侧重置按钮还原为初始值
+        configTypesGui.Add("Text", "w" contentWidth " y+10", "Root 路径:")
+        rootPathEdit := configTypesGui.Add("Edit", "w" (contentWidth - 90) " y+4", "")
+        btnRestoreRoot := configTypesGui.Add("Button", "x+10 w80 yp", "重置")
+
         ; 创建按钮
-        btnAdd := configTypesGui.Add("Button", "w80", "新增")
+        btnAdd := configTypesGui.Add("Button", "xm w80", "新增")
         btnModify := configTypesGui.Add("Button", "x+10 w80", "修改")
         btnDelete := configTypesGui.Add("Button", "x+10 w80", "删除")
         btnActivate := configTypesGui.Add("Button", "x+10 w80", "激活")
 
         ; 事件处理函数
-        btnAdd.OnEvent("Click", (*) => this.HandleAddConfigType(configTypesGui, inputBox, comboBox, guiManager))
-        btnModify.OnEvent("Click", (*) => this.HandleModifyConfigType(configTypesGui, inputBox, comboBox, guiManager))
-        btnDelete.OnEvent("Click", (*) => this.HandleDeleteConfigType(configTypesGui, comboBox, guiManager))
+        comboBox.OnEvent("Change", (*) => this.LoadRootPath(comboBox, rootPathEdit))
+        btnRestoreRoot.OnEvent("Click", (*) => this.RestoreRootPath(comboBox, rootPathEdit))
+        btnAdd.OnEvent("Click", (*) => this.HandleAddConfigType(configTypesGui, inputBox, comboBox, rootPathEdit, guiManager))
+        btnModify.OnEvent("Click", (*) => this.HandleModifyConfigType(configTypesGui, inputBox, comboBox, rootPathEdit, guiManager))
+        btnDelete.OnEvent("Click", (*) => this.HandleDeleteConfigType(configTypesGui, comboBox, rootPathEdit, guiManager))
         btnActivate.OnEvent("Click", (*) => this.HandleActivateConfigType(configTypesGui, comboBox, guiManager,moreGui))
         configTypesGui.OnEvent("Close", (*) => this.HandleConfigTypesGuiClose(configTypesGui, moreGui))
         configTypesGui.OnEvent("Escape", (*) => this.HandleConfigTypesGuiClose(configTypesGui, moreGui))
+
+        ; 回显当前类型的 Root 路径
+        this.LoadRootPath(comboBox, rootPathEdit)
 
         ; 居中显示
         configTypesGui.Show("Center")
     }
 
+    ; 回显所选配置类型的 Root 路径
+    static LoadRootPath(comboBox, rootPathEdit) {
+        selectedType := Trim(comboBox.Text)
+        rootPath := ""
+
+        if (selectedType != "") {
+            try {
+                configMgr := ConfigManager(selectedType)
+                rootPath := configMgr.GetRootPath()
+            }
+        }
+
+        rootPathEdit.Value := rootPath
+    }
+
+    ; 重置 Root 路径为默认初始值（配置文件自身路径）
+    static RestoreRootPath(comboBox, rootPathEdit) {
+        selectedType := Trim(comboBox.Text)
+        rootPath := ""
+
+        if (selectedType != "") {
+            try {
+                configMgr := ConfigManager(selectedType)
+                rootPath := configMgr.GetConfigPath()
+            }
+        }
+
+        rootPathEdit.Value := rootPath
+    }
+
     ; 处理新增配置类型
-    static HandleAddConfigType(configTypesGui, inputBox, comboBox, guiManager) {
+    static HandleAddConfigType(configTypesGui, inputBox, comboBox, rootPathEdit, guiManager) {
         newType := Trim(inputBox.Value)
 
         if (newType = "") {
@@ -738,6 +778,7 @@ class SettingsDialogManager {
             comboBox.Delete()
             comboBox.Add(allConfigTypes)
             comboBox.Text := newType  ; 选中新增的类型
+            this.LoadRootPath(comboBox, rootPathEdit)
 
             ; 清空输入框
             inputBox.Value := ""
@@ -757,7 +798,7 @@ class SettingsDialogManager {
     }
 
     ; 处理修改配置类型
-    static HandleModifyConfigType(configTypesGui, inputBox, comboBox,guiManager) {
+    static HandleModifyConfigType(configTypesGui, inputBox, comboBox, rootPathEdit, guiManager) {
         selectedType := Trim(comboBox.Text)
 
         if (selectedType = "") {
@@ -765,68 +806,77 @@ class SettingsDialogManager {
             return
         }
 
-        ; 检查是否是当前类型，如果是则不允许修改
-        if (selectedType = guiManager.configType) {
-            MessageManager.ShowWarning("不能修改当前正在使用的配置类型", , , configTypesGui.Hwnd)
-            return
-        }
-
         newType := Trim(inputBox.Value)
+        isRename := (newType != "" && newType != selectedType)
 
-        ; 检查是否为空
-        if (newType = "") {
-            MessageManager.ShowWarning("新类型名称不能为空", , , configTypesGui.Hwnd)
-            return
+        ; 只改 Root 路径时不需要重命名，也不受当前类型限制
+        if (isRename) {
+            ; 检查是否是当前类型，如果是则不允许修改
+            if (selectedType = guiManager.configType) {
+                MessageManager.ShowWarning("不能修改当前正在使用的配置类型", , , configTypesGui.Hwnd)
+                return
+            }
+
+            ; 校验名称是否有效
+            if (!IniTools.IsValidName(newType, 0, true)) {
+                MessageManager.ShowWarning(
+                    "配置类型名称包含非法字符！`n`n"
+                    . "名称不能包含：\ / : * ? " . Chr(34) . " < > |`n"
+                    . "且不能以点开头或结尾", , , configTypesGui.Hwnd
+                )
+                return
+            }
+
+            ; 长度限制（最多 15 个字符）
+            if (StrLen(newType) > 15) {
+                MessageManager.ShowWarning(
+                    "配置类型名称不能超过15个字符！`n`n"
+                    . "当前长度：" StrLen(newType) " 个字符", , , configTypesGui.Hwnd
+                )
+                return
+            }
         }
 
-        ; 检查是否与原名相同
-        if (newType = selectedType) {
-            MessageManager.ShowWarning("配置类型 '" newType "' 已存在", , , configTypesGui.Hwnd)
-            return
-        }
-
-        ; 校验名称是否有效
-        if (!IniTools.IsValidName(newType, 0, true)) {
-            MessageManager.ShowWarning(
-                "配置类型名称包含非法字符！`n`n"
-                . "名称不能包含：\ / : * ? " . Chr(34) . " < > |`n"
-                . "且不能以点开头或结尾", , , configTypesGui.Hwnd
-            )
-            return
-        }
-
-        ; 长度限制（最多 15 个字符）
-        if (StrLen(newType) > 15) {
-            MessageManager.ShowWarning(
-                "配置类型名称不能超过15个字符！`n`n"
-                . "当前长度：" StrLen(newType) " 个字符", , , configTypesGui.Hwnd
-            )
-            return
-        }
+        rootPath := Trim(rootPathEdit.Value)
 
         ; 执行修改
         try {
-            ; 1. 重命名配置文件
-            ConfigManager.RenameConfigFile(selectedType, newType)
+            targetType := selectedType
 
-            ; 2. 重命名 settings.ini 中的配置段
-            SettingsManager.RenameConfigSection(selectedType, newType)
+            if (isRename) {
+                ; 1. 重命名配置文件
+                ConfigManager.RenameConfigFile(selectedType, newType)
 
-            ; 3. 更新下拉列表框
+                ; 2. 重命名 settings.ini 中的配置段
+                SettingsManager.RenameConfigSection(selectedType, newType)
+                targetType := newType
+            }
+
+            ; 3. 保存 Root 路径
+            configMgr := ConfigManager(targetType)
+            if (!IniTools.UpdateRootPath(configMgr.GetConfigPath(), rootPath)) {
+                throw Error("保存 Root 路径失败")
+            }
+
+            ; 4. 更新下拉列表框
             newTypes := ConfigManager.GetAllConfigTypes()
             comboBox.Delete()
             comboBox.Add(newTypes)
-            comboBox.Text := newType  ; 选中修改后的类型
+            comboBox.Text := targetType  ; 选中修改后的类型
+            this.LoadRootPath(comboBox, rootPathEdit)
 
-            ; 4. 更新全局配置类型列表
+            ; 5. 更新全局配置类型列表
             try {
                 RefreshConfigTypes()
             }
 
-            ; 5. 清空输入框
-            inputBox.Value := ""
-
-            MessageManager.ShowSuccessDelayed("配置类型修改成功: " selectedType " -> " newType, ,configTypesGui.Hwnd)
+            if (isRename) {
+                ; 6. 清空输入框
+                inputBox.Value := ""
+                MessageManager.ShowSuccessDelayed("配置类型修改成功: " selectedType " -> " newType, ,configTypesGui.Hwnd)
+            } else {
+                MessageManager.ShowSuccessDelayed("Root 路径已保存", , configTypesGui.Hwnd)
+            }
 
             ; 更新主窗口的上下文菜单
             guiManager.CreateContextMenu()
@@ -837,7 +887,7 @@ class SettingsDialogManager {
     }
 
     ; 处理删除配置类型
-    static HandleDeleteConfigType(configTypesGui, comboBox, guiManager) {
+    static HandleDeleteConfigType(configTypesGui, comboBox, rootPathEdit, guiManager) {
         selectedType := Trim(comboBox.Text)
 
         if (selectedType = "") {
@@ -908,6 +958,7 @@ class SettingsDialogManager {
             if (newSelectedType != "") {
                 comboBox.Text := newSelectedType
             }
+            this.LoadRootPath(comboBox, rootPathEdit)
 
             ; 6. 更新全局配置
             try {
