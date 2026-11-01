@@ -116,15 +116,25 @@ InitTrayMenu() {
     }
 }
 
+; 自启动应写入的命令
+GetAutoStartCommand() {
+    if (A_IsCompiled)
+        return '"' A_ScriptFullPath '"'
+    return '"' A_AhkPath '" "' A_ScriptFullPath '"'
+}
+
+; 读取自启动 Run 值
+GetAutoStartRegistryValue() {
+    try
+        return RegRead("HKCU\Software\Microsoft\Windows\CurrentVersion\Run", "OpenFile")
+    catch
+        return ""
+}
+
 ; 启用自启动
 EnableAutoStart() {
     appName := "OpenFile"  ; 你的应用名称
-    exePath := A_ScriptFullPath
-
-    ; 如果是未编译的脚本，需要包含解释器路径
-    if !A_IsCompiled {
-        exePath := A_AhkPath ' "' A_ScriptFullPath '"'
-    }
+    exePath := GetAutoStartCommand()
 
     try {
         RegWrite(exePath, "REG_SZ", "HKCU\Software\Microsoft\Windows\CurrentVersion\Run", appName)
@@ -137,16 +147,6 @@ DisableAutoStart() {
     try {
         RegDelete("HKCU\Software\Microsoft\Windows\CurrentVersion\Run", appName)
     }
-}
-
-; 检查自启动状态
-IsAutoStartEnabled() {
-    appName := "OpenFile"
-    try {
-        value := RegRead("HKCU\Software\Microsoft\Windows\CurrentVersion\Run", appName)
-        return value != ""
-    }
-    return false
 }
 
 ; 切换自启动状态
@@ -172,12 +172,12 @@ ToggleAutoStart(*) {
 CheckAndSetAutoStart() {
     ; 这里只做最终的验证和确保一致
     configAutoStart := SettingsManager.GetBool("AutoStartEnabled", "Global")
-    registryAutoStart := IsAutoStartEnabled()
+    registryCommand := GetAutoStartRegistryValue()
 
-    ; 确保两者一致（以配置文件为准）
-    if (configAutoStart && !registryAutoStart) {
+    ; 以配置文件为准，路径不一致时重写
+    if (configAutoStart && registryCommand != GetAutoStartCommand()) {
         EnableAutoStart()
-    } else if (!configAutoStart && registryAutoStart) {
+    } else if (!configAutoStart && registryCommand != "") {
         DisableAutoStart()
     }
 }
@@ -191,11 +191,12 @@ InitVersionConfig(){
     configAutoStart := SettingsManager.GetBool("AutoStartEnabled", "Global")
 
     ; 3. 检查注册表状态
-    registryAutoStart := IsAutoStartEnabled()
+    registryCommand := GetAutoStartRegistryValue()
+    registryAutoStart := (registryCommand != "")
 
-    ; 4. 以配置文件为准，确保两者一致
-    if (configAutoStart && !registryAutoStart) {
-        ; 配置文件说启用，但注册表没有，启用它
+    ; 4. 以配置文件为准，路径不一致时重写
+    if (configAutoStart && registryCommand != GetAutoStartCommand()) {
+        ; 配置文件说启用，但注册表缺失或路径已变，重写它
         EnableAutoStart()
         registryAutoStart := true
     } else if (!configAutoStart && registryAutoStart) {
